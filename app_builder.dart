@@ -335,14 +335,6 @@ class _ExtensionAndWebScriptsBuilder {
     List<String> commands, {
     String? releaseLocation = "release/",
   }) async {
-    // await buildBackground(minify: false);
-    await buildPage(minify: true);
-    await buildContent(minify: true);
-    await buildContent(minify: true, isMozila: true);
-    return;
-
-    // await buildContent(minify: false, isMozila: true);
-    // return;
     final bool chrome = commands.contains("-chrome");
     final bool firefox = commands.contains("-firefox");
     final bool opera = commands.contains("-opera");

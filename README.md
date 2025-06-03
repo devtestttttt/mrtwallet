@@ -118,11 +118,11 @@ Clone the repository and build using Flutter:
 
 - **WEB**
 
- you can view the web version of OnChain Wallet at <https://mrtnetwork.github.io/mrtwallet/>.
+ you can view the web version of OnChain Wallet at <https://mrtnetwork.github.io/onchain_wallet/>.
 
 ```shell
-gh repo clone mrtnetwork/mrtwallet
-cd mrt_wallet
+gh repo clone mrtnetwork/onchain_wallet
+cd onchain_wallet
 flutter pub get
 dart run app_builder.dart -web
 ```
@@ -130,8 +130,8 @@ dart run app_builder.dart -web
 - **Chrome, Edge, Brave extention**
 
 ```shell
-gh repo clone mrtnetwork/mrtwallet
-cd mrt_wallet
+gh repo clone mrtnetwork/onchain_wallet
+cd onchain_wallet
 flutter pub get
 dart run app_builder.dart -chrome
 ```
@@ -139,8 +139,8 @@ dart run app_builder.dart -chrome
 - **Opera extention**
 
 ```shell
-gh repo clone mrtnetwork/mrtwallet
-cd mrt_wallet
+gh repo clone mrtnetwork/onchain_wallet
+cd onchain_wallet
 flutter pub get
 dart run app_builder.dart -opera
 ```
@@ -149,8 +149,8 @@ dart run app_builder.dart -opera
 - **Firefox extention**
 
 ```shell
-gh repo clone mrtnetwork/mrtwallet
-cd mrt_wallet
+gh repo clone mrtnetwork/onchain_wallet
+cd onchain_wallet
 flutter pub get
 dart run app_builder.dart -firefox
 ```
@@ -159,8 +159,8 @@ dart run app_builder.dart -firefox
 - **Android**
 
 ```shell
-gh repo clone mrtnetwork/mrtwallet
-cd mrt_wallet
+gh repo clone mrtnetwork/onchain_wallet
+cd onchain_wallet
 flutter pub get
 dart run app_builder.dart -apk
 ```
@@ -168,8 +168,8 @@ dart run app_builder.dart -apk
 - **Windows**
 
 ```shell
-gh repo clone mrtnetwork/mrtwallet
-cd mrt_wallet
+gh repo clone mrtnetwork/onchain_wallet
+cd onchain_wallet
 flutter pub get
 dart run app_builder.dart -windows
 ```
@@ -177,8 +177,8 @@ dart run app_builder.dart -windows
 - **Macos**
 
 ```shell
-gh repo clone mrtnetwork/mrtwallet
-cd mrt_wallet
+gh repo clone mrtnetwork/onchain_wallet
+cd onchain_wallet
 flutter pub get
 dart run app_builder.dart -macos
 ```
