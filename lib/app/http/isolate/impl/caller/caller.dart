@@ -48,9 +48,10 @@ class ServicesHTTPCaller {
     try {
       final r = await HTTPCaller.getStream(
           uri: uri, headers: headers, onProgress: onProgress);
-      return HTTPWorkerResponseSuccess(response: r, id: -1);
+      return HTTPWorkerResponseSuccess(response: r, id: "-1");
     } catch (e) {
-      return HTTPWorkerResponseError(message: _getExceptionMessage(e), id: -1);
+      return HTTPWorkerResponseError(
+          message: _getExceptionMessage(e), id: "-1");
     }
   }
 }

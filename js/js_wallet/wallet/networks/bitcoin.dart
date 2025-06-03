@@ -270,8 +270,7 @@ class JSBitcoinHandler extends JSWalletStandardNetworkHandler<
         return WalletMessageResponse.fail(Web3RequestExceptionConst
             .rejectedByUser
             .toResponseMessage()
-            .toJson()
-            .jsify());
+            .toWalletError());
       case Web3BitcoinRequestMethods.signTransaction:
         return WalletMessageResponse.success(
             JSBitcoinSignTransactionResponse.setup(response.resultAsString()));

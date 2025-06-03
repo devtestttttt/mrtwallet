@@ -315,7 +315,6 @@ class SwapStateController extends StreamStateController
         await onPage(s);
       }, delay: APPConst.animationDuraion);
     });
-    Logg.log("error ${r.error}");
     if (r.hasError) {
       _txError = r.error!.tr;
     }

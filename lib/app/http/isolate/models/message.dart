@@ -64,7 +64,7 @@ class HTTPWorkerMessage {
 }
 
 class HTTPWorkerRequest {
-  final int id;
+  final String id;
   final HTTPWorkerMessage message;
   const HTTPWorkerRequest({required this.id, required this.message});
   Map<String, dynamic> toJson() {
@@ -79,7 +79,7 @@ class HTTPWorkerRequest {
 }
 
 abstract class HTTPWorkerResponse {
-  final int id;
+  final String id;
   abstract final HTTPCallerResponse response;
   bool get isSuccess => true;
   const HTTPWorkerResponse({required this.id});
@@ -125,7 +125,7 @@ class HTTPWorkerResponseError<T> extends HTTPWorkerResponse {
 }
 
 class HTTPWorkerMessageCompleter {
-  final int id;
+  final String id;
   HTTPWorkerMessageCompleter(this.id);
   final Completer<HTTPWorkerResponse> _messageCompleter = Completer();
 

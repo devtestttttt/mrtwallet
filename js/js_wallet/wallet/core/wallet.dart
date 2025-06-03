@@ -102,8 +102,10 @@ abstract class JSWalletHandler with JSWalletStandardHandler {
           final message = WalletMessage.response(
               client: request.clientType,
               requestId: request.requestId,
-              data: WalletMessageResponse.fail(
-                  Web3RequestExceptionConst.internalError.toJson().jsify()));
+              data: WalletMessageResponse.fail(Web3RequestExceptionConst
+                  .internalError
+                  .toResponseMessage()
+                  .toWalletError()));
           _sendMessageToClient(message);
           return message;
         });
@@ -228,9 +230,10 @@ abstract class JSWalletHandler with JSWalletStandardHandler {
                 error: response.cast(),
                 params: request) ??
             WalletMessageResponse.fail(
-                response.cast<Web3ExceptionMessage>().toJson().jsify()),
-        _ => WalletMessageResponse.fail(
-            Web3RequestExceptionConst.invalidRequest.toJson().jsify())
+                response.cast<Web3ExceptionMessage>().toWalletError()),
+        _ => WalletMessageResponse.fail(Web3RequestExceptionConst.invalidRequest
+            .toResponseMessage()
+            .toWalletError())
       };
       return WalletMessage.response(
           requestId: params.requestId,

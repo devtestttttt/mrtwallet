@@ -11,6 +11,7 @@ import 'package:on_chain/ethereum/src/eip_4361/eip_4361.dart';
 
 import 'package:on_chain/solana/solana.dart'
     show Commitment, SolAddress, VersionedMessage;
+import '../../models/models/exception.dart';
 import '../../models/models/networks/solana.dart';
 import '../../models/models/requests.dart';
 import '../core/network_handler.dart';
@@ -333,8 +334,7 @@ class JSSolanaHandler extends JSWalletStandardNetworkHandler<
         return WalletMessageResponse.fail(Web3RequestExceptionConst
             .rejectedByUser
             .toResponseMessage()
-            .toJson()
-            .jsify());
+            .toWalletError());
 
       case Web3SolanaRequestMethods.signTransaction:
         final signedTxs = response

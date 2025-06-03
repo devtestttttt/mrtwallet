@@ -5,6 +5,7 @@ import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/messages/models/models/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/permission/models/authenticated.dart';
 import 'js_wallet/constant/constant.dart';
+import 'js_wallet/models/models/exception.dart';
 import 'js_wallet/wallet/core/wallet.dart';
 import 'js_wallet/models/models/requests.dart';
 
@@ -21,7 +22,7 @@ void main() async {
   if (backgroundEvent.type == WalletEventTypes.exception) {
     final exception =
         Web3ExceptionMessage.deserialize(bytes: backgroundEvent.data);
-    message = WalletMessageResponse.fail(exception.toJson().jsify());
+    message = WalletMessageResponse.fail(exception.toWalletError());
   } else {
     message = WalletMessageResponse.success(backgroundEvent.clientId.jsify());
   }

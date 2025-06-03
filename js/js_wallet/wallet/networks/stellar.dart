@@ -1,4 +1,3 @@
-import 'dart:js_interop';
 import 'package:blockchain_utils/utils/utils.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
@@ -6,6 +5,7 @@ import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/stellar/stellar.dart';
 import 'package:stellar_dart/stellar_dart.dart';
+import '../../models/models/exception.dart';
 import '../../models/models/networks/stellar.dart';
 import '../../models/models/requests.dart';
 import '../core/network_handler.dart';
@@ -173,8 +173,7 @@ class JSStellarHandler extends JSWalletStandardNetworkHandler<
         return WalletMessageResponse.fail(Web3RequestExceptionConst
             .rejectedByUser
             .toResponseMessage()
-            .toJson()
-            .jsify());
+            .toWalletError());
       default:
         break;
     }

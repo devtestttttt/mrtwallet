@@ -4,6 +4,7 @@ import 'package:on_chain_bridge/web/web.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/web3/web3.dart';
+import '../../models/models/exception.dart';
 import '../../models/models/networks/wallet_standard.dart';
 import '../../models/models/requests.dart';
 import '../../utils/utils/utils.dart';
@@ -352,7 +353,7 @@ abstract class JSWalletStandardNetworkHandler<
       {required PageMessageRequest message,
       required Web3RequestParams? params,
       required Web3ExceptionMessage error}) async {
-    return WalletMessageResponse.fail(error.toJson().jsify());
+    return WalletMessageResponse.fail(error.toWalletError());
   }
 
   Future<WalletMessageResponse> finalizeWalletResponse(

@@ -32,7 +32,7 @@ extension type APPJSUint8Array(JSAny _) implements JSAny {
     return APPJSUint8Array.from(bytes.jsify());
   }
   List<int> toListInt() {
-    return (dartify() as List?)?.cast() ?? [];
+    return (dartify() as List?)?.cast<int>() ?? [];
   }
 }
 @JS()

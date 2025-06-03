@@ -13,8 +13,7 @@ void main(List<String> args) async {
     if (inited) return;
     final event = (data.detail as WalletMessage).data as WalletMessageResponse;
     if (event.statusType == JSWalletResponseType.failed) {
-      final walletError = JSWalletError.fromJson(message: event.asMap());
-      pageController.disable(walletError);
+      pageController.disable(event.data as JSWalletError);
       return;
     }
     inited = true;

@@ -38,7 +38,7 @@ abstract class HTTPServiceWorker {
       } on FailedIsolateInitialization catch (_) {}
     }
     final result =
-        await caller.makeCall(HTTPWorkerRequest(id: -1, message: request));
+        await caller.makeCall(HTTPWorkerRequest(id: "-1", message: request));
     return result.response;
   }
 

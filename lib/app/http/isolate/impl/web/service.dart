@@ -58,7 +58,7 @@ class _WorkerConnector {
 }
 
 class _WorkerConnection {
-  final Map<int, HTTPWorkerMessageCompleter> _requests = {};
+  final Map<String, HTTPWorkerMessageCompleter> _requests = {};
   final web.Worker worker;
   final _lock = SynchronizedLock();
   int _requestId = 0;
@@ -155,10 +155,10 @@ class _WorkerConnection {
     return result;
   }
 
-  Future<int> _getRequestId() {
+  Future<String> _getRequestId() {
     return _lock.synchronized(() {
       _requestId++;
-      final id = HTTPWorkerMessageCompleter(_requestId);
+      final id = HTTPWorkerMessageCompleter(_requestId.toString());
       _requests[id.id] = id;
       return id.id;
     });
@@ -177,12 +177,12 @@ class _WorkerConnection {
   }
 
   void onResponse(MessageEvent e) {
-    final HTTPWorkerResponse r = HTTPWorkerResponse.fromJs(
-        (e.data.dartify() as Map).cast<String, dynamic>());
+    final data = (e.data.dartify() as Map).cast<String, dynamic>();
+    final HTTPWorkerResponse r = HTTPWorkerResponse.fromJs(data);
     _requests[r.id]?.complete(r);
   }
 
-  void _sentRequest(HTTPWorkerMessage message, int id) {
+  void _sentRequest(HTTPWorkerMessage message, String id) {
     final request = HTTPWorkerRequest(id: id, message: message);
     final toJs = request.toJson().jsify();
     if (toJs == null) {

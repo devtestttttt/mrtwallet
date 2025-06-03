@@ -288,8 +288,7 @@ class JSTronHandler extends JSWalletStandardNetworkHandler<
         return WalletMessageResponse.fail(Web3RequestExceptionConst
             .rejectedByUser
             .toResponseMessage()
-            .toJson()
-            .jsify());
+            .toWalletError());
       case Web3TronRequestMethods.signMessageV2:
         final signature = response.resultAsString();
         if (message.isWalletStandard) {

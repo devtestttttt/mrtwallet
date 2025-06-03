@@ -186,8 +186,7 @@ class JSSuiHandler extends JSWalletStandardNetworkHandler<
         return WalletMessageResponse.fail(Web3RequestExceptionConst
             .rejectedByUser
             .toResponseMessage()
-            .toJson()
-            .jsify());
+            .toWalletError());
       case Web3SuiRequestMethods.signTransaction:
         final transaction =
             Web3SuiSignTransactionResponse.fromJson(response.resultAsMap());

@@ -7,6 +7,7 @@ import 'package:on_chain_wallet/future/wallet/setting/color_selector.dart';
 import 'package:on_chain_wallet/future/wallet/setup/controller/controller.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
+import 'package:on_chain_wallet/future/wallet/start/pages/platform_widgets/widgets.dart';
 
 class WalletSetupPageWidget extends StatelessWidget {
   const WalletSetupPageWidget({super.key});
@@ -35,6 +36,7 @@ class WalletSetupPageWidget extends StatelessWidget {
                         return wallet.changeColor(p0);
                       },
                     ),
+                    appbarWidgets(false),
                     WidgetConstant.width8,
                   ],
                 ),

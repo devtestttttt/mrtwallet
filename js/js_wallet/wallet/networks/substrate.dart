@@ -9,7 +9,6 @@ import 'package:on_chain_wallet/wallet/web3/networks/substrate/substrate.dart';
 import 'package:polkadot_dart/polkadot_dart.dart';
 import '../../js_wallet.dart';
 import '../../models/models/networks/substrate.dart';
-import '../../models/models/requests.dart';
 import '../core/network_handler.dart';
 
 class SubstrateWeb3State extends WalletStandardChainWeb3State<
@@ -202,8 +201,7 @@ class JSSubstrateHandler extends JSWalletStandardNetworkHandler<
         return WalletMessageResponse.fail(Web3RequestExceptionConst
             .rejectedByUser
             .toResponseMessage()
-            .toJson()
-            .jsify());
+            .toWalletError());
       case Web3SubstrateRequestMethods.addSubstrateChain:
         return WalletMessageResponse.success(true.toJS);
       case Web3SubstrateRequestMethods.signTransaction:

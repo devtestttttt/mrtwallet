@@ -53,8 +53,7 @@ mixin JSWalletStandardHandler {
         return WalletMessageResponse.fail(Web3RequestExceptionConst
             .rejectedByUser
             .toResponseMessage()
-            .toJson()
-            .jsify());
+            .toWalletError());
       default:
         throw Web3RequestExceptionConst.methodDoesNotExist;
     }

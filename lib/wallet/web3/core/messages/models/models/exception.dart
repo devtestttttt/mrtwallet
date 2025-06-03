@@ -46,15 +46,6 @@ class Web3ExceptionMessage extends Web3MessageCore {
         type.tag);
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      "message": message,
-      "code": code,
-      "walletCode": walletCode,
-      "data": data,
-    }..removeWhere((k, v) => v == null);
-  }
-
   @override
   Web3MessageTypes get type => Web3MessageTypes.error;
 

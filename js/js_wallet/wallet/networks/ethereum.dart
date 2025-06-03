@@ -566,8 +566,7 @@ class JSEthereumHandler extends JSWalletStandardNetworkHandler<
         return WalletMessageResponse.fail(Web3RequestExceptionConst
             .rejectedByUser
             .toResponseMessage()
-            .toJson()
-            .jsify());
+            .toWalletError());
       default:
     }
     return super.finalizeWalletResponse(

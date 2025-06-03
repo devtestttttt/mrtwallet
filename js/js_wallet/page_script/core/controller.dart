@@ -122,7 +122,7 @@ class PageRequestController {
       case JSWalletResponseType.success:
         return response.data as T;
       case JSWalletResponseType.failed:
-        throw JSWalletError.fromJson(message: response.asMap());
+        throw response.data as JSWalletError;
     }
   }
 }

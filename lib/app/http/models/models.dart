@@ -49,7 +49,7 @@ class HTTPCallerResponse {
 
   factory HTTPCallerResponse.fromJs(Map<String, dynamic> json) {
     final responseType = HTTPResponseType.fromName(json["responseType"]);
-    final int status = json["statusCode"];
+    final int status = int.parse(json["statusCode"].toString());
     return HTTPCallerResponse(
         result: isSuccessStatusCode(status)
             ? fromJsObject(json["result"], responseType)
@@ -60,7 +60,7 @@ class HTTPCallerResponse {
   Map<String, dynamic> toJson() {
     return {
       "result": result,
-      "statusCode": statusCode,
+      "statusCode": statusCode.toString(),
       "responseType": responseType.name
     };
   }

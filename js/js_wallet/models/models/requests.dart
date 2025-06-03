@@ -144,18 +144,18 @@ extension type WalletMessageData._(JSObject object) implements JSAny {
     return data?.dartify() as String;
   }
 
-  Map<String, dynamic> _convertMap(Map map) {
-    map.forEach((key, value) {
-      if (value is Map) {
-        map[key] = _convertMap(value);
-      }
-    });
-    return Map<String, dynamic>.from(map);
-  }
+  // Map<String, dynamic> _convertMap(Map map) {
+  //   map.forEach((key, value) {
+  //     if (value is Map) {
+  //       map[key] = _convertMap(value);
+  //     }
+  //   });
+  //   return Map<String, dynamic>.from(map);
+  // }
 
-  Map<String, dynamic> asMap() {
-    return _convertMap(data?.dartify() as Map);
-  }
+  // Map<String, dynamic> asMap() {
+  //   return _convertMap(data?.dartify() as Map);
+  // }
 }
 @JS()
 extension type WalletMessageResponse._(JSObject object)
@@ -297,14 +297,6 @@ extension type PageMessageRequest._(JSObject object)
       return null;
     }
   }
-
-  Object? get getFirstParam {
-    final toDart = dartParams;
-    if (toDart.isEmpty) {
-      return null;
-    }
-    return toDart.first;
-  }
 }
 @JS()
 extension type PageMessageEvent._(JSObject object) implements PageMessageData {
@@ -313,14 +305,14 @@ extension type PageMessageEvent._(JSObject object) implements PageMessageData {
       required String event,
       required JSAny? data,
       required String providerType});
-  factory PageMessageEvent.build(
-      {required JSEventType event,
-      PageRequestType provider = PageRequestType.walletStandard,
-      Object? data}) {
+  factory PageMessageEvent.build({
+    required JSEventType event,
+    PageRequestType provider = PageRequestType.walletStandard,
+  }) {
     return PageMessageEvent(
         type: PageMessageType.event.name,
         providerType: provider.name,
-        data: data?.jsify(),
+        data: null,
         event: event.name);
   }
   external String get type;

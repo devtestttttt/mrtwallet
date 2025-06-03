@@ -76,10 +76,6 @@ class _ExtensionAndWebScriptsBuilder {
     if (file.existsSync()) {
       file.deleteSync();
     }
-    file = File("${_buildWebDir}bn.js");
-    if (file.existsSync()) {
-      file.deleteSync();
-    }
     file = File("${_buildWebDir}content.js");
     if (file.existsSync()) {
       file.deleteSync();
@@ -113,8 +109,7 @@ class _ExtensionAndWebScriptsBuilder {
 
   static bool hasExtensionScripts() {
     if (!Directory(_extensionDir).existsSync()) return false;
-    return File("${_extensionDir}bn.js").existsSync() &&
-        File("${_extensionDir}chrome_manifest.json").existsSync() &&
+    return File("${_extensionDir}chrome_manifest.json").existsSync() &&
         File("${_extensionDir}content.js").existsSync() &&
         File("${_extensionDir}firefox_content.js").existsSync() &&
         File("${_extensionDir}iframe.html").existsSync() &&
@@ -340,6 +335,11 @@ class _ExtensionAndWebScriptsBuilder {
     List<String> commands, {
     String? releaseLocation = "release/",
   }) async {
+    // await buildBackground(minify: false);
+    // await buildPage(minify: false);
+    // await buildContent(minify: false);
+    // await buildContent(minify: false, isMozila: true);
+    // return;
     final bool chrome = commands.contains("-chrome");
     final bool firefox = commands.contains("-firefox");
     final bool opera = commands.contains("-opera");
@@ -361,6 +361,7 @@ class _ExtensionAndWebScriptsBuilder {
     if (Directory("assets/webview/").existsSync()) {
       Directory("assets/webview/").deleteSync(recursive: true);
     }
+    Directory("assets/webview/").createSync(recursive: true);
     Directory("assets/wasm/").createSync(recursive: true);
     if (crypto) {
       await buildStreamCryptoJs(minify: minify);
@@ -408,8 +409,6 @@ class _ExtensionAndWebScriptsBuilder {
     if (extension) {
       File file = File("${_extensionDir}tron_web.js");
       file.copySync("web/tron_web.js");
-      file = File("${_extensionDir}bn.js");
-      file.copySync("web/bn.js");
 
       file = File("${_extensionDir}background.js");
       file.copySync("web/background.js");

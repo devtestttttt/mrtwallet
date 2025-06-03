@@ -1,4 +1,3 @@
-import 'dart:js_interop';
 import 'package:blockchain_utils/utils/utils.dart';
 import 'package:on_chain_bridge/web/api/core/js.dart';
 import 'package:on_chain_wallet/app/core.dart';
@@ -216,8 +215,7 @@ class JSTonHandler extends JSWalletStandardNetworkHandler<
         return WalletMessageResponse.fail(Web3RequestExceptionConst
             .rejectedByUser
             .toResponseMessage()
-            .toJson()
-            .jsify());
+            .toWalletError());
       default:
     }
     return super.finalizeWalletResponse(

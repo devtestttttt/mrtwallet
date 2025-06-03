@@ -312,8 +312,7 @@ class JSCosmosHandler extends JSWalletStandardNetworkHandler<
         return WalletMessageResponse.fail(Web3RequestExceptionConst
             .rejectedByUser
             .toResponseMessage()
-            .toJson()
-            .jsify());
+            .toWalletError());
       case Web3CosmosRequestMethods.signTransactionAmino:
       case Web3CosmosRequestMethods.signTransaction:
       case Web3CosmosRequestMethods.signTransactionDirect:

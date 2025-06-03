@@ -28,6 +28,7 @@ abstract class IsolateCryptoWoker {
     } on FailedIsolateInitialization {
       if (mode != WorkerMode.main) rethrow;
       final result = onMain();
+
       return result;
     } on TimeoutException {
       if (mode != WorkerMode.main) rethrow;
