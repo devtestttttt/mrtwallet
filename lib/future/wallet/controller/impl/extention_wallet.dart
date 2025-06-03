@@ -595,7 +595,8 @@ mixin ExtentionWalletHandler on Web3RequestControllerImpl {
           break;
         case ExtensionWalletContextType.tab:
           await extension.tabs.create_(
-              url: "${extension.runtime.getURL("index.html")}?context=tab");
+              url:
+                  "${extension.runtime.getURL("side_panel.html")}?context=tab");
           break;
         default:
           final info = await extension.windows.getCurrent_(populate: true);

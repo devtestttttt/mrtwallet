@@ -4,6 +4,8 @@ import 'package:on_chain_bridge/web/web.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 
+import '../models.dart';
+
 enum JSWalletMessageType {
   response,
   event;
@@ -143,19 +145,6 @@ extension type WalletMessageData._(JSObject object) implements JSAny {
   String asString<T>() {
     return data?.dartify() as String;
   }
-
-  // Map<String, dynamic> _convertMap(Map map) {
-  //   map.forEach((key, value) {
-  //     if (value is Map) {
-  //       map[key] = _convertMap(value);
-  //     }
-  //   });
-  //   return Map<String, dynamic>.from(map);
-  // }
-
-  // Map<String, dynamic> asMap() {
-  //   return _convertMap(data?.dartify() as Map);
-  // }
 }
 @JS()
 extension type WalletMessageResponse._(JSObject object)
@@ -171,7 +160,7 @@ extension type WalletMessageResponse._(JSObject object)
         data: data,
         status: JSWalletResponseType.success.name);
   }
-  factory WalletMessageResponse.fail(JSAny? data) {
+  factory WalletMessageResponse.fail(JSWalletError data) {
     return WalletMessageResponse(
         type: JSWalletMessageType.response.name,
         data: data,

@@ -9,27 +9,22 @@ extension type JSError._(JSAny _) implements JSAny {
 }
 
 extension type JSWalletError._(JSAny _) implements JSError {
-  external factory JSWalletError({String? message});
+  external factory JSWalletError(
+      {String? message,
+      int? code,
+      String? walletCode,
+      String? data,
+      String? stack});
   external String? get stack;
   external set stack(String? info);
   @JS("toString")
   external set toStr(JSFunction f);
-
-  factory JSWalletError.fromMessage(
-      {required Web3ExceptionMessage message, String? stack}) {
-    final error = message.toWalletError();
-    error.stack = stack;
-    String toString() {
-      return "OnChain: ${message.message}";
-    }
-
-    error.toStr = toString.toJS;
-    return error;
-  }
 }
 
 extension ToWalletError on Web3ExceptionMessage {
   JSWalletError toWalletError({String? stack}) {
-    return JSWalletError.fromMessage(message: this, stack: stack);
+    final error = JSWalletError(
+        message: message, code: code, walletCode: walletCode, data: data);
+    return error;
   }
 }

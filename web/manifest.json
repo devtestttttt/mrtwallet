@@ -22,8 +22,8 @@
       "tabs",
       "sidePanel"
     ],
-    "side_panel": {
-      "default_path":"side_panel.html?context=sidePanel"
+    "sidebar_action": {
+      "default_panel": "side_panel.html?context=sidebarAction"
     },
     "content_security_policy": {
       "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"

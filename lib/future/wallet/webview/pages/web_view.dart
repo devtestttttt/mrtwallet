@@ -93,7 +93,8 @@ class WebView extends StatelessWidget {
                                             Row(
                                               children: [
                                                 ConditionalWidget(
-                                                  enable: true,
+                                                  enable: model
+                                                      .enableBackForwardKey,
                                                   onActive: (context) =>
                                                       StreamWidget(
                                                     value:
