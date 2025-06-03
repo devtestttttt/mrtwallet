@@ -351,7 +351,7 @@ class _ExtensionAndWebScriptsBuilder {
     final bool http = !commands.contains("--no-http");
     final bool scripts = !commands.contains("--no-scripts");
     final bool extension = chrome | firefox | opera | ie;
-    final String baseHref = "--base-href=/onchain/";
+    final String baseHref = "--base-href=/onchain_wallet/";
     _log(
       "build chrome: $chrome firefox:$firefox release:$minify wasm:$wasm crypto:$crypto http:$http scripts:$scripts",
     );
