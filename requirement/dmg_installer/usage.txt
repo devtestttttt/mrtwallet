@@ -1,1 +1,1 @@
-appdmg config.json mrt.dmg
+appdmg config.json onchain.dmg

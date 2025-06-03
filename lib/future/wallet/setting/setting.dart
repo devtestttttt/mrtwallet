@@ -228,10 +228,8 @@ class _AppSettingViewState extends State<_AppSettingView>
               AppListTile(
                 title: Text("about_onchain_wallet".tr),
                 leading: const Icon(Icons.home),
-                subtitle: Text("essence_of_onchain_wallet".tr),
                 onTap: () {
-                  // context.openSliverDialog(
-                  //     (ctx) => const AbountWalletView(), APPConst.name);
+                  UriUtils.lunch(LinkConst.appGithub);
                 },
               ),
               WidgetConstant.height20,
