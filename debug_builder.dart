@@ -18,6 +18,7 @@ void _copyDirectory(Directory source, Directory destination) {
       final newFile = File(
         '${destination.path}/${entity.uri.pathSegments.last}',
       );
+
       newFile.writeAsBytesSync(entity.readAsBytesSync());
     }
   });
