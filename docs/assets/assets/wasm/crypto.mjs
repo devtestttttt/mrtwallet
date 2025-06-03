@@ -2040,6 +2040,7 @@ class CompiledApp {
 "type",
 "url",
 "current",
+"-1",
 "GET",
 "get",
 "api_http_timeout_error",
