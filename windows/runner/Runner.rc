@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.mrtnetwork" "\0"
-            VALUE "FileDescription", "MRT Wallet" "\0"
+            VALUE "FileDescription", "on_chain_wallet" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "MRT Wallet" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 com.mrtnetwork. All rights reserved." "\0"
-            VALUE "OriginalFilename", "mrt_wallet.exe" "\0"
-            VALUE "ProductName", "MRT Wallet" "\0"
+            VALUE "InternalName", "on_chain_wallet" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 com.mrtnetwork. All rights reserved." "\0"
+            VALUE "OriginalFilename", "on_chain_wallet.exe" "\0"
+            VALUE "ProductName", "on_chain_wallet" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
