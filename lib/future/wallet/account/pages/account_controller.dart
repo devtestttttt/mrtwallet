@@ -107,7 +107,6 @@ class _NetworkAccountControllerViewState<CL extends NetworkClient?,
       this.account = accout;
       this.client = client;
       this.address = address;
-      Logg.log("client ${this.client.runtimeType}");
       progressKey.backToIdle();
     } finally {
       updateState();

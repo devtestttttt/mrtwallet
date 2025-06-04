@@ -60,13 +60,11 @@ final class WalletRequestMoneroOutputUnlocker
   @override
   Future<MoneroBatchProcessTxesResponse> result(
       {required WalletMasterKeys wallet, required List<int> key}) async {
-    Logg.log("come unlock txes!");
     final client = APIUtils.buildMoneroClient(
         provider: provider, network: null, isolate: APPIsolate.current);
     final txids =
         requests.expand((e) => e.indexes.expand((e) => e.txes)).toList();
     final txInfos = await client.getTxes(txIds: txids);
-    Logg.log("tx ids $txids $txInfos ${requests.length}");
     final List<MoneroPrivateKeyData> keys = wallet
         .readKeys(requests
             .map((e) => AccessCryptoPrivateKeyRequest(index: e.accountIndex))

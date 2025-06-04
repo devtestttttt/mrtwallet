@@ -154,9 +154,7 @@ base mixin MoneroChainController
   Future<void> _getWalletRpcTxes() async {
     await _onWalletClient(
       onConnect: (client) async {
-        Logg.log("client $client");
         final txes = await client.readMoneroWalletTxes(this as MoneroChain);
-        Logg.log("txes ${txes.length}");
         if (txes.isEmpty) return;
         for (final tx in txes) {
           if (tx.indexes.isEmpty) continue;
@@ -172,7 +170,6 @@ base mixin MoneroChainController
             pendingTxes
                 .add(MoneroAccountIndexTxes(index: i.index, txes: unknownTxes));
           }
-          Logg.log("pneding txes ${pendingTxes.length}");
           if (pendingTxes.isEmpty) continue;
           defaultTracker.addAccountPendingTxes(tx.primaryAddress, pendingTxes);
         }
@@ -183,7 +180,6 @@ base mixin MoneroChainController
   }
 
   Future<void> _updateAaccountsBalances() async {
-    Logg.log("balance updated!");
     await _getWalletRpcTxes();
     await onClient(
       onConnect: (client) async {

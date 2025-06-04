@@ -201,7 +201,6 @@ abstract class HTTPService<P extends APIProvider>
       }
       return _readServiceResponse<T>(response);
     } catch (e) {
-      Logg.log("error $e");
       throw ApiProviderException.fromException(message: e);
     }
   }

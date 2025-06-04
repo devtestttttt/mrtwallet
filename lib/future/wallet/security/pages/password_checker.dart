@@ -202,7 +202,6 @@ class _PasswordCheckerViewState extends State<PasswordCheckerView>
     super.onInitOnce();
     wallet = context.watch<WalletProvider>(StateConst.main);
     _onWalletStatus = wallet.wallet.status.stream.listen(listener);
-    Logg.log("status ${wallet.wallet.homePageStatus}");
     listener(wallet.wallet.homePageStatus);
     MethodUtils.after(() => getKey(password: initialPassword));
     _walletStatus =
