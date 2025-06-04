@@ -83,6 +83,8 @@ class ProvidersConst {
   static final Map<int, List<APIProvider>> _providers =
       Map<int, List<APIProvider>>.unmodifiable({
     0: <APIProvider>[
+      BitcoinExplorerAPIProviderConst.mempool,
+      BitcoinExplorerAPIProviderConst.blockCypher,
       ElectrumAPIProvider(
           identifier: "${defaultidentifierName}0",
           url: "142.93.6.38:50002",
@@ -92,15 +94,9 @@ class ProvidersConst {
           url: "wss://bitcoin.aranguren.org:50004",
           protocol: ServiceProtocol.websocket),
       ElectrumAPIProvider(
-          identifier: "${defaultidentifierName}2",
-          url: "wss://104.198.149.61:8443",
-          protocol: ServiceProtocol.websocket),
-      ElectrumAPIProvider(
           identifier: "${defaultidentifierName}3",
           url: "104.248.139.211:50002",
           protocol: ServiceProtocol.ssl),
-      BitcoinExplorerAPIProviderConst.mempool,
-      BitcoinExplorerAPIProviderConst.blockCypher,
     ],
     1: <APIProvider>[
       ElectrumAPIProvider(
@@ -116,7 +112,6 @@ class ProvidersConst {
           url: "blockstream.info:700",
           protocol: ServiceProtocol.ssl),
       BitcoinExplorerAPIProviderConst.mempool,
-      // BitcoinExplorerAPIProviderConst.blockCypher,
     ],
     5: <APIProvider>[
       ElectrumAPIProvider(
@@ -133,6 +128,7 @@ class ProvidersConst {
           protocol: ServiceProtocol.websocket),
     ],
     2: <APIProvider>[
+      BitcoinExplorerAPIProviderConst.blockCypher,
       ElectrumAPIProvider(
           identifier: "${defaultidentifierName}7",
           url: "wss://electrum.qortal.link:50004",
@@ -149,7 +145,6 @@ class ProvidersConst {
           identifier: "${defaultidentifierName}10",
           url: "backup.electrum-ltc.org:443",
           protocol: ServiceProtocol.ssl),
-      BitcoinExplorerAPIProviderConst.blockCypher,
     ],
     7: <APIProvider>[
       ElectrumAPIProvider(
@@ -550,13 +545,16 @@ class ProvidersConst {
     ],
     700: <APIProvider>[
       const MoneroAPIProvider(
-          identifier: "${defaultidentifierName}700",
-          httpNodeUri: "http://node.tools.rino.io:18081"),
-      const MoneroAPIProvider(
           identifier: "${defaultidentifierName}700A",
           httpNodeUri: "http://node.xmr.rocks:18089"),
+      const MoneroAPIProvider(
+          identifier: "${defaultidentifierName}700",
+          httpNodeUri: "http://node.tools.rino.io:18081"),
     ],
     701: <APIProvider>[
+      const MoneroAPIProvider(
+          identifier: "${defaultidentifierName}704",
+          httpNodeUri: "http://3.10.182.182:38081"),
       const MoneroAPIProvider(
           identifier: "${defaultidentifierName}701",
           httpNodeUri: "http://stagenet.tools.rino.io:38081"),
@@ -601,6 +599,9 @@ class ProvidersConst {
     ],
     107: <APIProvider>[
       EthereumAPIProvider(
+          identifier: "${defaultidentifierName}69x",
+          uri: "wss://arbitrum-one-rpc.publicnode.com"),
+      EthereumAPIProvider(
         identifier: "${defaultidentifierName}68",
         uri: "https://arb1.arbitrum.io/rpc",
       ),
@@ -609,6 +610,14 @@ class ProvidersConst {
           uri: "https://arbitrum-one-rpc.publicnode.com"),
     ],
     108: <APIProvider>[
+      EthereumAPIProvider(
+        identifier: "${defaultidentifierName}72",
+        uri: "wss://base-rpc.publicnode.com",
+      ),
+      EthereumAPIProvider(
+        identifier: "${defaultidentifierName}1",
+        uri: "https://base-rpc.publicnode.com",
+      ),
       EthereumAPIProvider(
         identifier: "${defaultidentifierName}70",
         uri: "https://mainnet.base.org",

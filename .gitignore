@@ -27,3 +27,4 @@ assets/wasm/stream_crypto.support.js
 assets/wasm/stream_crypto.wasm
 assets/wasm/wasm.mjs
 requirement/extensions/content.js
+/web
