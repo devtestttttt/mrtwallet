@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:blockchain_utils/blockchain_utils.dart';
 import 'package:monero_dart/monero_dart.dart';
 import 'package:on_chain_wallet/app/core.dart';
@@ -403,7 +402,7 @@ class MoneroAccountBlocksTracker with CborSerializable {
   bool get isStart => _startHeight == 0;
 
   bool get hasPendingTxes {
-    return _accounts.any((e) => e.pendingTxes.isNotEmpty);
+    return _accounts.any((e) => e.hasTx);
   }
 
   MoneroSyncAccountsRequestInfos _getTrackerAccount(
@@ -473,16 +472,6 @@ class MoneroAccountBlocksTracker with CborSerializable {
           .map((e) => MoneroRequestBlockTrackingInfo.deserialize(cbor: e))
           .toList(),
     );
-  }
-
-  List<MoneroAccountPendingTxes> getAccountsPendingTxes() {
-    final List<MoneroAccountPendingTxes> accounts = [];
-    for (final i in this.accounts) {
-      if (i.pendingTxes.isEmpty) continue;
-      accounts.add(MoneroAccountPendingTxes(
-          primaryAddress: i.primaryAccount, txIDs: i.pendingTxes));
-    }
-    return accounts;
   }
 
   Future<void> addSyncRequest({
@@ -647,16 +636,8 @@ class MoneroAccountBlocksTracker with CborSerializable {
     for (final i in accounts) {
       final account = _accounts.firstWhereOrNull((e) => e == i);
       assert(account != null, "account does not exist.");
-      account?._addPendingTx(i.pendingTxes);
-    }
-  }
-
-  void addPendingTx(MoneroAccountPendingTxes tx) {
-    for (final i in accounts) {
-      if (i.primaryAccount == tx.primaryAddress) {
-        i._addPendingTx(tx.txIDs);
-        break;
-      }
+      if (account == null) continue;
+      account._mergeAccountTxes(i._indexes);
     }
   }
 
@@ -668,18 +649,14 @@ class MoneroAccountBlocksTracker with CborSerializable {
     );
   }
 
-  void removePendingTxes(Iterable<MoneroSyncAccountsInfos> accounts) {
-    for (final i in accounts) {
-      final account = _accounts.firstWhereOrNull((e) => e == i);
-      assert(account != null, "account does not exist.");
-      account?._removeTxes(i.pendingTxes);
-    }
+  void removeAccountPendingTxes(MoneroViewPrimaryAccountDetails account,
+      Iterable<MoneroAccountIndexTxes> txes) {
+    getAccountInfo(account)._removeTx(txes);
   }
 
-  void removeAccountPendingTxes(
-      {required MoneroViewPrimaryAccountDetails account,
-      required List<String> txes}) {
-    getAccountInfo(account)._removeTxes(txes);
+  void addAccountPendingTxes(MoneroViewPrimaryAccountDetails account,
+      Iterable<MoneroAccountIndexTxes> txes) {
+    getAccountInfo(account)._addTx(txes);
   }
 
   void addAccount(MoneroViewAccountDetails account) {
@@ -1003,54 +980,6 @@ class MoneroViewAccountDetails with Equatable, CborSerializable {
       ];
 }
 
-class MoneroTxInfo with CborSerializable {
-  final String txId;
-  final String txHex;
-  final List<BigInt> globalIndices;
-  final int confirmations;
-  MoneroTransaction? toTx() {
-    return MethodUtils.nullOnException(
-        () => MoneroTransaction.deserialize(BytesUtils.fromHexString(txHex)));
-  }
-
-  MoneroTxInfo(
-      {required String txId,
-      required String txHex,
-      required List<BigInt> globalIndices,
-      required int confirmations})
-      : txId = QuickCryptoValidator.asValidHexBytes(txId,
-            lengthInBytes: MoneroConst.txHashLength),
-        txHex = QuickCryptoValidator.asValidHexBytes(txHex),
-        globalIndices = globalIndices.immutable,
-        confirmations = confirmations.asInt32;
-  factory MoneroTxInfo.deserialize(
-      {List<int>? bytes, CborObject? cbor, String? hex}) {
-    final CborListValue values = CborSerializable.cborTagValue(
-        cborBytes: bytes,
-        hex: hex,
-        object: cbor,
-        tags: CborTagsConst.moneroUtxoRequestTxInfo);
-    return MoneroTxInfo(
-        txId: String.fromCharCodes(values.elementAs(0)),
-        txHex: String.fromCharCodes(values.elementAs(1)),
-        globalIndices: values
-            .elementAsListOf<CborBigIntValue>(2)
-            .map((e) => e.value)
-            .toList(),
-        confirmations: values.elementAs(3));
-  }
-
-  @override
-  CborTagValue toCbor() {
-    return CborTagValue([
-      CborBytesValue(txId.codeUnits),
-      CborBytesValue(txHex.codeUnits),
-      CborListValue.fixedLength(globalIndices),
-      confirmations
-    ], CborTagsConst.moneroUtxoRequestTxInfo);
-  }
-}
-
 class MoneroTxIDsUnlockOutputResponse with CborSerializable {
   final List<MoneroUnlockedPaymentRequestDetails> payments;
   MoneroTxIDsUnlockOutputResponse(
@@ -1301,6 +1230,13 @@ class MoneroAddressUtxos with CborSerializable {
       {Map<MoneroAddress, Set<MoneroOutputDetails>> utxos = const {}})
       : _utxos = utxos;
   List<MoneroAddress> get addresses => _utxos.keys.toList();
+  List<MoneroOutputDetails> getAccountUtxos(
+      MoneroViewPrimaryAccountDetails address) {
+    assert(
+        _utxos.containsKey(address.primaryAddress), "account does not exists.");
+    return _utxos[address.primaryAddress]?.toList() ?? [];
+  }
+
   factory MoneroAddressUtxos(
       {Map<MoneroAddress, List<MoneroOutputDetails>> utxos = const {}}) {
     for (final i in utxos.entries) {
@@ -1357,16 +1293,11 @@ class MoneroAddressUtxos with CborSerializable {
     }
   }
 
-  void updateUtxos(
-      {required List<MoneroOutputDetails> utxos,
-      required MoneroAddress primaryAddress}) {
-    if (primaryAddress.isSubaddress) {
-      throw WalletExceptionConst.invalidData(
-          messsage: 'monero subaddress not allowed');
-    }
+  void updateUtxos(MoneroAccountPendingTxes utxo) {
+    final primaryAddress = utxo.primaryAddress.primaryAddress;
     final existsUtxos = <MoneroOutputDetails>[
       ..._utxos[primaryAddress] ?? {},
-      ...utxos
+      ...utxo.responses.map((e) => e.output).whereType<MoneroOutputDetails>()
     ];
     _utxos[primaryAddress] =
         existsUtxos.where((e) => !e.status.isSpent).toSet();
@@ -1393,7 +1324,8 @@ class MoneroAddressUtxos with CborSerializable {
   BigInt getAddressBalance(MoneroViewAccountDetails address) {
     assert(_utxos.containsKey(address.viewKey.primaryAddress),
         "address does not exist");
-    final utxos = _utxos[address.viewKey.primaryAddress] ?? {};
+    final utxos = (_utxos[address.viewKey.primaryAddress] ?? {})
+        .where((e) => e.index == address.index);
     return utxos.fold<BigInt>(BigInt.zero, (p, c) => p + c.amount);
   }
 
@@ -1427,19 +1359,25 @@ class MoneroUnlockedPaymentRequestDetails with CborSerializable {
   final String txID;
   final MoneroOutputDetails? output;
   final MoneroUnlockPaymentRequestStatus status;
+  final MoneroAccountIndex index;
   bool get hasPayment => output != null;
 
   MoneroUnlockedPaymentRequestDetails._(
-      {required this.output, required this.status, required this.txID});
+      {required this.output,
+      required this.status,
+      required this.txID,
+      required this.index});
   factory MoneroUnlockedPaymentRequestDetails(
-      {required String txid, MoneroOutputDetails? output}) {
+      {required String txid,
+      MoneroOutputDetails? output,
+      required MoneroAccountIndex index}) {
     return MoneroUnlockedPaymentRequestDetails._(
-      output: output,
-      status: output == null
-          ? MoneroUnlockPaymentRequestStatus.error
-          : MoneroUnlockPaymentRequestStatus.success,
-      txID: QuickCryptoValidator.asValidHexBytes(txid),
-    );
+        output: output,
+        status: output == null
+            ? MoneroUnlockPaymentRequestStatus.error
+            : MoneroUnlockPaymentRequestStatus.success,
+        txID: QuickCryptoValidator.asValidHexBytes(txid),
+        index: index);
   }
   factory MoneroUnlockedPaymentRequestDetails.deserialize(
       {List<int>? bytes, CborObject? cbor, String? hex}) {
@@ -1454,22 +1392,26 @@ class MoneroUnlockedPaymentRequestDetails with CborSerializable {
         ? MoneroOutputDetails.deserialize(cbor: values.getCborTag(0))
         : null;
     return MoneroUnlockedPaymentRequestDetails._(
-      output: output,
-      status: status,
-      txID: QuickCryptoValidator.asValidHexBytes(
-          String.fromCharCodes(values.elementAs<List<int>>(2))),
-    );
+        output: output,
+        status: status,
+        txID: QuickCryptoValidator.asValidHexBytes(
+            String.fromCharCodes(values.elementAs<List<int>>(2))),
+        index: MoneroAccountIndex.deserialize(values.elementAs(3)));
   }
   factory MoneroUnlockedPaymentRequestDetails.fromUnlockOutput(
       {required String txId,
       required int? comfirmation,
       required BigInt? globalIndex,
+      required MoneroAccountIndex index,
       MoneroUnlockedOutput? output,
       MoneroAddress? address}) {
-    if (output == null) return MoneroUnlockedPaymentRequestDetails(txid: txId);
+    if (output == null) {
+      return MoneroUnlockedPaymentRequestDetails(txid: txId, index: index);
+    }
     assert(address != null, "address must not be null");
     return MoneroUnlockedPaymentRequestDetails(
         txid: txId,
+        index: index,
         output: MoneroOutputDetails(
             txId: txId,
             keyImage: output.keyImageAsHex,
@@ -1488,66 +1430,63 @@ class MoneroUnlockedPaymentRequestDetails with CborSerializable {
   @override
   CborTagValue toCbor() {
     return CborTagValue(
-        CborListValue.fixedLength(
-            [output?.toCbor(), status.value, CborBytesValue(txID.codeUnits)]),
+        CborListValue.fixedLength([
+          output?.toCbor(),
+          status.value,
+          CborBytesValue(txID.codeUnits),
+          CborBytesValue(index.serialize())
+        ]),
         CborTagsConst.moneroUtxoPaymentInfo);
   }
 }
 
-class MoneroProcessTxesResponse with CborSerializable {
-  final MoneroViewPrimaryAccountDetails address;
-  final List<MoneroUnlockedPaymentRequestDetails> responses;
-  MoneroUpdatePaymentRequest? toPayment() {
-    final successOuts = responses.where((e) => e.hasPayment);
-    if (successOuts.isEmpty) return null;
-    return MoneroUpdatePaymentRequest(
-        payments: successOuts.map((e) => e.output!).toList(),
-        primaryAddress: address);
-  }
+// class MoneroProcessTxesResponse with CborSerializable {
+//   final MoneroViewPrimaryAccountDetails address;
+//   final List<MoneroUnlockedPaymentRequestDetails> responses;
 
-  MoneroProcessTxesResponse(
-      {required List<MoneroUnlockedPaymentRequestDetails> responses,
-      required this.address})
-      : responses = responses.immutable;
-  factory MoneroProcessTxesResponse.deserialize(
-      {List<int>? bytes, CborObject? cbor, String? hex}) {
-    final CborListValue values = CborSerializable.cborTagValue(
-        cborBytes: bytes,
-        object: cbor,
-        hex: hex,
-        tags: CborTagsConst.moneroProcessTxesResponse);
-    return MoneroProcessTxesResponse(
-        responses: values
-            .elementAsListOf<CborTagValue>(0)
-            .map(
-                (e) => MoneroUnlockedPaymentRequestDetails.deserialize(cbor: e))
-            .toList(),
-        address: MoneroViewPrimaryAccountDetails.deserialize(
-            object: values.getCborTag(1)));
-  }
+//   MoneroProcessTxesResponse(
+//       {required List<MoneroUnlockedPaymentRequestDetails> responses,
+//       required this.address})
+//       : responses = responses.immutable;
+//   factory MoneroProcessTxesResponse.deserialize(
+//       {List<int>? bytes, CborObject? cbor, String? hex}) {
+//     final CborListValue values = CborSerializable.cborTagValue(
+//         cborBytes: bytes,
+//         object: cbor,
+//         hex: hex,
+//         tags: CborTagsConst.moneroProcessTxesResponse);
+//     return MoneroProcessTxesResponse(
+//         responses: values
+//             .elementAsListOf<CborTagValue>(0)
+//             .map(
+//                 (e) => MoneroUnlockedPaymentRequestDetails.deserialize(cbor: e))
+//             .toList(),
+//         address: MoneroViewPrimaryAccountDetails.deserialize(
+//             object: values.getCborTag(1)));
+//   }
 
-  @override
-  CborTagValue toCbor() {
-    return CborTagValue(
-        CborListValue.fixedLength([
-          CborListValue.fixedLength(responses.map((e) => e.toCbor()).toList()),
-          address.toCbor()
-        ]),
-        CborTagsConst.moneroProcessTxesResponse);
-  }
-}
+//   @override
+//   CborTagValue toCbor() {
+//     return CborTagValue(
+//         CborListValue.fixedLength([
+//           CborListValue.fixedLength(responses.map((e) => e.toCbor()).toList()),
+//           address.toCbor()
+//         ]),
+//         CborTagsConst.moneroProcessTxesResponse);
+//   }
+// }
 
 class MoneroBatchProcessTxesResponse with CborSerializable {
-  final List<MoneroProcessTxesResponse> payments;
+  final List<MoneroAccountPendingTxes> payments;
 
-  List<MoneroUpdatePaymentRequest> successPaymets() {
-    return payments
-        .map((e) => e.toPayment())
-        .whereType<MoneroUpdatePaymentRequest>()
-        .toList();
-  }
+  // List<MoneroUpdatePaymentRequest> successPaymets() {
+  //   return payments
+  //       .map((e) => e.toPayment())
+  //       .whereType<MoneroUpdatePaymentRequest>()
+  //       .toList();
+  // }
 
-  MoneroBatchProcessTxesResponse(List<MoneroProcessTxesResponse> payments)
+  MoneroBatchProcessTxesResponse(List<MoneroAccountPendingTxes> payments)
       : payments = payments.immutable;
   factory MoneroBatchProcessTxesResponse.deserialize(
       {List<int>? bytes, CborObject? cbor, String? hex}) {
@@ -1558,7 +1497,7 @@ class MoneroBatchProcessTxesResponse with CborSerializable {
         tags: CborTagsConst.moneroBatchProcessTxesResponse);
     return MoneroBatchProcessTxesResponse(values
         .elementAsListOf<CborTagValue>(0)
-        .map((e) => MoneroProcessTxesResponse.deserialize(cbor: e))
+        .map((e) => MoneroAccountPendingTxes.deserialize(obj: e))
         .toList());
   }
 
@@ -1653,22 +1592,46 @@ class MoneroChainTrackerResponse with CborSerializable {
   }
 }
 
-class MoneroUpdatePaymentRequest {
-  final List<MoneroOutputDetails> payments;
-  final MoneroViewPrimaryAccountDetails primaryAddress;
-  MoneroUpdatePaymentRequest(
-      {required List<MoneroOutputDetails> payments,
-      required this.primaryAddress})
-      : payments = payments.imutable;
-}
+// class MoneroUpdatePaymentRequest {
+//   final List<MoneroOutputDetails> payments;
+//   final MoneroViewPrimaryAccountDetails primaryAddress;
+//   MoneroUpdatePaymentRequest(
+//       {required List<MoneroOutputDetails> payments,
+//       required this.primaryAddress})
+//       : payments = payments.imutable;
+// }
 
 class MoneroAccountPendingTxes with CborSerializable, Equatable {
-  List<String> _txIDs;
-  List<String> get txIDs => _txIDs;
   final MoneroViewPrimaryAccountDetails primaryAddress;
-  MoneroAccountPendingTxes(
-      {Iterable<String> txIDs = const [], required this.primaryAddress})
-      : _txIDs = txIDs.toImutableList;
+  final Set<MoneroAccountIndexTxes> indexes;
+  final Bip32AddressIndex accountIndex;
+  final List<MoneroUnlockedPaymentRequestDetails> responses;
+  MoneroAccountPendingTxes._({
+    Iterable<MoneroAccountIndexTxes> indexes = const [],
+    required this.primaryAddress,
+    required this.accountIndex,
+    List<MoneroUnlockedPaymentRequestDetails> responses = const [],
+  })  : indexes = indexes.toImutableSet,
+        responses = responses.imutable;
+  factory MoneroAccountPendingTxes.request({
+    required Iterable<MoneroAccountIndexTxes> indexes,
+    required MoneroViewPrimaryAccountDetails primaryAddress,
+    required Bip32AddressIndex accountIndex,
+  }) {
+    return MoneroAccountPendingTxes._(
+        primaryAddress: primaryAddress,
+        accountIndex: accountIndex,
+        indexes: indexes);
+  }
+
+  MoneroAccountPendingTxes toResponse(
+      List<MoneroUnlockedPaymentRequestDetails> payments) {
+    return MoneroAccountPendingTxes._(
+        primaryAddress: primaryAddress,
+        accountIndex: accountIndex,
+        indexes: indexes,
+        responses: payments);
+  }
 
   factory MoneroAccountPendingTxes.deserialize(
       {List<int>? bytes, CborObject? obj, String? hex}) {
@@ -1677,12 +1640,18 @@ class MoneroAccountPendingTxes with CborSerializable, Equatable {
         hex: hex,
         object: obj,
         tags: CborTagsConst.moneroAccountPendingTxes);
-    return MoneroAccountPendingTxes(
+    return MoneroAccountPendingTxes._(
         primaryAddress: MoneroViewPrimaryAccountDetails.deserialize(
             object: values.getCborTag(0)),
-        txIDs: values
-            .elementAsListOf<CborStringValue>(1)
-            .map((e) => e.value)
+        indexes: values
+            .elementAsListOf<CborTagValue>(1)
+            .map((e) => MoneroAccountIndexTxes.deserialize(cbor: e))
+            .toList(),
+        accountIndex: Bip32AddressIndex.deserialize(obj: values.getCborTag(2)),
+        responses: values
+            .elementAsListOf<CborTagValue>(3)
+            .map(
+                (e) => MoneroUnlockedPaymentRequestDetails.deserialize(cbor: e))
             .toList());
   }
 
@@ -1691,86 +1660,21 @@ class MoneroAccountPendingTxes with CborSerializable, Equatable {
     return CborTagValue(
         CborListValue.fixedLength([
           primaryAddress.toCbor(),
-          txIDs.map((e) => CborStringValue(e)).toList()
+          CborListValue.fixedLength(indexes.map((e) => e.toCbor()).toList()),
+          accountIndex.toCbor(),
+          CborListValue.fixedLength(responses.map((e) => e.toCbor()).toList()),
         ]),
         CborTagsConst.moneroAccountPendingTxes);
   }
 
-  void addTxes(Iterable<String> txs) {
-    _txIDs = <String>{..._txIDs, ...txs}.toImutableList;
-  }
-
   @override
   List get variabels => [primaryAddress];
-
-  @override
-  String toString() {
-    return {"address": primaryAddress, "txIds": _txIDs}.toString();
-  }
-}
-
-class MoneroFetchTxIdsResponse {
-  final List<MoneroTxInfo> txes;
-  final MoneroViewPrimaryAccountDetails primaryAddress;
-  MoneroFetchTxIdsResponse(
-      {required List<MoneroTxInfo> txes, required this.primaryAddress})
-      : txes = txes.imutable;
-}
-
-class MoneroProcessTxIdsRequest with CborSerializable {
-  final List<MoneroTxInfo> txes;
-  final MoneroViewPrimaryAccountDetails primaryAddress;
-  final List<MoneroAccountIndex> keyIndexes;
-  final Bip32AddressIndex index;
-  MoneroProcessTxIdsRequest(
-      {required List<MoneroTxInfo> txes,
-      required this.primaryAddress,
-      required List<MoneroAccountIndex> keyIndexes,
-      required this.index})
-      : txes = txes.immutable,
-        keyIndexes = keyIndexes.immutable;
-  factory MoneroProcessTxIdsRequest.deserialize(
-      {List<int>? bytes, CborObject? cbor, String? hex}) {
-    final CborListValue values = CborSerializable.cborTagValue(
-        cborBytes: bytes,
-        object: cbor,
-        hex: hex,
-        tags: CborTagsConst.moneroProcessTxIdRequest);
-    return MoneroProcessTxIdsRequest(
-        txes: values
-            .elementAsListOf<CborTagValue>(0)
-            .map((e) => MoneroTxInfo.deserialize(cbor: e))
-            .toList(),
-        primaryAddress: MoneroViewPrimaryAccountDetails.deserialize(
-            object: values.getCborTag(1)),
-        keyIndexes: values
-            .elementAsListOf<CborBytesValue>(2)
-            .map((e) => MoneroAccountIndex.deserialize(e.value))
-            .toList(),
-        index: Bip32AddressIndex.deserialize(obj: values.getCborTag(3)));
-  }
-  @override
-  CborTagValue toCbor() {
-    return CborTagValue(
-        CborListValue.fixedLength([
-          CborListValue.fixedLength(txes.map((e) => e.toCbor()).toList()),
-          primaryAddress.toCbor(),
-          CborListValue.fixedLength(
-              keyIndexes.map((e) => CborBytesValue(e.serialize())).toList()),
-          index.toCbor(),
-        ]),
-        CborTagsConst.moneroProcessTxIdRequest);
-  }
 }
 
 class MoneroWalletRPCAddress {
   final MoneroAddress address;
-  final int addressIndex;
-  final int accountIndex;
-  const MoneroWalletRPCAddress(
-      {required this.address,
-      required this.addressIndex,
-      required this.accountIndex});
+  final MoneroAccountIndex index;
+  const MoneroWalletRPCAddress({required this.address, required this.index});
 }
 
 class MoneroWalletRPCAccounts {
@@ -1791,13 +1695,6 @@ class MoneroSyncAccountsRequestInfos with CborSerializable {
   MoneroSyncAccountsRequestInfos._(
       {required List<MoneroSyncAccountsInfos> accounts})
       : accounts = accounts.immutable;
-
-  void addPendingTx(MoneroSyncAccountsInfos account, String txId) {
-    final index = accounts.indexOf(account);
-    assert(index >= 0, "account does not exists.");
-    if (index.isNegative) return;
-    accounts[index]._addPendingTx({txId});
-  }
 
   factory MoneroSyncAccountsRequestInfos.deserialize(
       {List<int>? bytes, CborObject? cbor, String? hex}) {
@@ -1827,8 +1724,39 @@ class MoneroSyncAccountsInfos with CborSerializable, Equatable {
   final MoneroViewPrimaryAccountDetails primaryAccount;
   Set<MoneroSyncAccountIndexInfo> _indexes;
   Set<MoneroSyncAccountIndexInfo> get indexes => _indexes;
-  Set<String> _pendingTxes;
-  Set<String> get pendingTxes => _pendingTxes;
+
+  bool get hasTx => _indexes.any((e) => e._pendingTxes.isNotEmpty);
+
+  void addPendingTx(MoneroLockedOutput output, String txId) {
+    final index =
+        _indexes.firstWhereNullable((e) => e.index == output.accountIndex);
+    assert(index != null, "account index does not exists.");
+    index?._addPendingTx({txId});
+  }
+
+  void _mergeAccountTxes(Set<MoneroSyncAccountIndexInfo> indexes) {
+    for (final i in indexes) {
+      final index = _indexes.firstWhereOrNull((e) => e == i);
+      assert(index != null, "account index does not exists.");
+      index?._addPendingTx(i._pendingTxes);
+    }
+  }
+
+  void _removeTx(Iterable<MoneroAccountIndexTxes> txes) {
+    for (final i in txes) {
+      final index = _indexes.firstWhereOrNull((e) => e.index == i.index);
+      assert(index != null, "account index does not exists.");
+      index?._removeTxes(i.txes);
+    }
+  }
+
+  void _addTx(Iterable<MoneroAccountIndexTxes> txes) {
+    for (final i in txes) {
+      final index = _indexes.firstWhereOrNull((e) => e.index == i.index);
+      assert(index != null, "account index does not exists.");
+      index?._addPendingTx(i.txes);
+    }
+  }
 
   MoneroSyncAccountsInfos toRequest() {
     return MoneroSyncAccountsInfos(
@@ -1853,10 +1781,8 @@ class MoneroSyncAccountsInfos with CborSerializable, Equatable {
 
   MoneroSyncAccountsInfos(
       {List<MoneroSyncAccountIndexInfo> indexes = const [],
-      required this.primaryAccount,
-      List<String> pendingTxes = const []})
-      : _indexes = indexes.toImutableSet,
-        _pendingTxes = pendingTxes.toImutableSet;
+      required this.primaryAccount})
+      : _indexes = indexes.toImutableSet;
   factory MoneroSyncAccountsInfos.deserialize(
       {List<int>? bytes, CborObject? cbor, String? hex}) {
     final CborListValue values = CborSerializable.cborTagValue(
@@ -1870,10 +1796,6 @@ class MoneroSyncAccountsInfos with CborSerializable, Equatable {
         indexes: values
             .elementAsListOf<CborTagValue>(1)
             .map((e) => MoneroSyncAccountIndexInfo.deserialize(cbor: e))
-            .toList(),
-        pendingTxes: values
-            .elementAsListOf<CborStringValue>(2)
-            .map((e) => e.value)
             .toList());
   }
 
@@ -1883,8 +1805,6 @@ class MoneroSyncAccountsInfos with CborSerializable, Equatable {
         CborListValue.fixedLength([
           primaryAccount.toCbor(),
           CborListValue.fixedLength(_indexes.map((e) => e.toCbor()).toList()),
-          CborListValue.fixedLength(
-              _pendingTxes.map((e) => CborStringValue(e)).toList()),
         ]),
         CborTagsConst.moneroProcessTxesResponse);
   }
@@ -1906,6 +1826,19 @@ class MoneroSyncAccountsInfos with CborSerializable, Equatable {
     _indexes = {..._indexes, index}.toImutableSet;
   }
 
+  @override
+  List get variabels => [primaryAccount];
+}
+
+class MoneroSyncAccountIndexInfo with CborSerializable, Equatable {
+  final MoneroAccountIndex index;
+  final int startHeight;
+  Set<String> _pendingTxes;
+  bool get hasTx => _pendingTxes.isNotEmpty;
+  MoneroAccountIndexTxes txes() {
+    return MoneroAccountIndexTxes._(index: index, txes: _pendingTxes);
+  }
+
   void _addPendingTx(Iterable<String> txes) {
     _pendingTxes = {..._pendingTxes, ...txes}.toImutableSet;
   }
@@ -1914,24 +1847,11 @@ class MoneroSyncAccountsInfos with CborSerializable, Equatable {
     _pendingTxes = _pendingTxes.where((e) => !txes.contains(e)).toImutableSet;
   }
 
-  @override
-  List get variabels => [primaryAccount];
-
-  @override
-  String toString() {
-    return {
-      "index": indexes.toString(),
-      "address": primaryAccount.primaryAddress,
-      "pending_txes": pendingTxes
-    }.toString();
-  }
-}
-
-class MoneroSyncAccountIndexInfo with CborSerializable, Equatable {
-  final MoneroAccountIndex index;
-  final int startHeight;
-
-  MoneroSyncAccountIndexInfo({required this.index, required this.startHeight});
+  MoneroSyncAccountIndexInfo(
+      {required this.index,
+      required this.startHeight,
+      Iterable<String> txes = const []})
+      : _pendingTxes = txes.toImutableSet;
   factory MoneroSyncAccountIndexInfo.deserialize(
       {List<int>? bytes, CborObject? cbor, String? hex}) {
     final CborListValue values = CborSerializable.cborTagValue(
@@ -1941,18 +1861,27 @@ class MoneroSyncAccountIndexInfo with CborSerializable, Equatable {
         tags: CborTagsConst.moneroSyncAccountIndexInfo);
     return MoneroSyncAccountIndexInfo(
         index: MoneroAccountIndex.deserialize(values.elementAs(0)),
-        startHeight: values.elementAs(1));
+        startHeight: values.elementAs(1),
+        txes: values
+            .elementAsListOf<CborStringValue>(2, emyptyOnNull: true)
+            .map((e) => e.value)
+            .toList());
   }
 
   MoneroSyncAccountIndexInfo _updateHeight(int height) {
-    return MoneroSyncAccountIndexInfo(index: index, startHeight: height);
+    return MoneroSyncAccountIndexInfo(
+        index: index, startHeight: height, txes: _pendingTxes);
   }
 
   @override
   CborTagValue toCbor() {
     return CborTagValue(
-        CborListValue.fixedLength(
-            [CborBytesValue(index.serialize()), startHeight]),
+        CborListValue.fixedLength([
+          CborBytesValue(index.serialize()),
+          startHeight,
+          CborListValue.fixedLength(
+              _pendingTxes.map((e) => CborStringValue(e)).toList())
+        ]),
         CborTagsConst.moneroSyncAccountIndexInfo);
   }
 
@@ -1963,6 +1892,47 @@ class MoneroSyncAccountIndexInfo with CborSerializable, Equatable {
   String toString() {
     return {"index": index.toString(), "startHeight": startHeight}.toString();
   }
+}
+
+class MoneroAccountIndexTxes with CborSerializable, Equatable {
+  final MoneroAccountIndex index;
+  final Set<String> txes;
+
+  MoneroAccountIndexTxes._(
+      {required this.index, Iterable<String> txes = const []})
+      : txes = txes.toImutableSet;
+  factory MoneroAccountIndexTxes(
+      {required MoneroAccountIndex index, required Iterable<String> txes}) {
+    return MoneroAccountIndexTxes._(index: index, txes: txes);
+  }
+  factory MoneroAccountIndexTxes.deserialize(
+      {List<int>? bytes, CborObject? cbor, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: cbor,
+        hex: hex,
+        tags: CborTagsConst.moneroSyncAccountIndexInfo);
+    return MoneroAccountIndexTxes._(
+        index: MoneroAccountIndex.deserialize(values.elementAs(0)),
+        txes: values
+            .elementAsListOf<CborStringValue>(1, emyptyOnNull: true)
+            .map((e) => e.value)
+            .toList());
+  }
+
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([
+          CborBytesValue(index.serialize()),
+          CborListValue.fixedLength(
+              txes.map((e) => CborStringValue(e)).toList())
+        ]),
+        CborTagsConst.moneroSyncAccountIndexInfo);
+  }
+
+  @override
+  List get variabels => [index];
 }
 
 class MoneroSyncAccountInfo {

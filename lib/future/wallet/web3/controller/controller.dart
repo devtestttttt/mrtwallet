@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 import 'package:on_chain_wallet/future/wallet/controller/controller.dart';
-import 'package:on_chain_wallet/future/wallet/global/pages/r.dart';
+import 'package:on_chain_wallet/future/wallet/global/pages/types.dart';
 import 'package:on_chain_wallet/future/wallet/web3/web3.dart';
 import 'package:on_chain_wallet/wallet/api/client/core/client.dart';
 import 'package:on_chain_wallet/wallet/models/models.dart';

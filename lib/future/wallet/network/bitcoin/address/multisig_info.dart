@@ -18,11 +18,13 @@ class BitcoinMultisigAccountInfoView extends StatelessWidget {
       accsess: WalletAccsessType.unlock,
       title: "multisig_address_infos".tr,
       onAccsess: (credential, password, network) {
-        return NetworkAccountControllerView<BitcoinClient, IBitcoinAddress,
+        Logg.log("come!");
+        return NetworkAccountControllerView<BitcoinClient?, IBitcoinAddress,
             BitcoinChain>(
           addressRequired: true,
           clientRequired: false,
           childBulder: (wallet, account, client, address, onAccountChanged) {
+            Logg.log("done!");
             return _BitcoinMultisigAccountInfoView(account);
           },
         );

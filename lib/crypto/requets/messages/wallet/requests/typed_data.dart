@@ -57,19 +57,20 @@ final class WalletRequestEthereumTypedDataSign
   }
 
   @override
-  MessageArgsOneBytes getResult(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<MessageArgsOneBytes> getResult(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final signature = sign(wallet: wallet, index: index, message: message);
     return MessageArgsOneBytes(keyOne: signature);
   }
 
   @override
-  String parsResult(MessageArgsOneBytes result) {
+  Future<String> parsResult(MessageArgsOneBytes result) async {
     return BytesUtils.toHexString(result.keyOne, prefix: "0x");
   }
 
   @override
-  String result({required WalletMasterKeys wallet, required List<int> key}) {
+  Future<String> result(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final signature = sign(wallet: wallet, index: index, message: message);
     return BytesUtils.toHexString(signature, prefix: "0x");
   }

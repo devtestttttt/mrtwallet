@@ -126,36 +126,15 @@ class MoneroClient
     return result[0].toTx();
   }
 
-  Future<List<MoneroFetchTxIdsResponse>> getTxes(
-      {required List<MoneroAccountPendingTxes> txIds,
-      bool validateResponse = true}) async {
-    final rParams = DaemonRequestGetTransactions(
-        txIds.expand((e) => e.txIDs).toList(),
-        prune: false,
-        decodeAsJson: false,
-        split: false);
+  Future<List<TxResponse>> getTxes(
+      {required List<String> txIds, bool validateResponse = true}) async {
+    final rParams = DaemonRequestGetTransactions(txIds,
+        prune: false, decodeAsJson: false, split: false);
     final result = await provider.request(rParams);
     if (validateResponse && rParams.txHashes.length != result.length) {
       throw const WalletException("some_transaction_missing");
     }
-    int offset = 0;
-    return List.generate(txIds.length, (i) {
-      final txesLen = txIds[i].txIDs.length;
-      try {
-        return MoneroFetchTxIdsResponse(
-            txes: result
-                .sublist(offset, offset + txesLen)
-                .map((e) => MoneroTxInfo(
-                    txId: e.txHash,
-                    txHex: e.txHex,
-                    globalIndices: e.outoutIndices,
-                    confirmations: e.confirmations ?? 0))
-                .toList(),
-            primaryAddress: txIds[i].primaryAddress);
-      } finally {
-        offset += txesLen;
-      }
-    });
+    return result;
   }
 
   Future<DaemonIsKeyImageSpentResponse> keyImagesStatus(List<String> keyImages,
@@ -323,7 +302,7 @@ class MoneroWalletClient
     extends NetworkClient<MoneroWalletTransaction, MoneroAPIProvider>
     with CryptoWokerImpl {
   final MoneroProvider provider;
-  List<MoneroWalletRPCAccounts>? _walletAccounts;
+  List<MoneroWalletRPCAddress>? _addresses;
   MoneroWalletClient(MoneroAPIProvider provider, this.network)
       : provider = MoneroProvider(MoneroHTTPService(provider));
 
@@ -333,66 +312,65 @@ class MoneroWalletClient
   @override
   MoneroHTTPService get service => provider.rpc as MoneroHTTPService;
 
-  Future<MoneroAccountPendingTxes?> getAvailableTxes(
-      IMoneroAddress address) async {
-    _walletAccounts ??= await readMoneroWalletAdresses();
-    MoneroWalletRPCAddress? index;
-    for (final i in _walletAccounts!) {
-      index = i.addresses
-          .firstWhereOrNull((e) => e.address == address.networkAddress);
-      if (index != null) break;
-    }
-    if (index == null) return null;
-    final txes = await readMoneroWalletTxes([index]);
-    return MoneroAccountPendingTxes(
-        txIDs: txes.map((e) => e.txHash).toSet().toList(),
-        primaryAddress: address.addrDetails.primaryAccount());
-  }
-
   Future<WalletRPCGetAccountsResponse> readMoneroWalletAccounts() async {
     return provider.request(WalletRequestGetAccounts());
   }
 
-  Future<List<MoneroWalletRPCAccounts>> readMoneroWalletAdresses() async {
+  Future<List<MoneroWalletRPCAddress>> readMoneroWalletAdresses() async {
     final accounts = await readMoneroWalletAccounts();
-    final List<MoneroWalletRPCAccounts> existsAccounts = [];
+    final List<MoneroWalletRPCAddress> existsAccounts = [];
     for (final i in accounts.subaddressAccounts) {
       final addresses = await provider
           .request(WalletRequestGetAddress(accountIndex: i.accountIndex));
-      existsAccounts.add(MoneroWalletRPCAccounts(
-          primary: i.baseAddress,
-          addresses: addresses.addresses
-              .map((e) => MoneroWalletRPCAddress(
-                    address: e.address,
-                    addressIndex: e.addressIndex,
-                    accountIndex: i.accountIndex,
-                  ))
-              .toList()));
+      existsAccounts.addAll(addresses.addresses
+          .map((e) => MoneroWalletRPCAddress(
+                address: e.address,
+                index: MoneroAccountIndex(
+                    major: i.accountIndex, minor: e.addressIndex),
+              ))
+          .toList());
     }
     return existsAccounts;
   }
 
-  Future<List<WalletRPCIncommingTransferResponse>> readMoneroWalletTxes(
-      List<MoneroWalletRPCAddress> accountsIndexes) async {
-    final List<WalletRPCIncommingTransferResponse> availableTransfers = [];
-    final idexes = accountsIndexes.map((e) => e.accountIndex).toSet();
-    for (final i in idexes) {
-      final subaddrIndices = accountsIndexes
-          .where((e) => e.accountIndex == i)
-          .map((e) => e.addressIndex)
-          .toList();
+  Future<List<MoneroAccountPendingTxes>> readMoneroWalletTxes(
+      MoneroChain account) async {
+    final addresses = _addresses ?? await readMoneroWalletAdresses();
+    final accounts = account.addresses
+        .where((e) => addresses.any((r) => e.networkAddress == r.address))
+        .toList();
+    if (accounts.isEmpty) return [];
+    final Map<MoneroViewPrimaryAccountDetails, MoneroAccountPendingTxes>
+        availableTransfers = {};
+    for (final i in accounts) {
+      if (availableTransfers.containsKey(i.addrDetails.viewKey)) continue;
+      final allIndexes = account.relateAccountIndexes(i.addrDetails.viewKey);
       final r = await provider.request(WalletRequestIncommingTransfers(
           transferType: IncommingTransferType.available,
-          accountIndex: i,
-          subaddrIndices: subaddrIndices));
-      availableTransfers.addAll(r);
+          accountIndex: i.addrDetails.index.major,
+          subaddrIndices: allIndexes.map((e) => e.minor).toList()));
+      List<MoneroAccountIndexTxes> indexes = [];
+      for (final i in allIndexes) {
+        final txes = r.where((e) =>
+            e.subAddrIndex?.minor == i.minor &&
+            e.subAddrIndex?.major == i.major);
+        indexes.add(MoneroAccountIndexTxes(
+            index: i, txes: txes.map((e) => e.txHash).toList()));
+      }
+      if (indexes.isEmpty) continue;
+      availableTransfers[i.addrDetails.viewKey] =
+          MoneroAccountPendingTxes.request(
+              primaryAddress: i.addrDetails.viewKey,
+              indexes: indexes,
+              accountIndex: i.keyIndex.cast());
     }
-    return availableTransfers;
+
+    return availableTransfers.values.toList();
   }
 
   @override
   Future<bool> onInit() async {
-    _walletAccounts = await readMoneroWalletAdresses();
+    _addresses = await readMoneroWalletAdresses();
     return true;
   }
 

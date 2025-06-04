@@ -108,7 +108,10 @@ abstract class MoneroTransactionImpl extends WalletSendTransactionStateImpl<
 
   Future<void> initTransaction() async {
     // await apiProvider.updateAccountUtxos(address: address, account: account);
-    _utxos = account.relatedTxAccountsUtxos(address.addrDetails.viewKey);
+    _utxos = account
+        .relatedTxAccountsUtxos(address.addrDetails.viewKey)
+        .where((e) => e.utxos.isNotEmpty)
+        .toList();
     int total = 0;
     for (final i in _utxos) {
       List<MoneroOutputDetails> utxos = i.utxos

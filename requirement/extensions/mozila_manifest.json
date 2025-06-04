@@ -25,7 +25,7 @@
       "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
     },
     "web_accessible_resources": [{
-      "resources": ["canvaskit/canvaskit.wasm","canvaskit/skwasm.wasm","canvaskit/chromium/canvaskit.wasm","assets/assets/wasm/crypto.wasm","page.js"],
+      "resources": ["canvaskit/canvaskit.wasm","canvaskit/skwasm.wasm","canvaskit/chromium/canvaskit.wasm","assets/assets/wasm/crypto.wasm","page.js","assets/assets/wasm/stream_crypto.wasm"],
       "matches": ["<all_urls>"]
     }],
     "sidebar_action": {

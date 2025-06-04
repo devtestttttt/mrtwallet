@@ -10,15 +10,14 @@ mixin WalletMoneroImpl on WalletManager {
     final txids = txIds ?? account.getAccountsPendingTxes();
     if (txids.isEmpty) return [];
     final client = await account.client();
-    final txes = await client.getTxes(txIds: txids);
     final r = await _callWalletInternal(
       ({required masterKey, required wKey}) async {
         final unlockedInfo = await _walletRequest(
             masterkey: masterKey,
             walletKey: wKey,
             message: WalletRequestMoneroOutputUnlocker(
-                account.createUnlockOutputRequests(txes: txes)));
-        await account.addUnlockedPayment(unlockedInfo.successPaymets());
+                requests: txids, provider: client.service.provider));
+        await account.addUnlockedPayment(unlockedInfo.payments);
         return unlockedInfo.payments;
       },
     );

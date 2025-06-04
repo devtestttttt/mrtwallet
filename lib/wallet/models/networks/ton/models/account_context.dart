@@ -21,6 +21,7 @@ abstract class TonAccountContext with CborSerializable, Equatable {
   final TonAccountContextType type;
   final WalletVersion version;
   final bool bouncable;
+  int? get subOrWalletId;
   const TonAccountContext(
       {required this.type, required this.version, required this.bouncable});
   VersionedWalletContract toWalletContract(
@@ -152,6 +153,8 @@ class TonAccountLegacyContext extends TonAccountContext {
   }
 
   @override
+  int? get subOrWalletId => null;
+  @override
   List get variabels => [version.name];
 }
 
@@ -207,10 +210,14 @@ class TonAccountSubWalletContext extends TonAccountContext {
 
   @override
   List get variabels => [version.name, subwalletId];
+
+  @override
+  int? get subOrWalletId => subwalletId;
 }
 
 class TonAccountV5CustomContext extends TonAccountContext {
   final int walletId;
+
   const TonAccountV5CustomContext._(
       {required this.walletId, required super.bouncable})
       : super(type: TonAccountContextType.v5, version: WalletVersion.v5R1);
@@ -274,11 +281,14 @@ class TonAccountV5CustomContext extends TonAccountContext {
   }
 
   @override
+  int? get subOrWalletId => walletId;
+  @override
   List get variabels => [version.name, walletId];
 }
 
 class TonAccountV5SubWalletContext extends TonAccountContext {
   final int subwalletId;
+
   const TonAccountV5SubWalletContext._(
       {required this.subwalletId, required super.bouncable})
       : super(
@@ -345,6 +355,8 @@ class TonAccountV5SubWalletContext extends TonAccountContext {
         body: body);
   }
 
+  @override
+  int? get subOrWalletId => subwalletId;
   @override
   List get variabels => [version.name, subwalletId];
 }

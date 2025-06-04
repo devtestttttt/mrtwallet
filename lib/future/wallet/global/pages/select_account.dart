@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/router/page_router.dart';
 import 'package:on_chain_wallet/future/wallet/global/pages/chain_stream.dart';
-import 'package:on_chain_wallet/future/wallet/global/pages/r.dart';
+import 'package:on_chain_wallet/future/wallet/global/pages/types.dart';
 import 'package:on_chain_wallet/future/wallet/start/pages/account_no_adress.dart';
 import 'package:on_chain_wallet/wallet/wallet.dart';
 import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';

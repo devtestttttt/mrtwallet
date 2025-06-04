@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:on_chain_bridge/web/api/chrome/api/core.dart';
 import 'package:on_chain_wallet/app/constant/global/state.dart';
 import 'package:on_chain_wallet/app/core.dart';
+import 'package:on_chain_wallet/future/router/page_router.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 import 'package:on_chain_wallet/future/wallet/controller/controller.dart';
 import 'package:on_chain_wallet/future/wallet/controller/impl/extention_wallet.dart';
 import 'package:on_chain_wallet/future/wallet/controller/wallet/cross/web.dart';
+import 'package:on_chain_wallet/future/wallet/security/pages/password_checker.dart';
+import 'package:on_chain_wallet/future/wallet/swap/pages/pages/swap.dart';
 import 'package:on_chain_wallet/future/wallet/web3/pages/client_info.dart';
 import 'package:on_chain_wallet/future/wallet/web3/pages/permission_view.dart';
 import 'package:on_chain_wallet/future/widgets/widgets/conditional_widget.dart';
 import 'package:on_chain_wallet/future/widgets/widgets/list_tile.dart';
 import 'package:on_chain_wallet/future/widgets/widgets/widget_constant.dart';
+import 'package:on_chain_wallet/wallet/models/access/wallet_access.dart';
 
 Widget appbarWidgets(bool walletIsUnlock) {
   if (isExtension) return _AppbarExtentionWidget(walletIsUnlock);
@@ -23,70 +27,132 @@ class _AppbarExtentionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final wallet = context.watch<WalletProvider>(StateConst.main).wallet
-        as ExtentionWallet;
+    final wallet = context.watch<WalletProvider>(StateConst.main);
+    final extension = wallet.wallet as ExtentionWallet;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (walletIsUnlock)
           StreamWidget(
-              value: wallet.latestClient,
+              value: extension.latestClient,
               builder: (context, client) => Web3ClientInfoIconView(
                   client: client,
                   onTap: (s) {
                     context.openDialogPage(
                       "update_permission".tr,
                       fullWidget: (context) =>
-                          Web3PermissionUpdateView(controller: wallet),
+                          Web3PermissionUpdateView(controller: extension),
                     );
                   })),
         ConditionalWidget(
-            enable: wallet.context.context.isAction,
-            onActive: (context) => PopupMenuButton<ExtensionWalletContextType>(
+            enable: extension.context.context.isAction,
+            onActive: (context) => PopupMenuButton<ExtensionWalletContextType?>(
                 iconColor: context.colors.onSurface,
                 icon: Icon(Icons.more_vert),
                 constraints: WidgetConstant.constraintsMinWidth200,
                 onSelected: (v) {
-                  wallet.openPopup(v);
+                  if (v == null) return;
+                  extension.openPopup(v);
                 },
                 itemBuilder: (c) {
                   return [
-                    PopupMenuItem<ExtensionWalletContextType>(
-                      value: ExtensionWalletContextType.popup,
-                      child: AppListTile(
-                        trailing: const Icon(Icons.open_in_new),
-                        title: Text("open_as_popup".tr,
-                            style: context.textTheme.labelMedium),
-                      ),
-                    ),
-                    PopupMenuItem<ExtensionWalletContextType>(
-                      value: ExtensionWalletContextType.tab,
-                      child: AppListTile(
-                        trailing: const Icon(Icons.open_in_browser),
-                        title: Text("open_in_new_tab".tr,
-                            style: context.textTheme.labelMedium),
-                      ),
-                    ),
-                    if (wallet.supportedActions
-                        .contains(ExtensionWalletContextType.sidePanel))
+                    if (wallet.wallet.isReadOnly)
                       PopupMenuItem<ExtensionWalletContextType>(
-                        value: ExtensionWalletContextType.sidePanel,
                         child: AppListTile(
-                          trailing: const Icon(Icons.view_sidebar),
-                          title: Text("opn_in_side_panel".tr,
-                              style: context.textTheme.labelMedium),
-                        ),
-                      )
-                    else if (wallet.supportedActions
-                        .contains(ExtensionWalletContextType.sidebarAction))
-                      PopupMenuItem<ExtensionWalletContextType>(
-                        value: ExtensionWalletContextType.sidebarAction,
-                        child: AppListTile(
-                          trailing: const Icon(Icons.view_sidebar),
-                          title: Text("opn_in_side_panel".tr,
+                          onTap: () {
+                            context.openDialogPage(
+                              "",
+                              child: (context) {
+                                return PasswordCheckerView(
+                                  accsess: WalletAccsessType.unlock,
+                                  onWalletAccess: (password) async {
+                                    return null;
+                                  },
+                                );
+                              },
+                            );
+                          },
+                          trailing: const Icon(Icons.lock_open),
+                          title: Text("unlock_wallet".tr,
                               style: context.textTheme.labelMedium),
                         ),
                       ),
+                    if (wallet.wallet.isUnlock)
+                      PopupMenuItem<ExtensionWalletContextType>(
+                        child: AppListTile(
+                          onTap: () {
+                            wallet.wallet.lock();
+                          },
+                          trailing: const Icon(Icons.lock),
+                          title: Text("lock_wallet".tr,
+                              style: context.textTheme.labelMedium),
+                        ),
+                      ),
+                    if (wallet.wallet.isOpen)
+                      PopupMenuItem<ExtensionWalletContextType>(
+                        child: AppListTile(
+                          onTap: () {
+                            context.to(PageRouter.setting);
+                          },
+                          trailing: const Icon(Icons.settings),
+                          title: Text("settings".tr,
+                              style: context.textTheme.labelMedium),
+                        ),
+                      ),
+                    if (wallet.walletPage.inSwap)
+                      PopupMenuItem<ExtensionWalletContextType>(
+                        child: AppListTile(
+                          onTap: () {
+                            wallet.swap?.updateSettings((controller) {
+                              return context.openSliverDialog(
+                                  (context) =>
+                                      SelectSwapProvidersView(controller),
+                                  'swap_settings'.tr);
+                            });
+                          },
+                          trailing: const Icon(Icons.swap_horiz_outlined),
+                          title: Text("swap_settings".tr,
+                              style: context.textTheme.labelMedium),
+                        ),
+                      ),
+                    if (extension.context.context.isAction) ...[
+                      PopupMenuItem<ExtensionWalletContextType>(
+                        value: ExtensionWalletContextType.popup,
+                        child: AppListTile(
+                          trailing: const Icon(Icons.open_in_new),
+                          title: Text("open_as_popup".tr,
+                              style: context.textTheme.labelMedium),
+                        ),
+                      ),
+                      PopupMenuItem<ExtensionWalletContextType>(
+                        value: ExtensionWalletContextType.tab,
+                        child: AppListTile(
+                          trailing: const Icon(Icons.open_in_browser),
+                          title: Text("open_in_new_tab".tr,
+                              style: context.textTheme.labelMedium),
+                        ),
+                      ),
+                      if (extension.supportedActions
+                          .contains(ExtensionWalletContextType.sidePanel))
+                        PopupMenuItem<ExtensionWalletContextType>(
+                          value: ExtensionWalletContextType.sidePanel,
+                          child: AppListTile(
+                            trailing: const Icon(Icons.view_sidebar),
+                            title: Text("opn_in_side_panel".tr,
+                                style: context.textTheme.labelMedium),
+                          ),
+                        )
+                      else if (extension.supportedActions
+                          .contains(ExtensionWalletContextType.sidebarAction))
+                        PopupMenuItem<ExtensionWalletContextType>(
+                          value: ExtensionWalletContextType.sidebarAction,
+                          child: AppListTile(
+                            trailing: const Icon(Icons.view_sidebar),
+                            title: Text("opn_in_side_panel".tr,
+                                style: context.textTheme.labelMedium),
+                          ),
+                        ),
+                    ],
                   ];
                 })),
       ],

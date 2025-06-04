@@ -85,8 +85,8 @@ final class WalletRequestBitcoinSignMessage extends WalletRequest<
   }
 
   @override
-  MessageArgsTwoBytes getResult(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<MessageArgsTwoBytes> getResult(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     return sign(
         wallet: wallet,
         index: index,
@@ -96,7 +96,8 @@ final class WalletRequestBitcoinSignMessage extends WalletRequest<
   }
 
   @override
-  CryptoBitcoinPersonalSignResponse parsResult(MessageArgsTwoBytes result) {
+  Future<CryptoBitcoinPersonalSignResponse> parsResult(
+      MessageArgsTwoBytes result) async {
     return CryptoBitcoinPersonalSignResponse(
         signatureBase64:
             StringUtils.decode(result.keyOne, type: StringEncoding.base64),
@@ -104,8 +105,8 @@ final class WalletRequestBitcoinSignMessage extends WalletRequest<
   }
 
   @override
-  CryptoBitcoinPersonalSignResponse result(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<CryptoBitcoinPersonalSignResponse> result(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final signature = sign(
         wallet: wallet,
         index: index,

@@ -185,8 +185,12 @@ class _MoneroSyncOptionsViewState
         identifier: APIUtils.getProviderIdentifier(),
         httpNodeUri: url.url,
         auth: url.auth);
-    progressKey.progressText("monero_fetching_Wallet_addresses".tr);
     final client = MoneroWalletClient(provider, account.network);
+    // final r = await client.accountInfos();
+    // print("r $r");
+    // return;
+    progressKey.progressText("monero_fetching_Wallet_addresses".tr);
+
     final walletAddresses =
         await MethodUtils.call(() => client.readMoneroWalletAdresses());
     if (walletAddresses.hasError) {
@@ -194,40 +198,33 @@ class _MoneroSyncOptionsViewState
           backToIdle: false, showBackButton: true);
       return;
     }
-    final List<MoneroWalletRPCAddress> accountsIndexes = [];
-    for (final i in walletAddresses.result) {
-      for (final e in i.addresses) {
-        if (allRelatedAccountAddresses.contains(e.address)) {
-          accountsIndexes.add(e);
-        }
-      }
-    }
-    if (accountsIndexes.isEmpty) {
+    final relatedAccounts = account.addresses
+        .where((e) =>
+            walletAddresses.result.any((r) => e.networkAddress == r.address))
+        .toList();
+    if (relatedAccounts.isEmpty) {
       progressKey.errorText("wallet_rpc_different_account_response_desc".tr,
           backToIdle: false, showBackButton: true);
     } else {
       progressKey.progressText("monero_fetching_Wallet_available_transfers".tr);
-      final result = await MethodUtils.call(
-          () => client.readMoneroWalletTxes(accountsIndexes.toList()));
+      final result =
+          await MethodUtils.call(() => client.readMoneroWalletTxes(account));
       if (result.hasError) {
-        progressKey.errorText(result.error!.tr);
+        progressKey.errorText(result.error?.tr ?? "");
         return;
       }
       if (walletRpcSync) {
         await account.saveWalletRpc(provider);
         walletProvider = provider;
       }
-      final relatedTxIds = MoneroAccountPendingTxes(
-          txIDs: result.result.map((e) => e.txHash).toSet().toList(),
-          primaryAddress: address.addrDetails.primaryAccount());
-      if (relatedTxIds.txIDs.isEmpty) {
+      if (result.result.isEmpty) {
         progressKey.errorText("monero_wallet_rpc_sync_no_tx_found_desc".tr,
             backToIdle: false, showBackButton: true);
         return;
       }
       progressKey.progressText("retrieving_transaction".tr);
       final unlockedInfo = await wallet.wallet
-          .moneroUpdatePendingTxes(account: account, txIds: [relatedTxIds]);
+          .moneroUpdatePendingTxes(account: account, txIds: result.result);
       if (unlockedInfo.hasError) {
         progressKey.errorText(unlockedInfo.error!.tr);
         return;
@@ -326,11 +323,14 @@ class _MoneroSyncOptionsViewState
     if (!(formKey.currentState?.validate() ?? false)) return;
     final txes = txIdsStateKey.currentState?.getValue();
     final txIds = StrUtils.separateBySpace(txes);
-    final relatedTxIds = MoneroAccountPendingTxes(
-        txIDs: txIds, primaryAddress: address.addrDetails.primaryAccount());
     if (txIds.isEmpty) return;
+    final relatedTxIds = MoneroAccountPendingTxes.request(
+        accountIndex: address.keyIndex.cast(),
+        primaryAddress: address.addrDetails.primaryAccount(),
+        indexes: account
+            .relateAccountIndexes(address.addrDetails.viewKey)
+            .map((e) => MoneroAccountIndexTxes(index: e, txes: txIds)));
     progressKey.progressText("retrieving_transaction".tr);
-
     final unlockedInfo = await wallet.wallet
         .moneroUpdatePendingTxes(account: account, txIds: [relatedTxIds]);
     if (unlockedInfo.hasError) {

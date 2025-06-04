@@ -513,9 +513,10 @@ abstract class NoneEncryptedArgsCompleter<T, A extends CborMessageResponseArgs>
 abstract class WalletArgsCompleter<T, A extends CborMessageResponseArgs>
     with CborSerializable {
   const WalletArgsCompleter() : super();
-  A getResult({required WalletMasterKeys wallet, required List<int> key});
-  T parsResult(A result);
-  T result({required WalletMasterKeys wallet, required List<int> key});
+  Future<A> getResult(
+      {required WalletMasterKeys wallet, required List<int> key});
+  Future<T> parsResult(A result);
+  Future<T> result({required WalletMasterKeys wallet, required List<int> key});
 }
 
 class WalletArgs<T, A extends CborMessageResponseArgs,
@@ -568,18 +569,19 @@ class WalletArgs<T, A extends CborMessageResponseArgs,
         key: values.elementAt(4));
   }
 
-  A getResult() {
+  Future<A> getResult() {
     final masterKey = CryptoRequestReadMasterKey.getWalletMasterKeys(
         nonce: nonce, walletData: walletData, key: key);
     return args.getResult(wallet: masterKey, key: key);
   }
 
-  T parseResult(A result) {
+  Future<T> parseResult(A result) {
     return args.parsResult(result);
   }
 
-  T result() {
-    return parseResult(getResult());
+  Future<T> result() async {
+    final result = await getResult();
+    return parseResult(result);
   }
 
   @override

@@ -27,17 +27,19 @@ class WalletSetupPageWidget extends StatelessWidget {
                   pinned: true,
                   centerTitle: false,
                   actions: [
-                    BrightnessToggleIcon(
-                        onToggleBrightness: () => wallet.toggleBrightness(),
-                        brightness: ThemeController.appTheme.brightness),
-                    ColorSelectorIconView(
-                      (p0) {
-                        if (p0 == null) return;
-                        return wallet.changeColor(p0);
-                      },
-                    ),
-                    appbarWidgets(false),
-                    WidgetConstant.width8,
+                    if (!wallet.wallet.isReady) ...[
+                      BrightnessToggleIcon(
+                          onToggleBrightness: () => wallet.toggleBrightness(),
+                          brightness: ThemeController.appTheme.brightness),
+                      ColorSelectorIconView(
+                        (p0) {
+                          if (p0 == null) return;
+                          return wallet.changeColor(p0);
+                        },
+                      ),
+                      appbarWidgets(false),
+                      WidgetConstant.width8,
+                    ]
                   ],
                 ),
                 SliverConstraintsBoxView(

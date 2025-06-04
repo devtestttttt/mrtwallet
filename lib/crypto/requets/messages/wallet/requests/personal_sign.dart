@@ -88,23 +88,24 @@ final class WalletRequestSignMessage
   }
 
   @override
-  MessageArgsOneBytes getResult(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<MessageArgsOneBytes> getResult(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final signature =
         sign(wallet: wallet, index: index, message: message, network: network);
     return MessageArgsOneBytes(keyOne: signature);
   }
 
   @override
-  CryptoPersonalSignResponse parsResult(MessageArgsOneBytes result) {
+  Future<CryptoPersonalSignResponse> parsResult(
+      MessageArgsOneBytes result) async {
     return CryptoPersonalSignResponse(
         signatureHex: BytesUtils.toHexString(result.keyOne, prefix: "0x"),
         signature: result.keyOne);
   }
 
   @override
-  CryptoPersonalSignResponse result(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<CryptoPersonalSignResponse> result(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final signature =
         sign(wallet: wallet, index: index, message: message, network: network);
     return CryptoPersonalSignResponse(

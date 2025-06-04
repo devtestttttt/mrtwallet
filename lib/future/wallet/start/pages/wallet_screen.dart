@@ -6,7 +6,6 @@ import 'package:on_chain_wallet/future/wallet/controller/tabs/tabs.dart';
 import 'package:on_chain_wallet/future/wallet/global/pages/switch_network.dart';
 import 'package:on_chain_wallet/future/wallet/setting/color_selector.dart';
 import 'package:on_chain_wallet/future/wallet/start/pages/platform_widgets/widgets.dart';
-import 'package:on_chain_wallet/future/wallet/swap/pages/pages/swap.dart';
 import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
 import 'package:on_chain_wallet/wallet/models/others/models/status.dart';
 import 'package:on_chain_wallet/wallet/wallet.dart' show Chain, HDWallet;
@@ -129,11 +128,6 @@ class _WalletAppBar extends StatelessWidget {
       pinned: true,
       floating: false,
       actions: [
-        // ElevatedButton(
-        //     onPressed: () {
-        //       context.to(PageRouter.webview);
-        //     },
-        //     child: Text("testpage")),
         WidgetConstant.width8,
         ConditionalWidget(
             enable: isOpen,
@@ -239,28 +233,11 @@ class _AppbarUnlockActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(children: [
+      WidgetConstant.width8,
       APPAnimatedSwitcher<WalletPage>(enable: wallet.walletPage, widgets: {
         WalletPage.swap: (context) => SwitchNetworkIcon(account: account),
         WalletPage.webview: (context) => SwitchNetworkIcon(account: account),
       }),
-      IconButton(
-          onPressed: () {
-            final page = wallet.walletPage;
-            switch (page) {
-              case WalletPage.swap:
-                wallet.swap?.updateSettings((controller) {
-                  return context.openSliverDialog(
-                      (context) => SelectSwapProvidersView(controller),
-                      'swap_settings'.tr);
-                });
-                break;
-              default:
-                context.to(PageRouter.setting);
-                break;
-            }
-          },
-          icon: const Icon(Icons.settings)),
-      WidgetConstant.width8,
       appbarWidgets(true),
     ]);
   }

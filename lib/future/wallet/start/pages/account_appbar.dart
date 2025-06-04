@@ -319,7 +319,7 @@ class _AccountPopupMenu extends StatelessWidget {
                 value: 1,
                 child: AppListTile(
                   trailing: const Icon(Icons.north_east_sharp),
-                  title: Text("export_public_key".tr,
+                  title: Text("address_info".tr,
                       style: context.textTheme.labelMedium),
                 ),
               )

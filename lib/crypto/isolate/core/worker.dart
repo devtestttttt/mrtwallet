@@ -212,7 +212,7 @@ abstract class IsolateCryptoWoker {
           return message.parsResult(response);
         },
         onMain: () async {
-          return args.result();
+          return await args.result();
         },
         useIsolate: true,
         mode: WorkerMode.main);

@@ -21,6 +21,7 @@ mixin WalletsManager on _WalletCore {
   bool get isLock => homePageStatus.isLock;
   bool get isUnlock => homePageStatus.isUnlock;
   bool get isReadOnly => homePageStatus.isReadOnly;
+  bool get isReady => homePageStatus.isReady;
   HDWallets _wallets = HDWallets.init();
 
   void _onCurrentChainListener(ChainEvent _) {

@@ -33,19 +33,20 @@ final class WalletRequestBackupWallet
   WalletRequestMethod get method => WalletRequestMethod.walletBackup;
 
   @override
-  MessageArgsOneBytes getResult(
-      {required WalletMasterKeys wallet, required List<int> key}) {
-    final encrypt = result(wallet: wallet, key: key);
+  Future<MessageArgsOneBytes> getResult(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
+    final encrypt = await result(wallet: wallet, key: key);
     return MessageArgsOneBytes(keyOne: BytesUtils.fromHexString(encrypt));
   }
 
   @override
-  String parsResult(MessageArgsOneBytes result) {
+  Future<String> parsResult(MessageArgsOneBytes result) async {
     return BytesUtils.toHexString(result.keyOne);
   }
 
   @override
-  String result({required WalletMasterKeys wallet, required List<int> key}) {
+  Future<String> result(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final web3SD = Web3SecretStorageDefinationV3.encode(
         wallet.toCbor(backup: true).encode(), this.key);
     return web3SD.encrypt(encoding: SecretWalletEncoding.cbor);

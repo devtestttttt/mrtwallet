@@ -32,21 +32,21 @@ final class WalletRequestReadMnemonic
   WalletRequestMethod get method => WalletRequestMethod.readMnemonic;
 
   @override
-  MessageArgsOneBytes getResult(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<MessageArgsOneBytes> getResult(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final mnemonic = wallet.mnemonic();
     return MessageArgsOneBytes(keyOne: mnemonic.toCbor().encode());
   }
 
   @override
-  AccessMnemonicResponse parsResult(MessageArgsOneBytes result) {
+  Future<AccessMnemonicResponse> parsResult(MessageArgsOneBytes result) async {
     final response = AccessMnemonicResponse.deserialize(bytes: result.keyOne);
     return response;
   }
 
   @override
-  AccessMnemonicResponse result(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<AccessMnemonicResponse> result(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     return wallet.mnemonic();
   }
 }

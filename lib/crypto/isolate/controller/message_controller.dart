@@ -31,7 +31,7 @@ class EncryptedIsolateMessageController {
           break;
         case CryptoArgsType.wallet:
           final WalletArgs msg = args as WalletArgs;
-          result = msg.getResult();
+          result = await msg.getResult();
           break;
       }
     } on WalletException catch (e) {

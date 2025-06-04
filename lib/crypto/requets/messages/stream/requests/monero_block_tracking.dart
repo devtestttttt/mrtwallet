@@ -63,7 +63,7 @@ final class StreamRequestMoneroBlockTracking extends IsolateStreamRequest<
               if (unlock != null) {
                 moneroBlock ??= block.toBlock();
                 final txid = BytesUtils.toHexString(moneroBlock.txHashes[t]);
-                accounts.addPendingTx(viewAccounts[a], txid);
+                viewAccounts[a].addPendingTx(unlock, txid);
               }
             }
           }

@@ -2,7 +2,7 @@ import 'package:blockchain_utils/helper/extensions/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
-import 'package:on_chain_wallet/future/wallet/global/pages/r.dart';
+import 'package:on_chain_wallet/future/wallet/global/pages/types.dart';
 import 'package:on_chain_wallet/future/wallet/network/aptos/web3/web3.dart';
 import 'package:on_chain_wallet/future/wallet/network/bitcoin/web3/permission/permission.dart';
 import 'package:on_chain_wallet/future/wallet/network/cosmos/web3/permission/permission.dart';

@@ -18,9 +18,8 @@ List<PopupMenuItem<int>> cardanoAccountMenuButton(
         value: value,
         onTap: () {
           context.openSliverDialog(
-            (context) => _ShowRewardAddress(chainAccount: account.address),
-            "reward_address".tr,
-          );
+              (context) => _ShowRewardAddress(chainAccount: account.address),
+              "reward_address".tr);
         },
         child: AppListTile(
           trailing: const Icon(Icons.north_east_sharp),

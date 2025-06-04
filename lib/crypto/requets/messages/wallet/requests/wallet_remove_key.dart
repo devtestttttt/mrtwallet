@@ -32,8 +32,8 @@ final class WalletRequestRemoveKey extends WalletRequest<
   WalletRequestMethod get method => WalletRequestMethod.removeWalletKeys;
 
   @override
-  MessageArgsThreeBytes getResult(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<MessageArgsThreeBytes> getResult(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final newWallet = wallet.removeKey(keyId);
     final encryptWallet = newWallet.encrypt(key: key);
     return MessageArgsThreeBytes(
@@ -43,7 +43,8 @@ final class WalletRequestRemoveKey extends WalletRequest<
   }
 
   @override
-  CryptoGenerateMasterKeyResponse parsResult(MessageArgsThreeBytes result) {
+  Future<CryptoGenerateMasterKeyResponse> parsResult(
+      MessageArgsThreeBytes result) async {
     return CryptoGenerateMasterKeyResponse(
         masterKey: EncryptedMasterKey.deserialize(bytes: result.keyOne),
         storageData:
@@ -52,8 +53,8 @@ final class WalletRequestRemoveKey extends WalletRequest<
   }
 
   @override
-  CryptoGenerateMasterKeyResponse result(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<CryptoGenerateMasterKeyResponse> result(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final newWallet = wallet.removeKey(keyId);
     final encryptWallet = newWallet.encrypt(key: key);
     return CryptoGenerateMasterKeyResponse(

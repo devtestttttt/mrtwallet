@@ -1679,6 +1679,7 @@ class Localization {
           "ton_address_type_desc":
               "We recommend using a stable, non-bounceable address for the wallet contract.",
           "bouncable": "Bounceable",
+          "non_bouncable": "Non-Bouncable",
           "jettons": "Jettons",
           "no_jettons_found": "No jettons found in the account.",
           "import_jettons": "Import Jettons",
@@ -1804,6 +1805,7 @@ class Localization {
           "unlock_access_desc":
               "This feature only works on an unlocked wallet. Please enter your wallet password to continue.",
           "unlock_wallet": "Unlock Wallet",
+
           "incomplete_wallet_setup": "Wallet setup is incomplete",
           "switch_wallets": "Switch wallets",
           "wallet_does_not_exists": "Wallet does not exists.",
@@ -2465,6 +2467,7 @@ class Localization {
           "select_accounts_for_syncing":
               "Select the accounts you want to sync.",
           "primary_account": "Primary account.",
+          "primary_address": "Primary address",
           "addresses": "Addresses",
           "at_least_one_account_required": "At least one address is required.",
           "only_on_request_can_be_processed":
@@ -2829,6 +2832,7 @@ class Localization {
           "exceeded_multisig_maximum_publickey":
               "Exceeded the maximum allowed public keys for a multisig account.",
           "multisig_address_infos": "Multisig address info",
+          "address_info": "Address info",
           "invalid_account": "Invalid account.",
           "locking_script": "Locking Script",
           "at_least_n_account_required": "At least ___1__ address is required.",
@@ -3167,7 +3171,13 @@ class Localization {
           "imported_key_derivation_not_allowed":
               "Key derivation is not supported for imported keys.",
           "press_back_button_twice":
-              "Press the back button twice to exit the app."
+              "Press the back button twice to exit the app.",
+          "account_index": "Account index",
+          "wallet_version": "Wallet version",
+          "type": "Type",
+          "sub_or_wallet_id": "Sub/Wallet Id",
+          "muxed_id": "Muxed id",
+          "base_address": "Base address"
         }
       };
 }

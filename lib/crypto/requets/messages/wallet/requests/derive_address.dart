@@ -199,8 +199,8 @@ final class WalletRequestDeriveAddress
   }
 
   @override
-  MessageArgsTwoBytes getResult(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<MessageArgsTwoBytes> getResult(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final deriveAddr = deriveAddress(addressParams, wallet);
     return MessageArgsTwoBytes(
         keyOne: deriveAddr.accountParams.toCbor().encode(),
@@ -208,7 +208,8 @@ final class WalletRequestDeriveAddress
   }
 
   @override
-  CryptoDeriveAddressResponse parsResult(MessageArgsTwoBytes result) {
+  Future<CryptoDeriveAddressResponse> parsResult(
+      MessageArgsTwoBytes result) async {
     return CryptoDeriveAddressResponse(
         accountParams: NewAccountParams.deserialize(bytes: result.keyOne),
         publicKey:
@@ -216,8 +217,8 @@ final class WalletRequestDeriveAddress
   }
 
   @override
-  CryptoDeriveAddressResponse result(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<CryptoDeriveAddressResponse> result(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     return deriveAddress(addressParams, wallet);
   }
 }

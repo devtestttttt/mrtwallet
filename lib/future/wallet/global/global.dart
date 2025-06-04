@@ -21,7 +21,7 @@ export 'pages/token_details_view.dart';
 export 'pages/transaction_amount.dart';
 export 'pages/update_tokens.dart';
 export 'pages/wallet_signing_password.dart';
-export 'pages/show_public_key.dart';
+export 'pages/accout_public_key.dart';
 export 'pages/update_wallet_infos.dart';
 export 'pages/http_authenticated.dart';
 export 'pages/accout_appbar.dart';

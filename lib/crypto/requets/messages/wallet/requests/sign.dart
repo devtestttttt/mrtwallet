@@ -211,20 +211,20 @@ final class WalletRequestSign
   }
 
   @override
-  MessageArgsOneBytes getResult(
-      {required WalletMasterKeys wallet, required List<int> key}) {
-    final sign = result(wallet: wallet, key: key);
+  Future<MessageArgsOneBytes> getResult(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
+    final sign = await result(wallet: wallet, key: key);
     return MessageArgsOneBytes(keyOne: sign.toCbor().encode());
   }
 
   @override
-  GlobalSignResponse parsResult(MessageArgsOneBytes result) {
+  Future<GlobalSignResponse> parsResult(MessageArgsOneBytes result) async {
     return GlobalSignResponse.deserialize(result.keyOne);
   }
 
   @override
-  GlobalSignResponse result(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<GlobalSignResponse> result(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final key = wallet
         .readKeys([AccessCryptoPrivateKeyRequest(index: request.index)])
         .keys

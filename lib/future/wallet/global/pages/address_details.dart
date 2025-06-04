@@ -44,7 +44,7 @@ class AddressDetailsView extends StatelessWidget {
                           context.textTheme.labelLarge?.copyWith(color: color)),
         OneLineTextWidget(address.address.toAddress,
             style: context.textTheme.bodyMedium?.copyWith(color: color)),
-        AddressDrivationInfo(address.keyIndex, color: color),
+        // AddressDrivationInfo(address.keyIndex, color: color),
         if (showBalance && network != null)
           CoinAndMarketLivePriceView(
               liveBalance: address.address.balance,

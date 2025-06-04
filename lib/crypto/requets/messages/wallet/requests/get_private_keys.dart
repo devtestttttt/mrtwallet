@@ -34,22 +34,23 @@ final class WalletRequestReadPrivateKeys
   WalletRequestMethod get method => WalletRequestMethod.readPrivateKeys;
 
   @override
-  MessageArgsOneBytes getResult(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<MessageArgsOneBytes> getResult(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final keys = wallet.readKeys(request.indexes);
     return MessageArgsOneBytes(keyOne: keys.toCbor().encode());
   }
 
   @override
-  List<CryptoPrivateKeyData> parsResult(MessageArgsOneBytes result) {
+  Future<List<CryptoPrivateKeyData>> parsResult(
+      MessageArgsOneBytes result) async {
     final response =
         CryptoPrivateKeysResponse.fromCborBytesOrObject(bytes: result.keyOne);
     return response.keys;
   }
 
   @override
-  List<CryptoPrivateKeyData> result(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<List<CryptoPrivateKeyData>> result(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final keys = wallet.readKeys(request.indexes);
     return keys.keys;
   }

@@ -32,20 +32,20 @@ final class WalletRequestReadImportedKey
   WalletRequestMethod get method => WalletRequestMethod.readImportKey;
 
   @override
-  MessageArgsOneBytes getResult(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<MessageArgsOneBytes> getResult(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final importedKey = wallet.getImportedKey(keyId);
     return MessageArgsOneBytes(keyOne: importedKey.toCbor().encode());
   }
 
   @override
-  PrivateKeyData parsResult(MessageArgsOneBytes result) {
+  Future<PrivateKeyData> parsResult(MessageArgsOneBytes result) async {
     return PrivateKeyData.deserialize(bytes: result.keyOne);
   }
 
   @override
-  CryptoPrivateKeyData result(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<CryptoPrivateKeyData> result(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     return wallet.getImportedKey(keyId);
   }
 }

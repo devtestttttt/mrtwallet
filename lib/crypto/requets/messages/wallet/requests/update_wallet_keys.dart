@@ -34,8 +34,8 @@ final class WalletRequestImportNewKey extends WalletRequest<
   WalletRequestMethod get method => WalletRequestMethod.updateWalletKeys;
 
   @override
-  MessageArgsThreeBytes getResult(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<MessageArgsThreeBytes> getResult(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final newWallet = wallet.importCustomKey(newKey);
     final encryptWallet = newWallet.encrypt(key: key);
     return MessageArgsThreeBytes(
@@ -45,7 +45,8 @@ final class WalletRequestImportNewKey extends WalletRequest<
   }
 
   @override
-  CryptoGenerateMasterKeyResponse parsResult(MessageArgsThreeBytes result) {
+  Future<CryptoGenerateMasterKeyResponse> parsResult(
+      MessageArgsThreeBytes result) async {
     return CryptoGenerateMasterKeyResponse(
         masterKey: EncryptedMasterKey.deserialize(bytes: result.keyOne),
         storageData:
@@ -54,8 +55,8 @@ final class WalletRequestImportNewKey extends WalletRequest<
   }
 
   @override
-  CryptoGenerateMasterKeyResponse result(
-      {required WalletMasterKeys wallet, required List<int> key}) {
+  Future<CryptoGenerateMasterKeyResponse> result(
+      {required WalletMasterKeys wallet, required List<int> key}) async {
     final newWallet = wallet.importCustomKey(newKey);
     final encryptWallet = newWallet.encrypt(key: key);
     return CryptoGenerateMasterKeyResponse(

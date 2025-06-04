@@ -13,3 +13,6 @@ web_builder.dart
 /.vscode
 debug_builder.dart
 debug_builder.dart
+requirement/extensions/content.js
+requirement/extensions/firefox_content.js
+requirement/extensions/background.js
