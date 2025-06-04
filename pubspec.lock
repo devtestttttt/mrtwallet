@@ -405,7 +405,7 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: "0431d531cae50a3c3da2e149bed20767df19f7ee"
+      resolved-ref: "9ad669229c7c69a6891298c94e4da8eb062659c7"
       url: "https://github.com/mrtnetwork/onchain_bridge.git"
     source: git
     version: "0.0.1"

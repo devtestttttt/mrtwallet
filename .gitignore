@@ -28,3 +28,7 @@ assets/wasm/stream_crypto.wasm
 assets/wasm/wasm.mjs
 requirement/extensions/content.js
 /web
+requirement/extensions/background.js
+requirement/extensions/content.js
+requirement/extensions/firefox_content.js
+/web

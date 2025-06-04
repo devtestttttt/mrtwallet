@@ -344,7 +344,6 @@ mixin ExtentionWalletHandler on Web3RequestControllerImpl {
       request.completeSuccess();
       port.onDisconnect.removeListener(onDisconnect.toJS);
       await extension.tabs.update_(int.parse(event.clientId), active: true);
-      // ignore: empty_catches
     } catch (_) {}
   }
 

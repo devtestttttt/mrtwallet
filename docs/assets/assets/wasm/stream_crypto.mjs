@@ -2183,7 +2183,6 @@ class CompiledApp {
 "excepted",
 "Parsing response failed.",
 "on_get_block_hash",
-"pending_txes",
 "primaryAddress",
 "Invalid address type.",
 "Invalid address network.",
