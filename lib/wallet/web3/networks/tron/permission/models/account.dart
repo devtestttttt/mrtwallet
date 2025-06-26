@@ -83,14 +83,14 @@ class Web3TronChainIdnetifier extends Web3ChainIdnetifier {
   final int chainId;
   final String solidityNode;
   final String fullNode;
-  @override
-  String get identifier => "tron:$chainId";
-  const Web3TronChainIdnetifier({
-    required this.chainId,
-    required super.id,
-    required this.solidityNode,
-    required this.fullNode,
-  });
+
+  Web3TronChainIdnetifier(
+      {required this.chainId,
+      required super.id,
+      required this.solidityNode,
+      required this.fullNode,
+      required super.wsIdentifier,
+      required super.caip2});
   factory Web3TronChainIdnetifier.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
     final CborListValue values = CborSerializable.cborTagValue(
@@ -102,12 +102,15 @@ class Web3TronChainIdnetifier extends Web3ChainIdnetifier {
         chainId: values.elementAs(0),
         id: values.elementAs(1),
         fullNode: values.elementAs(2),
-        solidityNode: values.elementAs(3));
+        solidityNode: values.elementAs(3),
+        wsIdentifier: values.elementAs(4),
+        caip2: values.elementAs(5));
   }
   @override
   CborTagValue toCbor() {
     return CborTagValue(
-      CborListValue.fixedLength([chainId, id, fullNode, solidityNode]),
+      CborListValue.fixedLength(
+          [chainId, id, fullNode, solidityNode, wsIdentifier, caip2]),
       CborTagsConst.web3TronChainIdentifier,
     );
   }

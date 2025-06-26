@@ -10,7 +10,7 @@ enum JSWebviewTraget {
   }
 }
 
-class JSWebviewWallet extends JSWalletHandler {
+class JSWebviewWallet extends Web3JSWalletHandler {
   @override
   final String clientId;
 
@@ -73,7 +73,7 @@ class JSWebviewWallet extends JSWalletHandler {
         chacha.decrypt(encryptedMessage.nonce, encryptedMessage.message);
     final message = Web3ChainMessage.deserialize(bytes: decode);
     final handler = JSWebviewWallet._(
-        crypto: ChaCha20Poly1305(message.authenticated.token),
+        crypto: ChaCha20Poly1305(message.authenticated.token.symkey),
         clientId: clientId,
         target: target,
         isWorker: isWorker,

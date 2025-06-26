@@ -1,205 +1,183 @@
-import 'package:blockchain_utils/utils/utils.dart';
-import 'package:on_chain_bridge/web/api/core/js.dart';
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/ton/ton.dart';
+import 'package:on_chain_wallet/wallet/web3/state/state.dart';
 import 'package:ton_dart/ton_dart.dart';
 import '../../models/models.dart';
+import '../../models/models/networks/wallet_standard.dart';
 import '../core/network_handler.dart';
 
-class TonWeb3State extends WalletStandardChainWeb3State<TonAddress,
+class TonWeb3JSStateAddress extends Web3JSStateAddress<TonAddress,
     Web3TonChainAccount, JSTonWalletAccount, Web3ChainDefaultIdnetifier> {
-  TonWeb3State._({
+  const TonWeb3JSStateAddress(
+      {required super.chainaccount,
+      required super.jsAccount,
+      required super.networkIdentifier});
+}
+
+class TonWeb3JSStateAccount extends Web3JSStateAccount<
+    TonAddress,
+    Web3TonChainAccount,
+    JSTonWalletAccount,
+    Web3ChainDefaultIdnetifier,
+    TonWeb3JSStateAddress> {
+  TonWeb3JSStateAccount._({
     required super.state,
     required super.chains,
     required super.accounts,
     super.defaultAccount,
     super.defaultChain,
   });
-  factory TonWeb3State.init(
-      {JSNetworkState state = JSNetworkState.disconnect}) {
-    return TonWeb3State._(accounts: const [], state: state, chains: []);
+  factory TonWeb3JSStateAccount.init(
+      {Web3NetworkState state = Web3NetworkState.disconnect}) {
+    return TonWeb3JSStateAccount._(
+        accounts: const [], state: state, chains: []);
   }
-  factory TonWeb3State(Web3TonChainAuthenticated? authenticated) {
+  factory TonWeb3JSStateAccount(Web3TonChainAuthenticated? authenticated) {
     if (authenticated == null) {
-      return TonWeb3State.init(state: JSNetworkState.block);
+      return TonWeb3JSStateAccount.init(state: Web3NetworkState.block);
     }
-    final accounts = authenticated.accounts
-        .map((e) => JSWalletStateAccount<TonAddress, Web3TonChainAccount,
-                JSTonWalletAccount>(
-            chainaccount: e,
-            jsAccount: JSTonWalletAccount.setup(
-                address: e.addressStr,
-                publicKey: e.publicKey,
-                walletStateInit: e.accountState,
-                chain: e.identifier),
-            identifier: e.identifier))
-        .toList();
-    final defaultAddress = authenticated.accounts.firstWhereOrNull(
-        (e) => e.id == authenticated.currentNetwork.id && e.defaultAddress);
-    return TonWeb3State._(
-        accounts: accounts,
-        state: JSNetworkState.init,
+    final networks = {for (final i in authenticated.networks) i.id: i};
+    final accounts = authenticated.accounts.map((e) {
+      final network = networks[e.id];
+      if (network == null) return null;
+      return TonWeb3JSStateAddress(
+          chainaccount: e,
+          jsAccount: JSTonWalletAccount.setup(
+              address: e.addressStr,
+              publicKey: e.publicKey,
+              walletStateInit: e.accountState,
+              chain: network.wsIdentifier),
+          networkIdentifier: network);
+    }).toList();
+    final defaultAddress = authenticated.accounts.firstWhereOrNull((e) =>
+        e.defaultAddress &&
+        networks.containsKey(e.id) &&
+        e.id == authenticated.currentNetwork.id);
+    return TonWeb3JSStateAccount._(
+        accounts: accounts.whereType<TonWeb3JSStateAddress>().toList(),
+        state: Web3NetworkState.init,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null
             ? null
-            : JSWalletStateAccount<TonAddress, Web3TonChainAccount,
-                JSTonWalletAccount>(
+            : TonWeb3JSStateAddress(
                 chainaccount: defaultAddress,
-                identifier: authenticated.currentNetwork.identifier,
+                networkIdentifier: networks[defaultAddress.id]!,
                 jsAccount: JSTonWalletAccount.setup(
                     address: defaultAddress.addressStr,
                     publicKey: defaultAddress.publicKey,
                     walletStateInit: defaultAddress.accountState,
-                    chain: defaultAddress.identifier),
+                    chain: networks[defaultAddress.id]!.wsIdentifier),
               ));
   }
 }
 
-class JSTonHandler extends JSWalletStandardNetworkHandler<
-    TonAddress,
-    Web3TonChainAccount,
-    JSTonWalletAccount,
-    Web3ChainDefaultIdnetifier,
-    TonWeb3State> {
-  JSTonHandler(
+class TonWeb3JSStateHandler extends Web3JSStateHandler<
+        TonAddress,
+        Web3TonChainAccount,
+        JSTonWalletAccount,
+        Web3ChainDefaultIdnetifier,
+        TonWeb3JSStateAccount>
+    with
+        TonWeb3StateHandler<JSTonWalletAccount, TonWeb3JSStateAccount,
+            WalletMessageResponse, Web3JsClientRequest, JSWalletNetworkEvent> {
+  TonWeb3JSStateHandler(
       {required super.sendMessageToClient, required super.sendInternalMessage});
+  // @override
+  // Web3TonSignMessage toSignMessageRequest(
+  //     {required Web3JsClientRequest params,
+  //     required TonWeb3JSStateAccount state,
+  //     required Web3TonRequestMethods method,
+  //     Web3ChainDefaultIdnetifier? network}) {
+  //   return Web3ValidatorUtils.parseParams2(() {
+  //     final param = params.elementAsJsObject<JSTonSignMessageParams>(0,
+  //         method: method, keys: JSTonSignMessageParams.properties);
+  //     Web3TonChainAccount account =
+  //         state.getJsAddressChainAccountOrThrow(param.account);
+  //     List<int> message =
+  //         params.objectAsBytes(param.message, "message", encoding: [
+  //       StringEncoding.hex,
+  //       StringEncoding.base64,
+  //       StringEncoding.utf8,
+  //     ]);
+  //     return Web3TonSignMessage(
+  //         accessAccount: account,
+  //         challeng: BytesUtils.toHexString(message),
+  //         content: StringUtils.tryDecode(message));
+  //   });
+  // }
+
+  // @override
+  // Web3TonSendTransaction toSignTransactionRequest(
+  //     {required Web3JsClientRequest params,
+  //     required TonWeb3JSStateAccount state,
+  //     required Web3TonRequestMethods method,
+  //     Web3ChainDefaultIdnetifier? network}) {
+  //   return Web3ValidatorUtils.parseParams2(() {
+  //     final txParams =
+  //         params.elementAsJsObject<JSTonSendOrSignTransactionParams>(0,
+  //             keys: JSTonSendOrSignTransactionParams.properties);
+  //     const List<String> keys = ["messages", "validUntil"];
+  //     Web3TonChainAccount account =
+  //         state.getJsAddressChainAccountOrThrow(txParams.account);
+  //     Map<String, dynamic> data = params.objectAsMap(txParams, keys: keys);
+  //     final int validUntil = Web3ValidatorUtils.parseInt(
+  //         key: "validUntil", method: method, json: data);
+  //     final List<Map<String, dynamic>> messagesJson = Web3ValidatorUtils
+  //         .parseList<List<Map<String, dynamic>>, Map<String, dynamic>>(
+  //             key: "messages", method: method, json: data);
+  //     List<Web3TonTransactionMessage> messages =
+  //         messagesJson.map(Web3TonTransactionMessage.fromJson).toList();
+  //     return Web3TonSendTransaction(
+  //         account: account,
+  //         validUntil: validUntil,
+  //         method: method,
+  //         messages: messages);
+  //   });
+  // }
 
   @override
-  Future<Web3MessageCore> request(PageMessageRequest params) async {
+  Future<Web3MessageCore> request(Web3JsClientRequest params,
+      {Web3ChainDefaultIdnetifier? network}) async {
     final state = await getState();
-    final method = Web3TonRequestMethods.fromName(params.method);
+    final method = Web3TonRequestMethods.fromName(params.request.method);
     switch (method) {
       case Web3TonRequestMethods.requestAccounts:
-        if (state.hasAccount) {
-          return createResponse();
-        }
-        return connect();
+        return onConnect_(params);
       case Web3TonRequestMethods.sendTransaction:
       case Web3TonRequestMethods.signTransaction:
-        return _parseTransaction(params: params, state: state, method: method!);
+        return toSignTransactionRequest(
+            params: params, state: state, method: method!);
       case Web3TonRequestMethods.signMessage:
-        final signMessage = _signMessage(params: params, state: state);
+        final signMessage =
+            toSignMessageRequest(params: params, state: state, method: method!);
         return signMessage;
       default:
-        throw Web3RequestExceptionConst.methodDoesNotExist;
-    }
-  }
-
-  Web3TonSignMessage _signMessage(
-      {required PageMessageRequest params, required TonWeb3State state}) {
-    try {
-      final signParams = params.elementAs<JSTonSignMessageParams>(0,
-          peroperties: JSTonSignMessageParams.properties);
-      final messageBytes =
-          MethodUtils.nullOnException(() => signParams?.message.toListInt());
-      if (signParams == null || messageBytes == null) {
-        throw Web3RequestExceptionConst.invalidWalletStandardSignMessage;
-      }
-      Web3TonChainAccount defaultAccount =
-          state.getJsAddressChainAccountOrThrow(signParams.account);
-      return Web3TonSignMessage(
-          accessAccount: defaultAccount,
-          challeng: BytesUtils.toHexString(messageBytes),
-          content: StringUtils.tryDecode(messageBytes));
-    } on Web3RequestException {
-      rethrow;
-    } catch (_) {
-      throw Web3RequestExceptionConst.invalidWalletStandardSignMessage;
-    }
-  }
-
-  Future<Web3TonSendTransaction> _parseTransaction(
-      {required PageMessageRequest params,
-      required TonWeb3State state,
-      required Web3TonRequestMethods method}) async {
-    try {
-      final txParams = params.elementAs<JSTonSendOrSignTransactionParams>(0,
-          peroperties: JSTonSendOrSignTransactionParams.properties);
-      if (txParams == null) {
-        throw Web3RequestExceptionConst.invalidTransaction;
-      }
-      final account = state.getJsAddressChainAccountOrThrow(txParams.account);
-      List<Web3TonTransactionMessage> messages = [];
-      for (int i = 0; i < txParams.messages.length; i++) {
-        final message = JSOBJ.as<JSTonSendOrSignTransactionMessageParams>(
-            object: txParams.messages[i],
-            keys: JSTonSendOrSignTransactionMessageParams.properties);
-        if (message == null) {
-          throw Web3TonExceptionConstant.invalidTxMessage;
-        }
-        final address =
-            MethodUtils.nullOnException(() => TonAddress(message.address!));
-        if (address == null) {
-          throw Web3TonExceptionConstant.invalidTxMessage;
-        }
-        if (address.workChain != account.network.workchain) {
-          throw Web3TonExceptionConstant.invalidMessageAddressNetwork;
-        }
-        final amount = BigintUtils.tryParse(message.amount);
-        if (amount == null) {
-          throw Web3TonExceptionConstant.invalidTxMessage;
-        }
-        Cell? stateInit;
-        Cell? payload;
-        if (message.stateInit != null) {
-          stateInit = MethodUtils.nullOnException(
-              () => Cell.fromBase64(message.stateInit!));
-          if (stateInit == null) {
-            throw Web3TonExceptionConstant.invalidTxMessage;
-          }
-        }
-        if (message.payload != null) {
-          payload = MethodUtils.nullOnException(
-              () => Cell.fromBase64(message.payload!));
-          if (payload == null) {
-            throw Web3TonExceptionConstant.invalidTxMessage;
-          }
-        }
-        final msg = Web3TonTransactionMessage(
-            address: address,
-            amount: amount,
-            stateInit: stateInit,
-            payload: payload);
-        messages.add(msg);
-      }
-      return Web3TonSendTransaction(
-          account: account,
-          messages: messages,
-          validUntil: txParams.validUntil,
-          method: method);
-    } on Web3RequestException {
-      rethrow;
-    } catch (e) {
-      throw Web3RequestExceptionConst.invalidTransaction;
+        throw Web3RequestExceptionConst.methodDoesNotSupport;
     }
   }
 
   @override
-  void onRequestDone(PageMessageRequest message) {}
-
-  @override
-  NetworkType get networkType => NetworkType.ton;
+  void onRequestDone(Web3JsClientRequest message) {}
 
   @override
   Future<WalletMessageResponse> finalizeWalletResponse(
-      {required PageMessageRequest message,
+      {required Web3JsClientRequest message,
       required Web3RequestParams? params,
       required Web3WalletResponseMessage response}) async {
-    final state = await getState();
-    final method = Web3TonRequestMethods.fromName(message.method);
-
+    final method = Web3TonRequestMethods.fromName(message.request.method);
     switch (method) {
       case Web3TonRequestMethods.signMessage:
+        final signature = Web3TonSignMessageResponse.deserialize(
+            bytes: response.resultAsList<int>());
         return WalletMessageResponse.success(
-            JSTonSignMessageResponse.setup(response.resultAsList()));
+            JSTonSignMessageResponse.setup(signature.signature));
       case Web3TonRequestMethods.sendTransaction:
       case Web3TonRequestMethods.signTransaction:
-        final r =
-            Web3TonSendTransactionResponse.fromJson(response.resultAsMap());
+        final r = Web3TonSendTransactionResponse.deserialize(
+            bytes: response.resultAsList());
         final txHash = r.txHash;
         if (txHash == null) {
           return WalletMessageResponse.success(
@@ -208,14 +186,7 @@ class JSTonHandler extends JSWalletStandardNetworkHandler<
         return WalletMessageResponse.success(
             JSTonSendTransactionResponse.setup(boc: r.message, txId: txHash));
       case Web3TonRequestMethods.requestAccounts:
-        if (state.hasAccount) {
-          return WalletMessageResponse.success(
-              JSTonWalletStandardConnect.setup(state.jsAccounts));
-        }
-        return WalletMessageResponse.fail(Web3RequestExceptionConst
-            .rejectedByUser
-            .toResponseMessage()
-            .toWalletError());
+        return onConnectResponse(message);
       default:
     }
     return super.finalizeWalletResponse(
@@ -223,8 +194,8 @@ class JSTonHandler extends JSWalletStandardNetworkHandler<
   }
 
   @override
-  TonWeb3State createState(Web3APPData? authenticated) {
-    if (authenticated == null) return TonWeb3State.init();
-    return TonWeb3State(authenticated.getAuth(networkType));
+  TonWeb3JSStateAccount createState(Web3APPData? authenticated) {
+    if (authenticated == null) return TonWeb3JSStateAccount.init();
+    return TonWeb3JSStateAccount(authenticated.getAuth(networkType));
   }
 }

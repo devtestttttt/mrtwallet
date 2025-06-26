@@ -1,6 +1,8 @@
+enum APPLocale { en }
+
 class Localization {
-  static Map<String, Map<String, String>> get languages => {
-        "en": {
+  static Map<APPLocale, Map<String, String>> get languages => {
+        APPLocale.en: {
           "wellcome": "Welcome To OnChain Wallet",
           "setup": "Setup wallet",
           "use_mnemonic": "Use Existing Mnemonic",
@@ -17,6 +19,8 @@ class Localization {
               "Enter your 12-24 word recovery phrase (mnemonic) to import your wallet",
           "enter_passphrase_desc":
               "If you have used a mnemonic passphrase to create the master key, use the following option to enter the passphrase",
+          "enter_passphrase_desc2":
+              " Warning: We do not store your passphrase in wallet storage or backups. The mnemonic passphrase is now required to validate the backup checksum and will also be required when restoring your backup. Please enter the passphrase if you selected one when generating your wallet.",
           "g_mnemonic":
               "Generate a new 12-24 word recovery phrase (mnemonic) to create a new wallet",
           "g_mnemonic_desc":
@@ -67,6 +71,7 @@ class Localization {
               "BIP39, also known as Hierarchical Deterministic Wallets, allows for the generation of a tree of keys from a single master seed. Adding a passphrase to this process creates an extra layer of security, known as a BIP32 passphrase.",
           "enable_mnemonic_password": "Enable BIP39 passphrase",
           "password_should_not_be_empty": "Password should not be empty",
+          "passphrase_should_not_be_empty": "Passphrase should not be empty",
           "wallet_data_is_invalid": "The wallet data is invalid",
           "incorrect_password": "Incorrect password",
           "invalid_mnemonic": "Invalid mnemonic",
@@ -496,7 +501,7 @@ class Localization {
               "This backup can only be decrypted using this application.",
           "invalid_wallet_backup": "Invalid wallet backup.",
           "invalid_wallet_backup_checksum":
-              "Invalid wallet backup checksum. The passphrase may be incorrect.",
+              "Checksum verification failed: Invalid passphrase.",
           "mnemonic_backup": "Mnemonic backup",
           "wallet_backup": "Wallet backup",
           "select_backup_option": "Select your backup option.",
@@ -2867,6 +2872,9 @@ class Localization {
           "sui_key_conversion": "Sui key conversion",
           "sui_key_conversion_desc":
               "Convert a Sui Bech32 secret key into an private key for secure cryptographic operations on the Sui network.",
+          "aptos_key_conversion_desc":
+              "Convert a Aptos AIP-80 secret key into an private key for secure cryptographic operations on the Aptos network.",
+          // AIP-80
           "invalid_sui_secret_key": "Invalid Sui secret key.",
           "sui_bech32_secret_key_desc2":
               "Please enter a valid Sui Bech32 secret key. The key must start with 'suiprivkey'.",
@@ -3177,7 +3185,78 @@ class Localization {
           "type": "Type",
           "sub_or_wallet_id": "Sub/Wallet Id",
           "muxed_id": "Muxed id",
-          "base_address": "Base address"
+          "base_address": "Base address",
+          "sessions": "Sessions",
+          "loading_sessions_please_wait":
+              "Loading WalletConnect sessions. Please wait.",
+          "remove_session": "Remove session",
+          "remove_session_desc":
+              "Are you sure you want to remove this session? All associated activity will be deleted.",
+          "session_has_been_removed": "Session has been removed.",
+          "clear_dapp_permissions": "Clear DApp Permissions",
+          "reset_dapp_desc":
+              "Delete all application permissions and activities? This action cannot be undone",
+          "application_updated": "Application has been updated.",
+          "application_removed": "Application has been removed.",
+          "backup_options": "Backup Options",
+          "backup_options_desc":
+              "Choose the wallet sections you'd like to back up.",
+          "mnemonic_seed_hd_wallet_elements":
+              "Mnemonic, seed, and other HD wallet elements",
+          "encrypted": "Encrypted",
+          "non_encrypted": "Non-Encrypted",
+          "select_network_for_backup": "Select the network for backup.",
+          "setup_chains": "Setup chains",
+          "networks_and_addresses": "Networks and addresses",
+          "use_current_wallet_password": "Use current wallet password",
+          "use_new_password": "Use new password",
+
+          /// wc
+          "invalid_pairing_url": "Invalid pairing url.",
+          "unsuported_pairing_url": "Unsuported pairing url.",
+          "unsuported_wc_method":
+              "Wallet does not support the required pairing methods.",
+          "pairing_canceled_by_dapp": "Pairing channel canceled by the client.",
+          "unsuported_required_namespace": "Unsupported required namespaces.",
+          "wc_internal_error": "An error occurred during the request",
+          "wc_publis_message_timeout":
+              "Failed to publish message: request timed out.",
+          "wc_client_request_timed_out": "Client request timed out.",
+          "pairing_request_timed_out": "Pairing request timed out.",
+
+          "enable_wallet_connect": "Enable wallet connect",
+          "disable": "Disable",
+          "no_network": "No network",
+          "pairing_url": "Pairing url",
+          "close_connection": "Close connection",
+          "pairing_please_wait": "Pairing. Please wait",
+          "pair_with_new_client": "Pair with New Client",
+          "enter_pairing_url_for_connect": "Enter the pairing URL to connect.",
+          "wallet_connect_management": "WalletConnect Management",
+          "manage_and_pair": "Manage and pair",
+          "tap_to_pair_with_new_client": "Tap to pair with a new client.",
+          "wallet_management": "Wallet Management",
+          "wallet_management_desc": "Switch or create new wallet",
+          "swap_setting_desc": "Configure providers and networks",
+          "connection_terminated":
+              "The connection to the server was terminated",
+          "dapps_management": "DApps Management",
+          "dapps_permissions": "DApps Permissions",
+          "invalid_backup_options": "Invalid backup options",
+
+          "loading_applications_please_wait":
+              "Loading applications. Please wait",
+          "dapps_management_desc": "Manage DApps permissions",
+          "generate_backup_desc2":
+              "Warning: Only a backup of the currently active wallet will be generated. If you have multiple wallets, make sure to switch to each wallet individually and generate a backup for each one.",
+          "web3_dapp_update_permission_alert":
+              "This application requires at least one authorized account on the following network(s): ___1__. If you update the permissions without providing the required accounts, the request will be rejected. Do you want to update permissions and reject the request?"
         }
       };
+}
+
+extension Translate on String {
+  static Map<APPLocale, Map<String, String>> get localization =>
+      Localization.languages;
+  String get find => localization[APPLocale.en]?[this] ?? this;
 }

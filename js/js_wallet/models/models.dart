@@ -1,4 +1,3 @@
-export 'models/networks/ethereum.dart';
 export 'models/base.dart';
 export 'models/exception.dart';
 export 'models/requests.dart';

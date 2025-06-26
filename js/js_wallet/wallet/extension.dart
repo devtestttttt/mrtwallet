@@ -10,7 +10,7 @@ external set _onBackgroundListener(JSFunction? f);
 @JS("OnBackgroundListener_")
 external JSFunction get _onBackgroundListener;
 
-class JSExtentionWallet extends JSWalletHandler {
+class JSExtentionWallet extends Web3JSWalletHandler {
   final _portLock = SynchronizedLock();
   @override
   final String clientId;
@@ -39,7 +39,7 @@ class JSExtentionWallet extends JSWalletHandler {
         chacha.decrypt(encryptedMessage.nonce, encryptedMessage.message);
     final message = Web3ChainMessage.deserialize(bytes: decode);
     final handler = JSExtentionWallet._(
-        crypto: ChaCha20Poly1305(message.authenticated.token),
+        crypto: ChaCha20Poly1305(message.authenticated.token.symkey),
         clientId: activationEvent.clientId,
         authenticated: message.authenticated);
     handler._listenOnClients();

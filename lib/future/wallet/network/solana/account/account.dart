@@ -37,6 +37,7 @@ class _SolanaServices extends StatelessWidget {
             AppListTile(
               title: Text("associated_token_program".tr),
               subtitle: Text("create_associated_token_account".tr),
+              trailing: const Icon(Icons.arrow_forward),
               onTap: () {
                 final validator =
                     LiveTransactionForm<SolanaCreateAssociatedTokenAccountForm>(
@@ -47,6 +48,7 @@ class _SolanaServices extends StatelessWidget {
             AppListTile(
               title: Text("create_account".tr),
               subtitle: Text("solana_create_account_desc".tr),
+              trailing: const Icon(Icons.arrow_forward),
               onTap: () {
                 final validator = LiveTransactionForm<SolanaCreateAccountForm>(
                     validator: SolanaCreateAccountForm());
@@ -56,6 +58,7 @@ class _SolanaServices extends StatelessWidget {
             AppListTile(
               title: Text("initialize_mint".tr),
               subtitle: Text("initiailize_mint_desc".tr),
+              trailing: const Icon(Icons.arrow_forward),
               onTap: () {
                 final validator = LiveTransactionForm<SolanaInitializeMintForm>(
                     validator: SolanaInitializeMintForm());
@@ -65,6 +68,7 @@ class _SolanaServices extends StatelessWidget {
             AppListTile(
               title: Text("mint_to".tr),
               subtitle: Text("mint_to_desc".tr),
+              trailing: const Icon(Icons.arrow_forward),
               onTap: () {
                 final validator = LiveTransactionForm<SolanaMintToForm>(
                     validator: SolanaMintToForm());
@@ -73,7 +77,7 @@ class _SolanaServices extends StatelessWidget {
             ),
             WidgetConstant.divider,
             AppListTile(
-              trailing: const Icon(Icons.password),
+              trailing: const Icon(Icons.arrow_forward),
               title: Text("solana_key_conversion".tr),
               subtitle: Text("solana_key_conversion_desc".tr),
               onTap: () {

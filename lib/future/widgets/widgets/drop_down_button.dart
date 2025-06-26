@@ -5,9 +5,10 @@ import 'package:on_chain_wallet/app/models/models/typedef.dart'
 class AppDropDownBottom<T> extends StatelessWidget {
   const AppDropDownBottom(
       {super.key,
-      required this.items,
+      this.items,
+      this.menuItems,
       this.label,
-      this.itemBuilder,
+      this.selectedItemBuilder,
       this.value,
       this.onChanged,
       this.validator,
@@ -22,8 +23,9 @@ class AppDropDownBottom<T> extends StatelessWidget {
       this.border,
       this.iconEnabledColor,
       this.hint});
-  final Map<T, Widget> items;
-  final Map<T, Widget>? itemBuilder;
+  final Map<T, Widget>? items;
+  final List<DropdownMenuItem<T>>? menuItems;
+  final Map<T, Widget>? selectedItemBuilder;
   final FuncVoidNullT<T?>? onChanged;
   final NullStringT<T>? validator;
   final String? label;
@@ -42,20 +44,20 @@ class AppDropDownBottom<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentItems = menuItems ??
+        items?.keys
+            .map<DropdownMenuItem<T>>(
+                (e) => DropdownMenuItem<T>(value: e, child: items![e]!))
+            .toList() ??
+        [];
     return DropdownButtonFormField<T>(
-      items: itemBuilder?.keys
-              .map<DropdownMenuItem<T>>(
-                  (e) => DropdownMenuItem<T>(value: e, child: itemBuilder![e]!))
+      items: selectedItemBuilder?.keys
+              .map<DropdownMenuItem<T>>((e) => DropdownMenuItem<T>(
+                  value: e, child: selectedItemBuilder![e]!))
               .toList() ??
-          items.keys
-              .map<DropdownMenuItem<T>>(
-                  (e) => DropdownMenuItem<T>(value: e, child: items[e]!))
-              .toList(),
+          currentItems,
       icon: icon,
-      selectedItemBuilder: (context) => items.keys
-          .map<DropdownMenuItem<T>>(
-              (e) => DropdownMenuItem<T>(value: e, child: items[e]!))
-          .toList(),
+      selectedItemBuilder: (context) => currentItems,
       onChanged: onChanged,
       validator: validator,
       isExpanded: isExpanded,

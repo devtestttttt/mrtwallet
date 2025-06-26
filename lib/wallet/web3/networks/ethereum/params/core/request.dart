@@ -37,6 +37,7 @@ abstract class Web3EthereumRequestParam<RESPONSE> extends Web3RequestParams<
         param = Web3EthereumAddNewChain.deserialize(
             bytes: bytes, object: object, hex: hex);
         break;
+      case Web3EthereumRequestMethods.ethSign:
       case Web3EthereumRequestMethods.persoalSign:
         param = Web3EthreumPersonalSign.deserialize(
             bytes: bytes, object: object, hex: hex);

@@ -3,8 +3,8 @@ import 'package:blockchain_utils/bip/ecc/curve/elliptic_curve_types.dart';
 import 'package:blockchain_utils/bip/substrate/substrate.dart';
 import 'package:flutter/material.dart';
 import 'package:on_chain_wallet/app/core.dart' show WalletException;
+import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
-import 'package:on_chain_wallet/future/state_managment/extension/extension.dart';
 import 'package:on_chain_wallet/crypto/utils/utils.dart';
 import 'package:on_chain_wallet/wallet/wallet.dart'
     show BlockchainConst, WalletNetwork;
@@ -28,19 +28,19 @@ class Bip32KeyDerivationView extends StatefulWidget {
   State<Bip32KeyDerivationView> createState() => _Bip32KeyDerivationViewState();
 }
 
-class _Bip32KeyDerivationViewState extends State<Bip32KeyDerivationView> {
+class _Bip32KeyDerivationViewState extends State<Bip32KeyDerivationView>
+    with SafeState<Bip32KeyDerivationView> {
+  String path = "";
   final GlobalKey<FormState> form =
       GlobalKey<FormState>(debugLabel: "_Bip32KeyDerivationViewState_form");
   final GlobalKey<AppTextFieldState> pathTextFieldKey =
       GlobalKey<AppTextFieldState>(
           debugLabel: "_Bip32KeyDerivationViewState_pathTextFieldKey");
   late final bool isSupportNoneHardend;
-
-  late final bool isSubstrate =
-      widget.coin.proposal == SubstratePropoosal.substrate;
+  late final bool isSubstrate;
 
   void onSubmit() {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     AddressDerivationIndex keyIndex;
     if (isSubstrate) {
       keyIndex = SubstrateAddressIndex.fromPath(
@@ -53,14 +53,6 @@ class _Bip32KeyDerivationViewState extends State<Bip32KeyDerivationView> {
     }
 
     context.pop(keyIndex);
-  }
-
-  late String path = widget.defaultPath ?? "";
-
-  @override
-  void initState() {
-    super.initState();
-    isSupportNoneHardend = widget.curve != EllipticCurveTypes.ed25519;
   }
 
   void onChangePath(String v) {
@@ -106,6 +98,14 @@ class _Bip32KeyDerivationViewState extends State<Bip32KeyDerivationView> {
 
   void onPaste(String v) {
     pathTextFieldKey.currentState?.updateText(v);
+  }
+
+  @override
+  void onInitOnce() {
+    super.onInitOnce();
+    path = widget.defaultPath ?? "";
+    isSubstrate = widget.coin.proposal == SubstratePropoosal.substrate;
+    isSupportNoneHardend = widget.curve != EllipticCurveTypes.ed25519;
   }
 
   @override

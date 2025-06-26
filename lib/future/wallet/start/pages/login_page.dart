@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/future/wallet/controller/controller.dart';
-import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
+import 'package:on_chain_wallet/future/future.dart';
+import 'package:on_chain_wallet/future/router/page_router.dart';
+import 'package:on_chain_wallet/future/wallet/setting/color_selector.dart';
+import 'package:on_chain_wallet/future/wallet/start/pages/drawer_view.dart';
+import 'package:on_chain_wallet/future/wallet/start/pages/platform_widgets/widgets.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
+import 'package:on_chain_wallet/wallet/models/wallet/hd_wallet.dart';
 
 class WalletLoginPageView extends StatefulWidget {
   const WalletLoginPageView({super.key});
@@ -17,6 +21,7 @@ class _WalletLoginPageViewState extends State<WalletLoginPageView>
       GlobalKey<FormState>(debugLabel: "WalletLoginPageView");
   final GlobalKey<StreamWidgetState> buttonKey =
       GlobalKey<StreamWidgetState>(debugLabel: "WalletLoginPageView_1");
+  late WalletProvider wallet;
   String? _error;
   String password = "";
   void onChange(String v) {
@@ -33,20 +38,60 @@ class _WalletLoginPageViewState extends State<WalletLoginPageView>
   }
 
   void unlock() async {
-    final provider = context.watch<WalletProvider>(StateConst.main);
-
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     buttonKey.process();
-    final login = await provider.wallet.login(password);
+    final login = await wallet.wallet.login(password);
     buttonKey.fromMethodResult(login);
     _error = login.error?.tr;
     updateState(() {});
   }
 
   @override
+  void onInitOnce() {
+    super.onInitOnce();
+    wallet = context.watch<WalletProvider>(StateConst.main);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
+      appBar: AppBar(
+        centerTitle: false,
+        title: Text(wallet.wallet.wallet.name),
+        actions: [
+          WidgetConstant.width8,
+          BrightnessToggleIcon(
+              onToggleBrightness: () => wallet.toggleBrightness(),
+              brightness: ThemeController.appTheme.brightness),
+          ColorSelectorIconView(
+            (p0) {
+              if (p0 == null) return;
+              return wallet.changeColor(p0);
+            },
+          ),
+          appbarWidgets(false),
+        ],
+        leading: IconButton(
+            onPressed: () {
+              context
+                  .openSliverDialog<HDWallet>(
+                      (c) => SwitchWalletView(
+                            wallets: wallet.wallet.wallets,
+                            selectedWallet: wallet.wallet.wallet,
+                          ),
+                      "switch_wallets".tr,
+                      content: (c) => [
+                            IconButton(
+                                onPressed: () {
+                                  context.offTo(PageRouter.createWallet);
+                                },
+                                icon: const Icon(Icons.add))
+                          ])
+                  .then(wallet.wallet.switchWallet);
+            },
+            icon: const Icon(Icons.account_balance_wallet_rounded)),
+      ),
       body: UnfocusableChild(
         child: ConstraintsBoxView(
           padding: WidgetConstant.padding20,

@@ -44,6 +44,7 @@ class _SelectRecipientAccountViewState<NETWORKADDRESS>
   List<ReceiptAddress<NETWORKADDRESS>> multipleReceipments = [];
   List<ReceiptAddress<NETWORKADDRESS>> existsAccounts = [];
   List<ReceiptAddress<NETWORKADDRESS>> filteredAccounts = [];
+  bool get isDebug => kDebugMode;
   late final multipleSelect = widget.multipleSelect;
   bool showSubmit = false;
   final GlobalKey<AppTextFieldState> textFieldKey =
@@ -53,6 +54,10 @@ class _SelectRecipientAccountViewState<NETWORKADDRESS>
   late final bool isRippleNetwork = network.type == NetworkType.xrpl;
   String _address = "";
   bool allowAddAddress = true;
+  ContactCore<NETWORKADDRESS>? newContact;
+  bool useRippleTag = false;
+  int? rippleAddressTag;
+
   void checkAllowAddAddress() {
     final max = widget.max;
     allowAddAddress = max == null || multipleReceipments.length < max;
@@ -87,41 +92,6 @@ class _SelectRecipientAccountViewState<NETWORKADDRESS>
     return true;
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    existsAccounts = [];
-    final contacts = widget.account.contacts
-        .map((e) => ReceiptAddress<NETWORKADDRESS>(
-            view: e.address,
-            networkAddress: e.addressObject,
-            contact: e as ContactCore<NETWORKADDRESS>,
-            type: e.type))
-        .toList();
-    final accounts = widget.account.addresses
-        .map((e) => ReceiptAddress<NETWORKADDRESS>(
-            view: e.address.address,
-            networkAddress: e.networkAddress,
-            type: e.type,
-            account: e))
-        .toList();
-    contacts.removeWhere((e) => accounts.contains(e));
-    existsAccounts
-        .removeWhere((e) => accounts.contains(e) || contacts.contains(e));
-
-    existsAccounts = {...existsAccounts, ...accounts, ...contacts}.toList();
-    final filter = widget.onFilterAccount;
-    if (filter != null) {
-      existsAccounts = existsAccounts
-          .where((e) => filter(e.networkAddress) == null)
-          .toList();
-    }
-    filteredAccounts = existsAccounts.clone();
-    checkAllowAddAddress();
-  }
-
-  ContactCore<NETWORKADDRESS>? newContact;
-
   void rebuildFilterAccounts() {
     if (_address.trim().isEmpty) {
       filteredAccounts = existsAccounts.clone();
@@ -139,9 +109,6 @@ class _SelectRecipientAccountViewState<NETWORKADDRESS>
     _address = v;
     rebuildFilterAccounts();
   }
-
-  bool useRippleTag = false;
-  int? rippleAddressTag;
 
   void onChangeTag(int v) {
     rippleAddressTag = v;
@@ -198,7 +165,7 @@ class _SelectRecipientAccountViewState<NETWORKADDRESS>
         newContact = contact;
       }
     }
-    MethodUtils.after(() async => updateState());
+    // MethodUtils.after(() async => updateState());
   }
 
   String? validatorTag(String? v) {
@@ -240,14 +207,13 @@ class _SelectRecipientAccountViewState<NETWORKADDRESS>
 
   ReceiptAddress<NETWORKADDRESS> _buildReceiptAddress(ContactCore addr) {
     return ReceiptAddress<NETWORKADDRESS>(
-      view: addr.address,
-      type: addr.type,
-      networkAddress: addr.addressObject,
-    );
+        view: addr.address,
+        type: addr.type,
+        networkAddress: addr.addressObject);
   }
 
   void onAddReceipt() {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     ContactCore<NETWORKADDRESS>? addr;
     if (isRippleNetwork) {
       final validate = _validateRipple(_address, rippleAddressTag);
@@ -286,7 +252,38 @@ class _SelectRecipientAccountViewState<NETWORKADDRESS>
     );
   }
 
-  bool get isDebug => kDebugMode;
+  @override
+  void onInitOnce() {
+    super.onInitOnce();
+    existsAccounts = [];
+    final contacts = widget.account.contacts
+        .map((e) => ReceiptAddress<NETWORKADDRESS>(
+            view: e.address,
+            networkAddress: e.addressObject,
+            contact: e as ContactCore<NETWORKADDRESS>,
+            type: e.type))
+        .toList();
+    final accounts = widget.account.addresses
+        .map((e) => ReceiptAddress<NETWORKADDRESS>(
+            view: e.address.address,
+            networkAddress: e.networkAddress,
+            type: e.type,
+            account: e))
+        .toList();
+    contacts.removeWhere((e) => accounts.contains(e));
+    existsAccounts
+        .removeWhere((e) => accounts.contains(e) || contacts.contains(e));
+
+    existsAccounts = {...existsAccounts, ...accounts, ...contacts}.toList();
+    final filter = widget.onFilterAccount;
+    if (filter != null) {
+      existsAccounts = existsAccounts
+          .where((e) => filter(e.networkAddress) == null)
+          .toList();
+    }
+    filteredAccounts = existsAccounts.clone();
+    checkAllowAddAddress();
+  }
 
   @override
   Widget build(BuildContext context) {

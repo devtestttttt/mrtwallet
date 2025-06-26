@@ -44,13 +44,13 @@ final class NoneEncryptedRequestFakeMoneroTx
   Future<MessageArgsOneBytes> getResult({List<int>? encryptedPart}) async {
     final result = await this.result();
     return MessageArgsOneBytes(
-        keyOne:
-            BigintUtils.toBytes(result, length: BigintUtils.orderLen(result)));
+        keyOne: BigintUtils.toBytes(result,
+            length: BigintUtils.bitlengthInBytes(result)));
   }
 
   @override
   BigInt parsResult(MessageArgsOneBytes result) {
-    return BigintUtils.fromBytes(result.keyOne, sign: false);
+    return BigintUtils.fromBytes(result.keyOne);
   }
 
   @override

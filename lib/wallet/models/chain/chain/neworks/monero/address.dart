@@ -110,29 +110,6 @@ final class IMoneroAddress extends ChainAccount<MoneroAddress, TokenCore,
         network: addrDetails.viewKey.network);
   }
 
-  // bool updateUtxos(List<MoneroOutputDetails> utxos) {
-  //   final indexUtxos =
-  //       utxos.where((e) => e.index == addrDetails.index).toList();
-  //   if (indexUtxos.isEmpty) return false;
-  //   _utxos.updateUtxos(indexUtxos);
-  //   // final unspent = indexUtxos.where((e) => e.status.isUnspent);
-  //   // final spent = indexUtxos.where((e) => e.status.isSpent);
-  //   // final allUtxos =
-  //   //     [...this.utxos, ...unspent].where((e) => !spent.contains(e));
-  //   // _utxos = allUtxos.toSet().toImutableList;
-  //   return true;
-  // }
-
-  // void replaceUtxos(List<MoneroOutputDetails> utxos) {
-  //   final indexUtxos = utxos.where((e) => e.index == addrDetails.index);
-  //   // _utxos = indexUtxos.toSet().toImutableList;
-  //   _utxos.replaceUtxos(indexUtxos.toList());
-  // }
-
-  // void _setUtxos(MoneroAddressUtxos utxo) {
-  //   _utxos = MoneroAddressUtxos();
-  // }
-
   @override
   List<int>? get publicKey => addrDetails.viewKey.viewPrivateKey;
 }

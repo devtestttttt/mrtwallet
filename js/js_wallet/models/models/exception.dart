@@ -15,8 +15,8 @@ extension type JSWalletError._(JSAny _) implements JSError {
       String? walletCode,
       String? data,
       String? stack});
-  external String? get stack;
-  external set stack(String? info);
+  // external String? get stack;
+  // external set stack(String? info);
   @JS("toString")
   external set toStr(JSFunction f);
 }

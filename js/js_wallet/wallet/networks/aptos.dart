@@ -1,19 +1,26 @@
 import 'package:blockchain_utils/utils/utils.dart';
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/crypto/models/networks.dart';
-import 'package:on_chain_wallet/wallet/wallet.dart';
-import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
-import 'package:on_chain_wallet/wallet/web3/core/core.dart';
-import 'package:on_chain_wallet/wallet/web3/networks/aptos/aptos.dart';
-import 'package:on_chain_wallet/wallet/web3/networks/networks.dart';
 import 'package:on_chain/on_chain.dart';
+import 'package:on_chain_wallet/wallet/web3/web3.dart';
 import '../../js_wallet.dart';
 import '../../models/models/networks/aptos.dart';
 import '../../models/models/networks/wallet_standard.dart';
 import '../core/network_handler.dart';
 
-class AptosWeb3State extends WalletStandardChainWeb3State<AptosAddress,
+class AptosWeb3JSStateAddress extends Web3JSStateAddress<AptosAddress,
     Web3AptosChainAccount, JSAptosWalletAccount, Web3AptosChainIdnetifier> {
+  const AptosWeb3JSStateAddress(
+      {required super.chainaccount,
+      required super.jsAccount,
+      required super.networkIdentifier});
+}
+
+class AptosWeb3JSStateAccount extends Web3JSStateAccount<
+    AptosAddress,
+    Web3AptosChainAccount,
+    JSAptosWalletAccount,
+    Web3AptosChainIdnetifier,
+    AptosWeb3JSStateAddress> {
   JSAptosNetworkInfo get currentChainInfo {
     final chain = defaultChain;
     if (chain == null) {
@@ -23,69 +30,76 @@ class AptosWeb3State extends WalletStandardChainWeb3State<AptosAddress,
         chainId: chain.chainId, name: chain.aptosChain.name);
   }
 
-  AptosWeb3State._({
+  AptosWeb3JSStateAccount._({
     required super.state,
     required super.chains,
     required super.accounts,
     super.defaultAccount,
     super.defaultChain,
   });
-  factory AptosWeb3State.init(
-      {JSNetworkState state = JSNetworkState.disconnect}) {
-    return AptosWeb3State._(accounts: const [], state: state, chains: []);
+  factory AptosWeb3JSStateAccount.init(
+      {Web3NetworkState state = Web3NetworkState.disconnect}) {
+    return AptosWeb3JSStateAccount._(
+        accounts: const [], state: state, chains: []);
   }
-  factory AptosWeb3State(Web3AptosChainAuthenticated? authenticated) {
+  factory AptosWeb3JSStateAccount(Web3AptosChainAuthenticated? authenticated) {
     if (authenticated == null) {
-      return AptosWeb3State.init(state: JSNetworkState.block);
+      return AptosWeb3JSStateAccount.init(state: Web3NetworkState.block);
     }
-    final accounts = authenticated.accounts
-        .map((e) => JSWalletStateAccount<AptosAddress, Web3AptosChainAccount,
-                JSAptosWalletAccount>(
-            chainaccount: e,
-            jsAccount: JSAptosWalletAccount.setup(
-                address: e.addressStr,
-                signingScheme: e.signingScheme,
-                publicKey: JSAptosPublicKey.setup(
-                    publicKey: e.publicKey, publicKeyHex: e.publicKeyHex),
-                chain: e.network.identifier),
-            identifier: e.network.identifier))
-        .toList();
-    final defaultAddress = authenticated.accounts.firstWhereOrNull(
-        (e) => e.id == authenticated.currentNetwork.id && e.defaultAddress);
-    return AptosWeb3State._(
-        accounts: accounts,
-        state: JSNetworkState.init,
+    final networks = {for (final i in authenticated.networks) i.id: i};
+    final accounts = authenticated.accounts.map((e) {
+      final network = networks[e.id];
+      if (network == null) return null;
+      return AptosWeb3JSStateAddress(
+          chainaccount: e,
+          jsAccount: JSAptosWalletAccount.setup(
+              address: e.addressStr,
+              signingScheme: e.signingScheme,
+              publicKey: JSAptosPublicKey.setup(
+                  publicKey: e.publicKey, publicKeyHex: e.publicKeyHex),
+              chain: network.wsIdentifier),
+          networkIdentifier: network);
+    }).toList();
+    final defaultAddress = authenticated.accounts.firstWhereOrNull((e) =>
+        e.defaultAddress &&
+        networks.containsKey(e.id) &&
+        e.id == authenticated.currentNetwork.id);
+    return AptosWeb3JSStateAccount._(
+        accounts: accounts.whereType<AptosWeb3JSStateAddress>().toList(),
+        state: Web3NetworkState.init,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null
             ? null
-            : JSWalletStateAccount<AptosAddress, Web3AptosChainAccount,
-                JSAptosWalletAccount>(
+            : AptosWeb3JSStateAddress(
                 chainaccount: defaultAddress,
-                identifier: authenticated.currentNetwork.identifier,
+                networkIdentifier: networks[defaultAddress.id]!,
                 jsAccount: JSAptosWalletAccount.setup(
                     signingScheme: defaultAddress.signingScheme,
                     publicKey: JSAptosPublicKey.setup(
                         publicKey: defaultAddress.publicKey,
                         publicKeyHex: defaultAddress.publicKeyHex),
                     address: defaultAddress.addressStr,
-                    chain: defaultAddress.network.identifier),
+                    chain: networks[defaultAddress.id]!.wsIdentifier),
               ));
   }
 }
 
-class JSAptosHandler extends JSWalletStandardNetworkHandler<
-    AptosAddress,
-    Web3AptosChainAccount,
-    JSAptosWalletAccount,
-    Web3AptosChainIdnetifier,
-    AptosWeb3State> {
-  JSAptosHandler(
+class AptosWeb3JSStateHandler extends Web3JSStateHandler<
+        AptosAddress,
+        Web3AptosChainAccount,
+        JSAptosWalletAccount,
+        Web3AptosChainIdnetifier,
+        AptosWeb3JSStateAccount>
+    with
+        AptosWeb3StateHandler<JSAptosWalletAccount, AptosWeb3JSStateAccount,
+            WalletMessageResponse, Web3JsClientRequest, JSWalletNetworkEvent> {
+  AptosWeb3JSStateHandler(
       {required super.sendMessageToClient, required super.sendInternalMessage});
   @override
   JSWalletNetworkEvent createStateEvent(
-      {required AptosWeb3State previousState,
-      required AptosWeb3State currentState,
+      {required AptosWeb3JSStateAccount previousState,
+      required AptosWeb3JSStateAccount currentState,
       required bool networkAccountsChanged,
       required bool networkChanged,
       required bool networksChanged,
@@ -112,138 +126,55 @@ class JSAptosHandler extends JSWalletStandardNetworkHandler<
   }
 
   @override
-  Future<Web3MessageCore> request(PageMessageRequest params) async {
+  Future<Web3MessageCore> request(Web3JsClientRequest params,
+      {Web3AptosChainIdnetifier? network}) async {
     final state = await getState();
-    final method = Web3AptosRequestMethods.fromName(params.method);
+    final method = Web3AptosRequestMethods.fromName(params.request.method);
     switch (method) {
       case Web3AptosRequestMethods.requestAccounts:
+        return onConnect_(params);
+      case Web3AptosRequestMethods.getNetwork:
         if (state.hasChainAccount) {
           return createResponse();
         }
-        return connect();
-      case Web3AptosRequestMethods.getNetwork:
-        if (state.hasChainAccount) {
-          return createResponse(state.currentChainInfo);
-        }
         throw Web3RequestExceptionConst.missingPermission;
       case Web3AptosRequestMethods.signTransaction:
-        return _parseTransaction(params: params, state: state, method: method!);
+        return toSignTransactionRequest(
+            params: params, state: state, method: method!);
       case Web3AptosRequestMethods.signMessage:
-        final r = _signMessage(params: params, state: state);
-        return r;
+        return toSignInRequest(params: params, state: state, method: method!);
       case Web3AptosRequestMethods.switchNetwork:
-        return _parseSwitchChain(params: params, state: state);
+        return toSwitchChainRequest(
+            params: params, state: state, method: method!);
       default:
-        throw Web3RequestExceptionConst.methodDoesNotExist;
+        throw Web3RequestExceptionConst.methodDoesNotSupport;
     }
-  }
-
-  Web3AptosSignMessage _signMessage(
-      {required PageMessageRequest params, required AptosWeb3State state}) {
-    final account = state.defaultNetworkChainAccountOrThrow;
-    try {
-      final JSAptosSignMessageParams? aptosSignMessage =
-          params.elementAs<JSAptosSignMessageParams>(0,
-              peroperties: JSAptosSignMessageParams.requiredKey);
-      if (aptosSignMessage == null) {
-        throw Web3AptosExceptionConstant.invalidAptosSigningMessage;
-      }
-      return Web3AptosSignMessage.aptos(
-          account: account,
-          message: aptosSignMessage.message,
-          nonce: aptosSignMessage.nonce,
-          address: aptosSignMessage.address,
-          chainId: aptosSignMessage.chainId,
-          application: aptosSignMessage.application);
-    } on Web3RequestException {
-      rethrow;
-    } catch (_) {
-      throw Web3AptosExceptionConstant.invalidAptosSigningMessage;
-    }
-  }
-
-  Web3AptosSendTransaction _parseTransaction(
-      {required PageMessageRequest params,
-      required AptosWeb3State state,
-      required Web3AptosRequestMethods method}) {
-    AptosRawTransaction transaction;
-    AptosAddress? feePayer;
-    List<AptosAddress>? secondarySignerAddresses;
-    try {
-      final JSAptosSignTransactionRequest? tx =
-          params.getElementAt<JSAptosSignTransactionRequest>(0);
-      if (tx!.isMultiAgent) {
-        final data =
-            AptosMultiAgentTransaction.deserialize(tx.data.toListInt());
-        transaction = data.rawTransaction;
-        feePayer = data.feePayerAddress;
-        secondarySignerAddresses = data.secondarySignerAddresses;
-      } else {
-        final data = AptosSimpleTransaction.deserialize(tx.data.toListInt());
-        transaction = data.rawTransaction;
-        feePayer = data.feePayerAddress;
-      }
-      final chainType = AptosChainType.fromValue(transaction.chainId);
-      if (chainType != state.defaultChain?.aptosChain) {
-        throw Web3AptosExceptionConstant.invalidTransactionChainId;
-      }
-      return Web3AptosSendTransaction(
-          transaction: transaction,
-          account: state.defaultNetworkChainAccountOrThrow,
-          feePayer: feePayer,
-          socondarySignerAddresses: secondarySignerAddresses,
-          method: method);
-    } on Web3RequestException catch (_) {
-      rethrow;
-    } catch (_) {}
-    throw Web3AptosExceptionConstant.invalidTransaction;
-  }
-
-  Future<Web3MessageCore> _parseSwitchChain(
-      {required PageMessageRequest params,
-      required AptosWeb3State state}) async {
-    if (!state.hasChainAccount) {
-      throw Web3RequestExceptionConst.missingPermission;
-    }
-    try {
-      final JSAptosNetworkInfo? networkInfo =
-          params.elementAs<JSAptosNetworkInfo>(0);
-      if (networkInfo != null) {
-        final chain = state.chains.firstWhere(
-            (e) =>
-                e.aptosChain == AptosChainType.fromValue(networkInfo.chainId),
-            orElse: () => throw Web3RequestExceptionConst.networkDoesNotExists);
-        if (chain.aptosChain == state.defaultChain?.aptosChain) {
-          return createResponse(JSAptosSwitchChainResponse.success());
-        }
-        return switchChain(chain.id);
-      }
-    } on Web3RequestException {
-      rethrow;
-    } catch (_) {}
-    throw Web3AptosExceptionConstant.invalidChainId;
   }
 
   @override
-  void onRequestDone(PageMessageRequest message) {}
-
-  @override
-  NetworkType get networkType => NetworkType.aptos;
+  void onRequestDone(Web3JsClientRequest message) {}
 
   @override
   Future<WalletMessageResponse> finalizeWalletResponse(
-      {required PageMessageRequest message,
+      {required Web3JsClientRequest message,
       required Web3RequestParams? params,
       required Web3WalletResponseMessage response}) async {
     final state = await getState();
-    final method = Web3AptosRequestMethods.fromName(message.method);
+    final method = Web3AptosRequestMethods.fromName(message.request.method);
     switch (method) {
       case Web3AptosRequestMethods.requestAccounts:
         if (state.hasChainAccount) {
-          final message = JSAptosWalletStandardUserResponse.approved(
-              state.defaultNetworkChainJsAccountOrThrow);
-          return WalletMessageResponse.success(message);
+          final chainId = message.requestParams.elementAtOrNull(0)?.toString();
+          final chain = chainId == null
+              ? null
+              : state.chains.firstWhereOrNull((e) => e.isChain(chainId));
+          if (chain == null || chain == state.defaultChain) {
+            return WalletMessageResponse.success(
+                JSAptosWalletStandardUserResponse.approved(
+                    state.defaultAccountOrError));
+          }
         }
+
         return WalletMessageResponse.success(
             JSAptosWalletStandardUserResponse.rejected());
       case Web3AptosRequestMethods.signTransaction:
@@ -255,8 +186,8 @@ class JSAptosHandler extends JSWalletStandardNetworkHandler<
                     BytesUtils.toHexString(transactionResponse, prefix: "0x")));
         return WalletMessageResponse.success(message);
       case Web3AptosRequestMethods.signMessage:
-        final responseMessage =
-            Web3AptosSignMessageResponse.fromJson(response.resultAsMap());
+        final responseMessage = Web3AptosSignMessageResponse.deserialize(
+            bytes: response.resultAsList<int>());
         final signedMessage = JSAptosSignMessageResponse.setup(
             signatureBytes: responseMessage.signature,
             signatureHex:
@@ -270,9 +201,20 @@ class JSAptosHandler extends JSWalletStandardNetworkHandler<
             chainId: responseMessage.chainId);
         return WalletMessageResponse.success(
             JSAptosWalletStandardUserResponse.approved(signedMessage));
+      case Web3AptosRequestMethods.getNetwork:
+        if (state.hasChainAccount) {
+          return WalletMessageResponse.success(state.currentChainInfo);
+        }
+        throw Web3RequestExceptionConst.missingPermission;
       case Web3AptosRequestMethods.switchNetwork:
-        return WalletMessageResponse.success(
-            JSAptosSwitchChainResponse.success());
+        final network = parseSwitchChainRequest(
+            params: message, state: state, method: method!);
+        if (network == state.defaultChain) {
+          return WalletMessageResponse.success(
+              JSAptosSwitchChainResponse.success());
+        }
+        return WalletMessageResponse.success(JSAptosSwitchChainResponse.fail());
+
       default:
         break;
     }
@@ -282,14 +224,17 @@ class JSAptosHandler extends JSWalletStandardNetworkHandler<
 
   @override
   Future<WalletMessageResponse> finalizeError(
-      {required PageMessageRequest message,
+      {required Web3JsClientRequest message,
       required Web3RequestParams? params,
       required Web3ExceptionMessage error}) async {
-    final method = Web3AptosRequestMethods.fromName(message.method);
-    if (error.isAuthenticatedError) {
+    final method = Web3AptosRequestMethods.fromName(message.request.method);
+    bool isAuthenticatedError =
+        error.code == Web3RequestExceptionConst.missingPermission.code ||
+            error.code == Web3RequestExceptionConst.bannedHost.code ||
+            error.code == Web3RequestExceptionConst.rejectedByUser.code;
+    if (isAuthenticatedError) {
       switch (method) {
         case Web3AptosRequestMethods.requestAccounts:
-        case Web3AptosRequestMethods.sendTransaction:
         case Web3AptosRequestMethods.signTransaction:
         case Web3AptosRequestMethods.signMessage:
           return WalletMessageResponse.success(
@@ -308,16 +253,16 @@ class JSAptosHandler extends JSWalletStandardNetworkHandler<
   }
 
   @override
-  AptosWeb3State createState(Web3APPData? authenticated) {
-    if (authenticated == null) return AptosWeb3State.init();
-    return AptosWeb3State(authenticated.getAuth(networkType));
+  AptosWeb3JSStateAccount createState(Web3APPData? authenticated) {
+    if (authenticated == null) return AptosWeb3JSStateAccount.init();
+    return AptosWeb3JSStateAccount(authenticated.getAuth(networkType));
   }
 
   @override
-  Future<JSWalletNetworkEvent?> createEvent(JSEventType event) async {
+  Future<JSWalletNetworkEvent?> createEvent(Web3NetworkEvent event) async {
     final state = await getState();
     switch (event) {
-      case JSEventType.chainChanged:
+      case Web3NetworkEvent.chainChanged:
         final event = JSWalletNetworkEvent(
             events: [JSNetworkEventType.defaultChainChanged]);
         final chain = state.defaultChain;

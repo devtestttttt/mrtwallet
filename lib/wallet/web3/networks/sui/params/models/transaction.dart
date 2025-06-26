@@ -1,6 +1,7 @@
 import 'package:blockchain_utils/blockchain_utils.dart';
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
+import 'package:on_chain_wallet/crypto/models/networks.dart';
+import 'package:on_chain_wallet/wallet/wallet.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/sui/constant/constants/exception.dart';
@@ -204,7 +205,7 @@ class Web3SuiTransactionImmOrOwnedObject extends Web3SuiTransactionObjectArg {
             key: "objectId",
             method: Web3SuiRequestMethods.signTransaction,
             json: json,
-            addressName: "objectId"),
+            network: NetworkType.sui.name),
         version: Web3ValidatorUtils.parseBigInt(
             key: "version",
             method: Web3SuiRequestMethods.signTransaction,
@@ -260,7 +261,7 @@ class Web3SuiTransactionSharedObject extends Web3SuiTransactionObjectArg {
           key: "objectId",
           method: Web3SuiRequestMethods.signTransaction,
           json: json,
-          addressName: "objectId"),
+          network: NetworkType.sui.name),
       initialSharedVersion: Web3ValidatorUtils.parseBigInt(
           key: "initialSharedVersion",
           method: Web3SuiRequestMethods.signTransaction,
@@ -308,7 +309,7 @@ class Web3SuiTransactionReceiving extends Web3SuiTransactionObjectArg {
           key: "objectId",
           method: Web3SuiRequestMethods.signTransaction,
           json: json,
-          addressName: "objectId"),
+          network: NetworkType.sui.name),
       version: Web3ValidatorUtils.parseBigInt(
           key: "version",
           method: Web3SuiRequestMethods.signTransaction,
@@ -421,7 +422,7 @@ class Web3SuiTransactionUnresolvedObject extends Web3SuiTransactionCallArg {
     return Web3SuiTransactionUnresolvedObject(
       objectId: Web3ValidatorUtils.parseAddress(
           onParse: (address) => SuiAddress(address),
-          addressName: "objectId",
+          network: NetworkType.sui.name,
           key: "objectId",
           method: Web3SuiRequestMethods.signTransaction,
           json: json),
@@ -664,7 +665,7 @@ class Web3SuiTransactionCommandMoveCall extends Web3SuiTransactionCommand {
           onParse: (address) => SuiAddress(address),
           method: Web3SuiRequestMethods.signTransaction,
           json: json,
-          addressName: "Package"),
+          network: NetworkType.sui.name),
       module: Web3ValidatorUtils.parseString(
           key: "module",
           method: Web3SuiRequestMethods.signTransaction,
@@ -855,6 +856,7 @@ class Web3SuiTransactionDataV2 {
           onParse: (address) => SuiAddress(address),
           key: "sender",
           method: Web3SuiRequestMethods.signTransaction,
+          network: NetworkType.sui.name,
           json: json),
       expiration: Web3ValidatorUtils.parse<Web3SuiTransactionExpiration?,
           Map<String, dynamic>>(
@@ -902,6 +904,7 @@ class Web3SuiTransactionDataV2 {
       sender: Web3ValidatorUtils.parseAddress(
           onParse: (address) => SuiAddress(address),
           key: "sender",
+          network: NetworkType.sui.name,
           method: Web3SuiRequestMethods.signTransaction,
           json: json),
       expiration: Web3ValidatorUtils.parse<Web3SuiTransactionExpiration?,
@@ -1057,6 +1060,7 @@ class Web3SuiTransactionGasData {
       owner: Web3ValidatorUtils.parseAddress(
           onParse: (address) => SuiAddress(address),
           key: "owner",
+          network: NetworkType.sui.name,
           method: Web3SuiRequestMethods.signTransaction,
           json: json),
       payment: Web3ValidatorUtils.parseList<List<Map<String, dynamic>>?,
@@ -1384,11 +1388,12 @@ class Web3SuiTransactionCommandUpgrade extends Web3SuiTransactionCommand {
           .map((e) => SuiAddress(e))
           .toList(),
       package: Web3ValidatorUtils.parseAddress(
-          key: "package",
-          onParse: (address) => SuiAddress(address),
-          method: Web3SuiRequestMethods.signTransaction,
-          json: json,
-          addressName: "package"),
+        key: "package",
+        onParse: (address) => SuiAddress(address),
+        method: Web3SuiRequestMethods.signTransaction,
+        json: json,
+        network: NetworkType.sui.name,
+      ),
       ticket: Web3SuiTransactionArgument.fromJson(Web3ValidatorUtils.parseMap(
           key: "ticket",
           method: Web3SuiRequestMethods.signTransaction,
@@ -1420,11 +1425,12 @@ class Web3SuiTransactionCommandUpgrade extends Web3SuiTransactionCommand {
           .map((e) => SuiAddress(e))
           .toList(),
       package: Web3ValidatorUtils.parseAddress(
-          key: "packageId",
-          onParse: (address) => SuiAddress(address),
-          method: Web3SuiRequestMethods.signTransaction,
-          json: json,
-          addressName: "package"),
+        key: "packageId",
+        onParse: (address) => SuiAddress(address),
+        method: Web3SuiRequestMethods.signTransaction,
+        json: json,
+        network: NetworkType.sui.name,
+      ),
       ticket: Web3SuiTransactionArgument.fromJsonV1(Web3ValidatorUtils.parseMap(
           key: "ticket",
           method: Web3SuiRequestMethods.signTransaction,
@@ -1541,24 +1547,59 @@ abstract class Web3SuiTransactionCommand {
   SuiCommand toTrnsactionCommand();
 }
 
-class Web3SuiSignTransactionResponse {
-  final String bytes;
-  final String signature;
+abstract class Web3SuiSignOrExcuteTransactionResponse with CborSerializable {
+  Map<String, dynamic> toWalletConnectJson();
+}
+
+class Web3SuiSignTransactionResponse
+    implements Web3SuiSignOrExcuteTransactionResponse {
+  final List<int> transactionBytes;
+  final List<int> signature;
+  String get signatureAsBase64 =>
+      StringUtils.decode(signature, type: StringEncoding.base64);
+  String get transactionAsBase64 =>
+      StringUtils.decode(transactionBytes, type: StringEncoding.base64);
   final String digest;
-  const Web3SuiSignTransactionResponse(
-      {required this.bytes, required this.signature, required this.digest});
-  factory Web3SuiSignTransactionResponse.fromJson(Map<String, dynamic> json) {
+  Web3SuiSignTransactionResponse(
+      {required List<int> transactionBytes,
+      required List<int> signature,
+      required this.digest})
+      : transactionBytes = transactionBytes.asImmutableBytes,
+        signature = signature.asImmutableBytes;
+  factory Web3SuiSignTransactionResponse.deserialize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: object,
+        hex: hex,
+        tags: CborTagsConst.defaultTag);
     return Web3SuiSignTransactionResponse(
-        bytes: json["bytes"],
-        signature: json["signature"],
-        digest: json["digest"]);
+        transactionBytes: values.elementAs(0),
+        signature: values.elementAs(1),
+        digest: values.elementAs(2));
   }
-  Map<String, dynamic> toJson() {
-    return {"bytes": bytes, "signature": signature, "digest": digest};
+  @override
+  Map<String, dynamic> toWalletConnectJson() {
+    return {
+      "transactionBytes": transactionAsBase64,
+      "signature": signatureAsBase64
+    };
+  }
+
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([
+          CborBytesValue(transactionBytes),
+          CborBytesValue(signature),
+          digest
+        ]),
+        CborTagsConst.defaultTag);
   }
 }
 
-class Web3SuiSignAndExecuteTransactionResponse {
+class Web3SuiSignAndExecuteTransactionResponse
+    implements Web3SuiSignOrExcuteTransactionResponse {
   final String digest;
   final String effects;
   final Map<String, dynamic> excuteResponse;
@@ -1566,24 +1607,44 @@ class Web3SuiSignAndExecuteTransactionResponse {
       {required this.digest,
       required this.effects,
       required this.excuteResponse});
-  factory Web3SuiSignAndExecuteTransactionResponse.fromJson(
-      Map<String, dynamic> json) {
+
+  factory Web3SuiSignAndExecuteTransactionResponse.deserialize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: object,
+        hex: hex,
+        tags: CborTagsConst.defaultTag);
     return Web3SuiSignAndExecuteTransactionResponse(
-        digest: json["digest"],
-        effects: json["effects"],
-        excuteResponse: json["excuteResponse"]);
+        digest: values.elementAs(0),
+        effects: values.elementAs(1),
+        excuteResponse:
+            StringUtils.decodeJson<Map<String, dynamic>>(values.elementAs(2)));
   }
-  Map<String, dynamic> toJson() {
+
+  @override
+  Map<String, dynamic> toWalletConnectJson() {
     return {
       "digest": digest,
       "effects": effects,
       "excuteResponse": excuteResponse
     };
   }
+
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([
+          digest,
+          effects,
+          CborBytesValue(StringUtils.encodeJson(excuteResponse)),
+        ]),
+        CborTagsConst.defaultTag);
+  }
 }
 
 class Web3SuiSignOrExecuteTransaction
-    extends Web3SuiRequestParam<Map<String, dynamic>> {
+    extends Web3SuiRequestParam<Web3SuiSignOrExcuteTransactionResponse> {
   final SuiApiTransactionBlockResponseOptions? executeOptions;
   final SuiApiExecuteTransactionRequestType? executeType;
   final Web3SuiTransactionDataV2 transaction;
@@ -1665,14 +1726,15 @@ class Web3SuiSignOrExecuteTransaction
   }
 
   @override
-  Web3SuiRequest<Map<String, dynamic>, Web3SuiSignOrExecuteTransaction>
+  Web3SuiRequest<Web3SuiSignOrExcuteTransactionResponse,
+          Web3SuiSignOrExecuteTransaction>
       toRequest(
           {required Web3RequestInformation request,
           required Web3RequestAuthentication authenticated,
           required List<Chain> chains}) {
     final chain = super.findRequestChain(
         request: request, authenticated: authenticated, chains: chains);
-    return Web3SuiRequest<Map<String, dynamic>,
+    return Web3SuiRequest<Web3SuiSignOrExcuteTransactionResponse,
         Web3SuiSignOrExecuteTransaction>(
       params: this,
       authenticated: authenticated,
@@ -1684,4 +1746,9 @@ class Web3SuiSignOrExecuteTransaction
 
   @override
   List<Web3SuiChainAccount> get requiredAccounts => [accessAccount];
+
+  @override
+  Object? toJsWalletResponse(Web3SuiSignOrExcuteTransactionResponse response) {
+    return response.toCbor().encode();
+  }
 }

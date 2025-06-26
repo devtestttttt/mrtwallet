@@ -24,8 +24,8 @@ class EthereumClient
   @override
   final WalletNetwork? network;
   @override
-  BaseServiceProtocol<EthereumAPIProvider> get service =>
-      provider.rpc as BaseServiceProtocol<EthereumAPIProvider>;
+  NetworkServiceProtocol<EthereumAPIProvider> get service =>
+      provider.rpc as NetworkServiceProtocol<EthereumAPIProvider>;
 
   Future<FeeHistorical> getHistoricalFee() async {
     final historical = await provider.request(EthereumRequestGetFeeHistory(
@@ -75,6 +75,11 @@ class EthereumClient
     final code = await provider
         .request(EthereumRequestGetCode(address: address.toHex()));
     return code != null;
+  }
+
+  Future<dynamic> dynamicCall({required String method, dynamic params}) async {
+    return await provider.requestDynamic(
+        EthereumRequestDynamic(methodName: method, params: params));
   }
 
   Future<Token?> getErc20Details(SolidityAddress contractAddress) async {
@@ -331,6 +336,10 @@ class EthereumClient
     final receipt = await provider
         .request(EthereumRequestGetTransactionReceipt(transactionHash: txId));
     if (receipt == null) return WalletTransactionStatus.unknown;
+    final status = receipt.status;
+    if (status != null && !status) {
+      return WalletTransactionStatus.failed;
+    }
     return WalletTransactionStatus.block;
   }
 

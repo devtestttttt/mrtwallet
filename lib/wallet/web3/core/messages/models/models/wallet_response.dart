@@ -62,6 +62,17 @@ class Web3WalletResponseMessage extends Web3MessageCore {
     }
   }
 
+  List<List<int>> resultAsListOfBytes({int? length}) {
+    try {
+      final list =
+          (result as List).map((e) => (e as List).cast<int>()).toList();
+      if (length == null) return list;
+      return list.sublist(0, length);
+    } catch (e) {
+      throw Web3RequestExceptionConst.internalError;
+    }
+  }
+
   Map<String, dynamic> resultAsMap() {
     try {
       return (result as Map).cast<String, dynamic>();
@@ -73,6 +84,14 @@ class Web3WalletResponseMessage extends Web3MessageCore {
   String resultAsString() {
     try {
       return result as String;
+    } catch (e) {
+      throw Web3RequestExceptionConst.internalError;
+    }
+  }
+
+  T resultAs<T>() {
+    try {
+      return result as T;
     } catch (e) {
       throw Web3RequestExceptionConst.internalError;
     }

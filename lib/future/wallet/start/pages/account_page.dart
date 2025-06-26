@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/wallet/controller/controller.dart';
+import 'package:on_chain_wallet/future/wallet/controller/tabs/tabs.dart';
 import 'package:on_chain_wallet/future/wallet/global/global.dart';
 import 'package:on_chain_wallet/future/wallet/network/aptos/account/account.dart';
 import 'package:on_chain_wallet/future/wallet/network/bch/account/account.dart';
@@ -16,7 +17,10 @@ import 'package:on_chain_wallet/future/wallet/network/substrate/substrate.dart';
 import 'package:on_chain_wallet/future/wallet/network/sui/account/account.dart';
 import 'package:on_chain_wallet/future/wallet/network/ton/account/account.dart';
 import 'package:on_chain_wallet/future/wallet/network/tron/account/account.dart';
+import 'package:on_chain_wallet/future/wallet/start/pages/drawer_view.dart';
+import 'package:on_chain_wallet/future/wallet/start/pages/platform_widgets/widgets.dart';
 import 'package:on_chain_wallet/future/wallet/swap/pages/pages/swap.dart';
+import 'package:on_chain_wallet/future/wallet/wc/widgets/icon.dart';
 import 'package:on_chain_wallet/future/wallet/webview/pages/web_view.dart';
 import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
 import 'package:on_chain_wallet/wallet/wallet.dart';
@@ -34,35 +38,62 @@ class NetworkAccountPageView extends StatelessWidget {
   final Chain account;
   @override
   Widget build(BuildContext context) {
+    final bool isReady = wallet.wallet.homePageStatus.isReady;
+    final bool isOpen = wallet.wallet.isOpen;
     return ChainStreamBuilder(
         builder: (context, chain, lastNotify) {
           return Shimmer(
               onActive: (enable, context) => Scaffold(
-                  floatingActionButton: APPAnimated(
-                      isActive: wallet.walletPage.inWallet,
-                      onActive: (context) => FloatingActionButton(
-                          shape: CircleBorder(),
-                          backgroundColor: context.colors.transparent,
-                          onPressed: () async {
-                            await context
-                                .openDialogPage("switch_network".tr,
-                                    fullWidget: (context) => SwitchNetworkView(
-                                        selectedNetwork: account.network))
-                                .then(
-                              (value) {
-                                if (value == null) return;
-                                if (value is int) {
-                                  wallet.wallet.switchNetwork(value);
-                                } else {
-                                  context
-                                      .mybeTo(PageRouter.importNetwork(value));
-                                }
-                              },
+                  drawer: Drawer(child: DrawerView()),
+                  appBar: AppBar(
+                    centerTitle: false,
+                    toolbarHeight: isReady ? kToolbarHeight : 0,
+                    actions: [
+                      APPAnimatedSwitcher<WalletPage>(
+                          enable: wallet.walletPage,
+                          widgets: {
+                            WalletPage.swap: (context) =>
+                                SwitchNetworkIcon(account: account),
+                            WalletPage.webview: (context) =>
+                                SwitchNetworkIcon(account: account),
+                          }),
+                      WalletConnectIcon(),
+                      appbarWidgets(true),
+                    ],
+                    title: ConditionalWidget(
+                        onActive: (context) {
+                          if (isOpen) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                OneLineTextWidget(
+                                    wallet.wallet.currentChain.network
+                                        .networkName,
+                                    style: context.textTheme.titleMedium),
+                                if (wallet.wallet.currentChain.network.coinParam
+                                    .isTestNet)
+                                  ToolTipView(
+                                    message: "testnet_price_desc".tr,
+                                    child: Text("testnet".tr,
+                                        style: context.textTheme.labelSmall
+                                            ?.copyWith(
+                                                color: context.colors.error)),
+                                  ),
+                              ],
                             );
-                          },
-                          child: CircleTokenImageView(account.network.token,
-                              radius: APPConst.circleRadius25)),
-                      onDeactive: (context) => null),
+                          }
+                          return Text(wallet.wallet.wallet.name);
+                        },
+                        enable: isReady),
+                  ),
+                  floatingActionButton: APPAnimatedSwitcher<
+                      WalletPage>(enable: wallet.walletPage, widgets: {
+                    WalletPage.webview: (context) =>
+                        WebViewFloatingActionButton(wallet.webviewContoller),
+                    WalletPage.wallet: (context) =>
+                        WalletPageFloatingActionButton(
+                            account: account, wallet: wallet),
+                  }),
                   bottomNavigationBar: ConditionalWidget(
                     enable: wallet.multipleTab,
                     onActive: (context) => BottomNavigationBar(
@@ -175,5 +206,37 @@ class _AccountPageView extends StatelessWidget {
         return const TabBarView(
             physics: WidgetConstant.noScrollPhysics, children: []);
     }
+  }
+}
+
+class WalletPageFloatingActionButton extends StatelessWidget {
+  final WalletProvider wallet;
+  final Chain account;
+  const WalletPageFloatingActionButton(
+      {required this.wallet, required this.account, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+        shape: CircleBorder(),
+        backgroundColor: context.colors.transparent,
+        onPressed: () async {
+          await context
+              .openDialogPage("switch_network".tr,
+                  fullWidget: (context) =>
+                      SwitchNetworkView(selectedNetwork: account.network))
+              .then(
+            (value) {
+              if (value == null) return;
+              if (value is int) {
+                wallet.wallet.switchNetwork(value);
+              } else {
+                context.mybeTo(PageRouter.importNetwork(value));
+              }
+            },
+          );
+        },
+        child: CircleTokenImageView(account.network.token,
+            radius: APPConst.circleRadius25));
   }
 }

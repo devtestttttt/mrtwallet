@@ -14,6 +14,7 @@ class EthereumWeb3FieldsView extends StatelessWidget {
     final wallet = context.watch<WalletProvider>(StateConst.main);
     switch (request.params.method) {
       case Web3EthereumRequestMethods.persoalSign:
+      case Web3EthereumRequestMethods.ethSign:
         return EthereumWeb3GlobalFieldsView<String, Web3EthreumPersonalSign>(
           request:
               request as Web3EthereumRequest<String, Web3EthreumPersonalSign>,

@@ -186,9 +186,6 @@ class _MoneroSyncOptionsViewState
         httpNodeUri: url.url,
         auth: url.auth);
     final client = MoneroWalletClient(provider, account.network);
-    // final r = await client.accountInfos();
-    // print("r $r");
-    // return;
     progressKey.progressText("monero_fetching_Wallet_addresses".tr);
 
     final walletAddresses =
@@ -299,7 +296,7 @@ class _MoneroSyncOptionsViewState
   }
 
   Future<void> updateSyncBlockOptions() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     progressKey.progressText("submiting_sync_process".tr);
     final moneroChains = wallet.wallet.getChains<MoneroChain>();
     if (account.syncChain != syncChain) {
@@ -320,7 +317,7 @@ class _MoneroSyncOptionsViewState
   }
 
   void syncTransactionIds() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     final txes = txIdsStateKey.currentState?.getValue();
     final txIds = StrUtils.separateBySpace(txes);
     if (txIds.isEmpty) return;

@@ -55,6 +55,7 @@ class _BitcoinWeb3PermissionViewState extends State<BitcoinWeb3PermissionView>
         addAccount: addAccount,
         onChangeChain: onChangeChain,
         onChangeDefaultAccount: onChangeDefaultPermission,
-        activities: activities);
+        activities: activities,
+        menuItems: menuItems);
   }
 }

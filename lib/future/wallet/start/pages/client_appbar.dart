@@ -44,7 +44,9 @@ class NetworkClientConnectionSliverHeaderDelegate extends StatelessWidget {
         true: (context) => SliverAppBar(
               pinned: true,
               centerTitle: false,
+              actions: [],
               toolbarHeight: appbarStatus.appbarHeight,
+              automaticallyImplyLeading: false,
               flexibleSpace: Material(
                 elevation: 25,
                 color: context.colors.transparent,

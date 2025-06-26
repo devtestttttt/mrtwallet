@@ -17,13 +17,12 @@ abstract class WalletCore extends _WalletCore with WalletsManager {
 
   Chain get currentChain => _controller._appChains.chain;
   WalletNetwork get network => _controller.network;
-  WalletNetwork? networkById(int id) =>
-      _controller._appChains._networks[id]?.network;
   HDWallet get wallet => _controller._wallet;
-  List<HDWallet> get wallets => _wallets._wallets.values.toList()
+  List<HDWallet> get wallets => _wallets.wallets.values.toList()
     ..sort((a, b) => b.created.compareTo(a.created));
   String? get defaultWalletId => _wallets.defaultWallet;
-  final _lockWeb3 = SynchronizedLock();
+  Web3WalletConnectHandler get walletConnect =>
+      _controller.walletConnectHandler;
 
   int? get reminingWalletTime => _timeout.remining;
 
@@ -51,7 +50,7 @@ abstract class WalletCore extends _WalletCore with WalletsManager {
           hdWallet: backup.wallet,
           password: password,
           walletInfos: walletInfos,
-          chains: backup.chains);
+          backup: backup);
     }, conditionStatus: true, progress: true);
   }
 
@@ -59,31 +58,29 @@ abstract class WalletCore extends _WalletCore with WalletsManager {
       Web3RequestApplicationInformation request) async {
     final result = await _callSynchronized(() async {
       return await _controller._web3Request(request);
-    }, conditionStatus: true, lock: _lockWeb3);
+    }, conditionStatus: true, lockId: LockId.two);
     return result;
+  }
+
+  Future<MethodResult<List<Web3DappInfo>>> getAllWeb3Applications() async {
+    return await _callSynchronized(() async {
+      return await _controller._getAllWeb3Applications();
+    }, conditionStatus: true, lockId: LockId.two);
   }
 
   Future<RESPONSE> localWeb3Request<RESPONSE>(
       WEB3REQUESTPARAMSRESPONSE<RESPONSE> params) async {
     final result = await _callSynchronized(() async {
       return await _controller._localWeb3Request(params);
-    }, conditionStatus: true, lock: _lockWeb3);
+    }, conditionStatus: true, lockId: LockId.two);
     return result.result;
   }
 
-  Future<MethodResult<Web3EncryptedMessage>> getWeb3Authenticated(
-      Web3ClientInfo info) async {
+  Future<MethodResult<Web3DappInfo>> getWeb3Dapp(
+      Web3ClientInfo clientInfo) async {
     final result = await _callSynchronized(() async {
-      return await _controller._getWeb3Authenticated(info);
-    }, conditionStatus: true, lock: _lockWeb3, delay: null);
-    return result;
-  }
-
-  Future<MethodResult<Web3EncryptedMessage>> getWeb3Permission(
-      Web3ClientInfo info) async {
-    final result = await _callSynchronized(() async {
-      return await _controller._getWeb3Permission(info);
-    }, conditionStatus: true, lock: _lockWeb3);
+      return await _controller._getWeb3Dapp(clientInfo);
+    }, conditionStatus: true, lockId: LockId.two);
     return result;
   }
 
@@ -95,17 +92,19 @@ abstract class WalletCore extends _WalletCore with WalletsManager {
     return result;
   }
 
-  Future<MethodResult<Web3APPAuthentication>> getOrCreateWeb3AppAuthenticated(
-      Web3ClientInfo info) async {
-    return _walletAction(() => _controller._getOrCreateAppAuthenticated(info));
-  }
-
-  Future<MethodResult<Web3EncryptedMessage>> updateWeb3Application(
+  Future<MethodResult<Web3DappInfo>> updateWeb3Application(
       Web3APPAuthentication application,
       {List<NetworkType>? web3Networks}) async {
     return _callSynchronized(
         () async => _controller._updateWeb3Application(application,
             web3Networks: web3Networks),
+        conditionStatus: isUnlock);
+  }
+
+  Future<MethodResult<void>> removeWeb3Application(
+      Web3APPAuthentication application) async {
+    return _callSynchronized(
+        () async => _controller._removeWeb3Authenticated(application),
         conditionStatus: isUnlock);
   }
 
@@ -204,9 +203,12 @@ abstract class WalletCore extends _WalletCore with WalletsManager {
     return result;
   }
 
-  Future<MethodResult<String>> generateWalletBackup(String password) async {
+  Future<MethodResult<String>> generateWalletBackup(
+      {required String password,
+      required GenerateWalletBackupOptions options}) async {
     final result = await _callSynchronized(() async {
-      return await _controller._generateWalletBackup(password);
+      return await _controller._generateWalletBackup(
+          options: options, password: password);
     }, conditionStatus: isUnlock);
     return result;
   }
@@ -389,7 +391,7 @@ abstract class WalletCore extends _WalletCore with WalletsManager {
     final checksum = await crypto.generateRandomBytes(
         length: CreateHDWalletConst.checksumLength,
         existsKeys:
-            _wallets._wallets.values.map((e) => e.checkSumBytes).toList());
+            _wallets.wallets.values.map((e) => e.checkSumBytes).toList());
     final encrypt = await crypto.cryptoIsolateRequest(
         CryptoRequestCreateHDWallet(
             mnemonic: mnemonic,
@@ -417,7 +419,7 @@ abstract class WalletCore extends _WalletCore with WalletsManager {
       final checksum = await crypto.generateRandomHex(
         length: CreateHDWalletConst.checksumLength,
         existsKeys:
-            _wallets._wallets.values.map((e) => e.checkSumBytes).toList(),
+            _wallets.wallets.values.map((e) => e.checkSumBytes).toList(),
       );
       final key = await _toWalletPassword(password, checksum);
       final resotreKey = await crypto.cryptoIsolateRequest(
@@ -426,7 +428,7 @@ abstract class WalletCore extends _WalletCore with WalletsManager {
               backup: BytesUtils.fromHexString(backup.key),
               passphrase: passhphrase));
       return await _validateBackupAccounts(
-          chains: (backup as WalletBackup).chains,
+          backup: backup as WalletBackup,
           checksum: checksum,
           resotreKey: resotreKey,
           key: key);
@@ -441,16 +443,17 @@ abstract class WalletCore extends _WalletCore with WalletsManager {
   }
 
   Future<WalletRestoreV2> _validateBackupAccounts({
-    required List<WalletChainBackup> chains,
+    required WalletBackup backup,
     required CryptoRestoreBackupMasterKeyResponse resotreKey,
     required String checksum,
     required List<int> key,
   }) async {
     final setupKey = resotreKey.masterKey;
     if (!resotreKey.isValid) {
-      return WalletRestoreV2._(
+      return WalletRestoreV2(
           masterKeys: resotreKey.masterKey,
-          chains: [],
+          chains: const [],
+          dapps: const [],
           invalidAddresses: const [],
           verifiedChecksum: false,
           wallet: HDWallet.setup(
@@ -462,7 +465,7 @@ abstract class WalletCore extends _WalletCore with WalletsManager {
     final List<WalletChainBackup> validateChains = [];
     final List<ChainAccount> invalidAddresses = [];
     try {
-      for (final c in chains) {
+      for (final c in backup.chains) {
         final List<ChainAccount> addresses = [];
 
         for (final address in c.chain.addresses) {
@@ -513,8 +516,9 @@ abstract class WalletCore extends _WalletCore with WalletsManager {
       }
       // ignore: empty_catches
     } catch (_) {}
-    return WalletRestoreV2._(
+    return WalletRestoreV2(
         masterKeys: setupKey,
+        dapps: backup.dapps,
         chains: validateChains,
         invalidAddresses: invalidAddresses,
         wallet: HDWallet.setup(

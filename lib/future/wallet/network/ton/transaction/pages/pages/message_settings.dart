@@ -53,7 +53,7 @@ class _TonTransactionMessageSettingsViewState
   }
 
   void submit() {
-    if (formKey.currentState?.validate() ?? false) {
+    if (formKey.ready()) {
       final body = bodyTextController.currentState?.getValue();
       if (widget.receiver.setBody(bodyType, body)) {
         widget.receiver.toggleBounce(isBounce);

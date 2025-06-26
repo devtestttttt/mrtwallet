@@ -59,16 +59,20 @@ class Web3TronChain extends Web3Chain<TronAddress, TronChain, ITronAddress,
       final tron = APIUtils.findNetworkProvider<TronAPIProvider>(e.network,
           identifier: e.serviceIdentifier, allowInWeb3: true);
       return Web3TronChainIdnetifier(
-          id: e.network.value,
-          chainId: e.network.tronNetworkType.genesisBlockNumber,
-          solidityNode: tron!.solidityProvider.callUrl,
-          fullNode: tron.callUrl);
+        id: e.network.value,
+        chainId: e.network.tronNetworkType.genesisBlockNumber,
+        solidityNode: tron!.solidityProvider.callUrl,
+        fullNode: tron.callUrl,
+        wsIdentifier: e.network.wsIdentifier,
+        caip2: e.network.caip,
+      );
     }).toList();
     final currentWeb3Network =
         web3Networks.firstWhere((e) => e.id == currentNetwork.value);
     return Web3TronChainAuthenticated(
-        accounts: activeAccounts,
-        networks: web3Networks,
-        currentNetwork: currentWeb3Network);
+      accounts: activeAccounts,
+      networks: web3Networks,
+      currentNetwork: currentWeb3Network,
+    );
   }
 }

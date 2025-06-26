@@ -33,6 +33,13 @@ class HTTPServiceProviderFieldsState extends State<HTTPServiceProviderFields>
   bool useAuthenticated = false;
   ProviderAuthType auth = ProviderAuthType.header;
   final GlobalKey<AppTextFieldState> urlKey = GlobalKey();
+  String authKey = "";
+  String authValue = "";
+  String? authError;
+  String rpcURL = '';
+
+  GlobalKey<FormState> formKey =
+      GlobalKey(debugLabel: "HTTPServiceProviderFieldsState_formstate");
 
   void onChangeAuthMode(ProviderAuthType? auth) {
     this.auth = auth ?? this.auth;
@@ -45,11 +52,6 @@ class HTTPServiceProviderFieldsState extends State<HTTPServiceProviderFields>
     updateState();
     checkAtuthError();
   }
-
-  String authKey = "";
-  String authValue = "";
-
-  String? authError;
 
   String get authKeyLabe {
     return auth.isDigest ? "username".tr : "authenticated_key".tr;
@@ -81,7 +83,6 @@ class HTTPServiceProviderFieldsState extends State<HTTPServiceProviderFields>
     }
   }
 
-  // hint:
   void onChangeKey(String v) {
     authKey = v;
   }
@@ -109,8 +110,6 @@ class HTTPServiceProviderFieldsState extends State<HTTPServiceProviderFields>
     }
     return null;
   }
-
-  String rpcURL = '';
 
   void onChageUrl(String v) {
     rpcURL = v;
@@ -148,11 +147,8 @@ class HTTPServiceProviderFieldsState extends State<HTTPServiceProviderFields>
     return null;
   }
 
-  GlobalKey<FormState> formKey =
-      GlobalKey(debugLabel: "HTTPServiceProviderFieldsState_formstate");
-
   RPCURL? getEndpoint() {
-    if (authError != null || !(formKey.currentState?.validate() ?? false)) {
+    if (authError != null || !formKey.ready()) {
       return null;
     }
     ProviderAuthenticated? authenticated;

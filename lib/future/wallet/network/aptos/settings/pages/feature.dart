@@ -9,7 +9,8 @@ class AptosFeaturePageView extends StatelessWidget {
   const AptosFeaturePageView({super.key});
   @override
   Widget build(BuildContext context) {
-    return NetworkAccountControllerView<SuiClient?, ISuiAddress?, SuiChain>(
+    return NetworkAccountControllerView<AptosClient?, IAptosAddress?,
+        AptosChain>(
       title: "settings".tr,
       addressRequired: false,
       clientRequired: false,

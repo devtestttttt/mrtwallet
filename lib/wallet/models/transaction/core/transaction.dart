@@ -26,8 +26,14 @@ enum WalletTransactionType {
 class WalletAccountTransactions<TRANSACTION extends ChainTransaction> {
   List<TRANSACTION> _transactions;
   List<TRANSACTION> get transactions => _transactions;
+  bool _havePendingTxes = false;
+  bool get havePendingTxes => _havePendingTxes;
   WalletAccountTransactions._({required List<TRANSACTION> transactions})
-      : _transactions = transactions.immutable;
+      : _transactions = transactions.immutable,
+        _havePendingTxes = transactions.any((e) => e.status.inMempool);
+
+  List<TRANSACTION> get pendingTxes =>
+      _transactions.where((e) => e.status.inMempool).toList();
   factory WalletAccountTransactions({required List<TRANSACTION> transactions}) {
     final txes = transactions.clone();
     txes.sort((a, b) => b.time.compareTo(a.time));
@@ -43,6 +49,7 @@ class WalletAccountTransactions<TRANSACTION extends ChainTransaction> {
     }
     txes.sort((a, b) => b.time.compareTo(a.time));
     _transactions = txes.toSet().toImutableList;
+    _havePendingTxes = _transactions.any((e) => e.status.inMempool);
   }
 
   void removeTx(TRANSACTION tx) {
@@ -50,6 +57,7 @@ class WalletAccountTransactions<TRANSACTION extends ChainTransaction> {
     txes.remove(tx);
     txes.sort((a, b) => a.time.compareTo(b.time));
     _transactions = txes.immutable;
+    _havePendingTxes = _transactions.any((e) => e.status.inMempool);
   }
 }
 
@@ -374,4 +382,13 @@ class WalletTransactionDecimalsAmount
             [amount.price, token?.toCbor(), tokenIdentifier]),
         type.tag);
   }
+}
+
+class TrackTransactionRequest<T extends ChainTransaction,
+    A extends ChainAccount> {
+  final List<T> transactions;
+  final A account;
+  TrackTransactionRequest(
+      {required List<T> transactions, required this.account})
+      : transactions = transactions.immutable;
 }

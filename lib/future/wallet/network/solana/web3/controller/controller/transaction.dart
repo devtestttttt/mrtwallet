@@ -11,8 +11,8 @@ import 'package:on_chain_wallet/wallet/web3/web3.dart';
 import 'package:on_chain/solana/src/rpc/models/models/commitment.dart';
 import 'package:on_chain/solana/src/transaction/transaction/transaction.dart';
 
-class Web3SolanaTransactionRequestController
-    extends Web3SolanaImpl<List<List<int>>, Web3SolanaSendTransaction> {
+class Web3SolanaTransactionRequestController extends Web3SolanaImpl<
+    List<Web3SolanaTransactionResponse>, Web3SolanaSendTransaction> {
   Web3SolanaTransactionRequestController(
       {required super.walletProvider, required super.request});
 
@@ -158,14 +158,17 @@ class Web3SolanaTransactionRequestController
     final List<SolanaWeb3SignedTransactionInfo> result = signedTr.result;
     if (!isSend) {
       final signedTransactions = result.map((e) {
-        return e.info.transaction.serialize();
+        return Web3SolanaTransactionResponse(
+            signature: e.signature, signedTx: e.info.transaction.serialize());
       }).toList();
       request.completeResponse(signedTransactions);
       progressKey.response(text: "transaction_signed".tr);
       return;
     }
     final signatures = result.map((e) {
-      return e.info.transaction.signatures[0];
+      return Web3SolanaTransactionResponse(
+          signature: e.info.transaction.signatures.elementAt(0),
+          signedTx: e.info.transaction.serialize());
     }).toList();
 
     progressKey.process(

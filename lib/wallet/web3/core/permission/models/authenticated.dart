@@ -1,7 +1,6 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
-import 'package:blockchain_utils/crypto/quick_crypto.dart';
 import 'package:blockchain_utils/helper/helper.dart';
-import 'package:blockchain_utils/utils/utils.dart';
+import 'package:blockchain_utils/utils/binary/utils.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/wallet/constant/tags/constant.dart';
 import 'package:on_chain_wallet/wallet/models/network/core/network/network.dart';
@@ -26,10 +25,11 @@ import 'package:on_chain_wallet/wallet/web3/networks/tron/permission/models/perm
 abstract class Web3RequestAuthentication with CborSerializable {
   final String applicationId;
   final APPImage? icon;
+  final String? url;
   String get name;
 
   const Web3RequestAuthentication(
-      {required this.applicationId, required this.icon});
+      {required this.applicationId, required this.icon, this.url});
 
   void addActivity(Web3Request request) {}
 }
@@ -46,26 +46,95 @@ class Web3LocalAuthentication extends Web3RequestAuthentication {
   }
 }
 
+enum Web3APPProtocol {
+  injected(0),
+  walletConnect(1);
+
+  final int value;
+  const Web3APPProtocol(this.value);
+  bool get isWalletConnect => this == walletConnect;
+  static Web3APPProtocol fromValue(int? tag) {
+    return values.firstWhere((e) => e.value == tag,
+        orElse: () => throw WalletExceptionConst.invalidData(
+            messsage: 'invalid auth protocol tag.'));
+  }
+}
+
+class Web3APPAuthenticationKey with CborSerializable {
+  final List<int> topic;
+  final List<int> publicKey;
+  final List<int> symkey;
+  factory Web3APPAuthenticationKey.fake() {
+    return Web3APPAuthenticationKey(topic: [], publicKey: [], symkey: []);
+  }
+  Web3APPAuthenticationKey(
+      {required List<int> topic,
+      required List<int> publicKey,
+      required List<int> symkey})
+      : topic = topic.asImmutableBytes,
+        publicKey = publicKey.asImmutableBytes,
+        symkey = symkey.asImmutableBytes;
+  late final String topicAsHex = BytesUtils.toHexString(topic);
+  late final String publicKeyAsHex = BytesUtils.toHexString(publicKey);
+  late final String symkeyAsHex = BytesUtils.toHexString(symkey);
+  factory Web3APPAuthenticationKey.deseralize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        hex: hex,
+        object: object,
+        tags: CborTagsConst.web3AppAuthKey);
+    return Web3APPAuthenticationKey(
+      symkey: values.elementAs(0),
+      publicKey: values.elementAs(1),
+      topic: values.elementAs(2),
+    );
+  }
+
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([
+          CborBytesValue(symkey),
+          CborBytesValue(publicKey),
+          CborBytesValue(topic),
+        ]),
+        CborTagsConst.web3AppAuthKey);
+  }
+}
+
 class Web3APPAuthentication extends Web3RequestAuthentication
     with CborSerializable {
   final String applicationKey;
-
+  final Web3APPProtocol protocol;
   @override
   String get name => _name;
   String _name;
-
   bool _active;
   bool get active => _active;
-  final List<int> token;
-
+  final Web3APPAuthenticationKey token;
   Map<NetworkType, Web3Chain> _chains;
   List<Web3AccountAcitvity> _activities;
   List<Web3AccountAcitvity> get activities => _activities;
+  bool get hasAnyPermission =>
+      active && _chains.values.any((e) => e.hasAccount);
+  Web3ClientInfo toClient() {
+    return Web3ClientInfo._(
+        image: icon,
+        url: url ?? applicationId,
+        identifier: applicationId,
+        name: name,
+        protocol: protocol);
+  }
 
   Web3APPData createAuth(List<Web3ChainNetworkData> networks,
       {List<NetworkType>? web3Networks}) {
+    if (protocol.isWalletConnect) {
+      web3Networks = null;
+    }
     List<Web3ChainAuthenticated> auths = [];
     web3Networks = (web3Networks ??= Web3Const.supportedWeb3).clone();
+
     for (final i in web3Networks) {
       final web3Chain = getChainFromNetworkType(i, allowDisable: true);
       List<Web3ChainNetworkData> relatedChains;
@@ -140,41 +209,18 @@ class Web3APPAuthentication extends Web3RequestAuthentication
     return appId.normalizePath().toString();
   }
 
-  static (String, List<int>)? toBridgeId(String? url) {
-    final parse = Uri.tryParse(url ?? '');
-    if (parse == null) {
-      return null;
-    }
-    final parameters = parse.queryParameters;
-    final key = parameters['key'];
-    final path = parameters['path']!;
-    final app = parameters['name'];
-    final iconUrl = parameters['iconUrl'];
-    if (key == null || app == null || iconUrl == null) {
-      return null;
-    }
-    final keyBytes = StringUtils.tryEncode(key, type: StringEncoding.base64);
-    if (keyBytes == null ||
-        keyBytes.length != QuickCrypto.chacha20Polu1305Keysize) {
-      return null;
-    }
-    if (app.isEmpty) {
-      return null;
-    }
-    return (path, keyBytes);
-  }
-
   Web3APPAuthentication._({
     required String name,
     required super.applicationId,
     required super.icon,
     required this.applicationKey,
     required List<Web3AccountAcitvity> activities,
-    required List<int> token,
+    required this.token,
+    required this.protocol,
     bool active = true,
+    super.url,
     Map<NetworkType, Web3Chain> chains = const {},
   })  : _chains = chains.imutable,
-        token = token.asImmutableBytes,
         _activities = activities.immutable,
         _name = name,
         _active = active;
@@ -196,28 +242,47 @@ class Web3APPAuthentication extends Web3RequestAuthentication
         token: token,
         chains: {for (final i in _chains.entries) i.key: i.value.clone()},
         active: active,
-        activities: _activities);
+        activities: _activities,
+        protocol: protocol);
   }
 
-  factory Web3APPAuthentication.create(
-      {required String applicationId,
-      required String applicationKey,
-      required String name,
-      required APPImage? icon,
-      required List<int> token}) {
-    if (toApplicationId(applicationId) != applicationId) {
-      throw Web3RequestExceptionConst.invalidHost;
-    }
+  factory Web3APPAuthentication.local() {
     return Web3APPAuthentication._(
-        name: name,
-        applicationId: applicationId,
-        icon: icon,
-        active: true,
-        token: token,
-        applicationKey: applicationKey,
-        chains: {},
-        activities: []);
+        name: "OnChain",
+        applicationId: "OnChain",
+        icon: null,
+        applicationKey: "OnChain",
+        activities: [],
+        token: Web3APPAuthenticationKey.fake(),
+        protocol: Web3APPProtocol.walletConnect);
   }
+
+  // factory Web3APPAuthentication.create({
+  //   required String applicationKey,
+  //   required String name,
+  //   required APPImage? icon,
+  //   required Web3APPAuthenticationKey token,
+  //   Web3APPProtocol protocol = Web3APPProtocol.injected,
+  //   required String applicationId,
+  //   String? url,
+  // }) {
+  //   if (!protocol.isWalletConnect &&
+  //       toApplicationId(applicationId) != applicationId) {
+  //     throw Web3RequestExceptionConst.invalidHost;
+  //   }
+  //   return Web3APPAuthentication._(
+  //       name: name,
+  //       applicationId: applicationId,
+  //       icon: icon,
+  //       active: true,
+  //       token: token,
+  //       applicationKey: applicationKey,
+  //       chains: {},
+  //       activities: [],
+  //       protocol: protocol,
+  //       url: url);
+  // }
+
   factory Web3APPAuthentication.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
     final CborListValue values = CborSerializable.cborTagValue(
@@ -236,12 +301,17 @@ class Web3APPAuthentication extends Web3RequestAuthentication
             (e) => NetworkType.fromName(e.value),
             (p0) => Web3Chain.deserialize(object: p0)),
         active: values.elementAt(4),
-        token: values.elementAt(5),
+        token:
+            Web3APPAuthenticationKey.deseralize(object: values.getCborTag(5)),
         applicationKey: values.elementAt(6),
         activities: values
             .elementAsListOf<CborTagValue>(7, emyptyOnNull: true)
             .map((e) => Web3AccountAcitvity.deserialize(object: e))
-            .toList());
+            .toList(),
+        protocol: values.elemetMybeAs<Web3APPProtocol, CborIntValue>(
+                8, (e) => Web3APPProtocol.fromValue(e.value)) ??
+            Web3APPProtocol.injected,
+        url: values.elementAs(9));
   }
   @override
   CborTagValue toCbor() {
@@ -253,9 +323,12 @@ class Web3APPAuthentication extends Web3RequestAuthentication
           CborMapValue.fixedLength(
               {for (final i in _chains.entries) i.key.name: i.value.toCbor()}),
           active,
-          CborBytesValue(token),
+          token.toCbor(),
           applicationKey,
-          CborListValue.fixedLength(_activities.map((e) => e.toCbor()).toList())
+          CborListValue.fixedLength(
+              _activities.map((e) => e.toCbor()).toList()),
+          protocol.value,
+          url
         ]),
         CborTagsConst.web3App);
   }
@@ -266,6 +339,17 @@ class Web3APPAuthentication extends Web3RequestAuthentication
     final chains = Map<NetworkType, Web3Chain>.from(_chains);
     chains[network] = updateChain;
     _chains = chains.imutable;
+  }
+
+  void resetApp() {
+    final networks = _chains.keys.toList();
+    final chains = Map<NetworkType, Web3Chain>.from(_chains);
+    for (final i in networks) {
+      final updateChain = _chains[i]!.disconnect();
+      chains[i] = updateChain;
+    }
+    _chains = chains.imutable;
+    _activities = <Web3AccountAcitvity>[].immutable;
   }
 
   T getChainFromNetworkType<T extends Web3ChainNetwork>(NetworkType network,
@@ -339,22 +423,15 @@ class Web3APPAuthentication extends Web3RequestAuthentication
 
   @override
   void addActivity(Web3Request request) {
-    final app = request.info;
-    final url = app.origin ?? '';
-    String? path;
     String? address;
     int? chainId;
-    path = Uri.tryParse(url)?.path.trim() ?? '';
-    if (path.isEmpty || path == '/' || path == applicationId) {
-      path = null;
-    }
     if (request is Web3NetworkRequest) {
       chainId = request.chain.network.value;
       address = request.params.requiredAccounts.firstOrNull?.addressStr;
     }
     final newAcctivity = Web3AccountAcitvity(
         method: request.params.method.name,
-        path: path,
+        path: null,
         address: address,
         id: chainId);
     final activities = [newAcctivity, ..._activities]
@@ -370,7 +447,7 @@ class Web3APPAuthentication extends Web3RequestAuthentication
 class Web3APPData with CborSerializable {
   final bool active;
   final String applicationId;
-  final List<int> token;
+  final Web3APPAuthenticationKey token;
   final List<NetworkType> networks;
   List<Web3ChainAuthenticated> _chains;
   List<Web3ChainAuthenticated> get chains => _chains;
@@ -385,17 +462,16 @@ class Web3APPData with CborSerializable {
   }
 
   Web3APPData._({
-    required List<int> token,
+    required this.token,
     required List<NetworkType> networks,
     required this.applicationId,
     this.active = true,
     List<Web3ChainAuthenticated> chains = const [],
   })  : _chains = chains.imutable,
-        token = token.asImmutableBytes,
         networks = networks.immutable;
 
   factory Web3APPData(
-      {required List<int> token,
+      {required Web3APPAuthenticationKey token,
       required List<NetworkType> networks,
       required String applicationId,
       List<Web3ChainAuthenticated> chains = const [],
@@ -420,7 +496,8 @@ class Web3APPData with CborSerializable {
             .map((e) => Web3ChainAuthenticated.deserialize(object: e))
             .toList(),
         active: values.elementAt(1),
-        token: values.elementAt(2),
+        token:
+            Web3APPAuthenticationKey.deseralize(object: values.getCborTag(2)),
         networks: values
             .elementAsListOf<CborBytesValue>(3)
             .map((e) => NetworkType.fromTag(e.value))
@@ -433,11 +510,84 @@ class Web3APPData with CborSerializable {
         CborListValue.fixedLength([
           CborListValue.fixedLength(_chains.map((e) => e.toCbor()).toList()),
           active,
-          CborBytesValue(token),
+          token.toCbor(),
           CborListValue.fixedLength(
               networks.map((e) => CborBytesValue(e.tag)).toList()),
           applicationId
         ]),
         CborTagsConst.web3App);
   }
+}
+
+class Web3ClientInfo with Equatable {
+  final APPImage? image;
+  final String url;
+  final String identifier;
+  final String name;
+  String get view => url;
+  final String? description;
+  final Web3APPProtocol protocol;
+  const Web3ClientInfo._(
+      {required this.image,
+      required this.url,
+      required this.identifier,
+      required this.name,
+      required this.protocol,
+      this.description});
+
+  static Web3ClientInfo? info(
+      {required String? url, String? name, required APPImage? faviIcon}) {
+    final applicationId = Web3APPAuthentication.toApplicationId(url);
+    if (applicationId == null) return null;
+    final Uri uri = Uri.parse(applicationId);
+    return Web3ClientInfo._(
+        image: faviIcon,
+        url: url!,
+        identifier: applicationId,
+        name: (name?.isEmpty ?? true) ? uri.host : name!,
+        protocol: Web3APPProtocol.injected);
+  }
+
+  Web3APPAuthentication toAuhenticated({
+    required Web3APPAuthenticationKey token,
+    required String applicationKey,
+  }) {
+    return Web3APPAuthentication._(
+        name: name,
+        applicationId: identifier,
+        icon: image,
+        applicationKey: applicationKey,
+        activities: [],
+        token: token,
+        url: url,
+        protocol: protocol);
+  }
+
+  static Web3ClientInfo walletConnect(
+      {required String clientId,
+      required String url,
+      required String name,
+      required String description,
+      required APPImage? faviIcon}) {
+    return Web3ClientInfo._(
+        image: faviIcon,
+        url: url,
+        identifier: clientId,
+        name: name,
+        protocol: Web3APPProtocol.walletConnect,
+        description: description);
+  }
+
+  @override
+  List get variabels => [identifier, url];
+}
+
+class Web3DappInfo {
+  final Web3APPAuthentication authentication;
+  final Web3APPData dappData;
+  final Web3ClientInfo clientInfo;
+  const Web3DappInfo(
+      {required this.authentication,
+      required this.dappData,
+      required this.clientInfo});
 }

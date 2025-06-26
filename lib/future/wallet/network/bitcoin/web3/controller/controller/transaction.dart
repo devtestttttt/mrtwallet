@@ -212,7 +212,7 @@ class Web3BitcoinTransactionRequestController
   Future<void> initWeb3() async {
     liveRequest.addListener(_onChangeForm);
     form.onCompleteForm = _onCompleteForm;
-    await account.updateAccountBalance(addresses: [address]);
+    account.updateAccountBalance(addresses: [address]);
     final init = await MethodUtils.call(() => form.initForm(
         account: account,
         address: address,

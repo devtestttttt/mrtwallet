@@ -6,17 +6,18 @@ import 'package:on_chain_wallet/wallet/api/services/core/base_service.dart';
 import 'package:on_chain_wallet/wallet/api/services/models/models.dart';
 
 abstract class BaseSocketService<T extends APIProvider>
-    extends BaseServiceProtocol<T> {
-  Future<void> connect();
+    extends NetworkServiceProtocol<T> {
+  Future<void> connect(Duration timeout);
   bool get isConnected;
   @override
   APPIsolate get isolate => APPIsolate.current;
   Future<Map<String, dynamic>> providerCaller(
-      Future<Map<String, dynamic>> Function() t,
-      SocketRequestCompleter param) async {
+      {required Future<Map<String, dynamic>> Function() t,
+      required SocketRequestCompleter param,
+      required Duration timeout}) async {
     Map<String, dynamic>? response;
     try {
-      response = await _onException(t);
+      response = await _onException(t: t, timeout: timeout);
       return response;
     } on ApiProviderException catch (e) {
       tracker.addRequest(ApiRequest(
@@ -31,9 +32,10 @@ abstract class BaseSocketService<T extends APIProvider>
   }
 
   Future<Map<String, dynamic>> _onException(
-      Future<Map<String, dynamic>> Function() t) async {
+      {required Future<Map<String, dynamic>> Function() t,
+      required Duration timeout}) async {
     try {
-      await connect().timeout(const Duration(seconds: 30));
+      await connect(timeout);
       if (!isConnected) {
         throw ApiProviderException.error("node_connection_error");
       }

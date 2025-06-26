@@ -165,7 +165,7 @@ class SwapTransactionStateController extends StateController {
                                 isDefault: false));
                         final signature =
                             (await wallet.wallet.localWeb3Request(param));
-                        return signature.signature;
+                        return signature.signatureHex;
                       });
                 });
       case const (SwapRouteSolanaTransactionBuilder):
@@ -196,7 +196,7 @@ class SwapTransactionStateController extends StateController {
                         final signedTransactions =
                             (await wallet.wallet.localWeb3Request(param));
                         return SolanaTransaction.deserialize(
-                            signedTransactions.elementAt(0));
+                            signedTransactions.elementAt(0).signedTx);
                       });
                 });
       case const (SwapRouteBitcoinTransactionBuilder):

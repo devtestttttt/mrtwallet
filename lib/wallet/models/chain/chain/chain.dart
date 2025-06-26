@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:monero_dart/monero_dart.dart';
+import 'package:on_chain_bridge/platform_interface.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/crypto/isolate/types/types.dart';
 import 'package:on_chain_wallet/crypto/requets/messages/stream/requests/monero_block_tracking.dart';
@@ -28,6 +29,8 @@ import 'package:on_chain_wallet/wallet/models/transaction/transaction.dart';
 
 import 'package:on_chain/on_chain.dart';
 import 'package:on_chain/solidity/address/core.dart';
+import 'package:on_chain_wallet/wallet/models/wallet/hd_wallet.dart';
+import 'package:on_chain_wallet/wallet/web3/models/models/network.dart';
 import 'package:polkadot_dart/polkadot_dart.dart';
 import 'package:stellar_dart/stellar_dart.dart';
 import 'package:ton_dart/ton_dart.dart';
@@ -109,6 +112,7 @@ part 'tokens/sui.dart';
 part 'tokens/trc10.dart';
 part 'tokens/trc20.dart';
 
+part 'core/handler.dart';
 part 'core/params.dart';
 part 'neworks/bitcoin/params.dart';
 part 'neworks/xrp/params.dart';

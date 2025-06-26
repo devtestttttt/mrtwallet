@@ -9,16 +9,19 @@ class CircleAssetsImageView extends StatelessWidget {
   const CircleAssetsImageView(this.assetPath,
       {this.radius = 120,
       this.backgroundColor = Colors.transparent,
+      this.foregroundColor,
       super.key});
   final APPImage assetPath;
   final double radius;
   final Color backgroundColor;
+  final Color? foregroundColor;
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
       backgroundImage: CacheMemoryImageProvider(assetPath),
       radius: radius,
       backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
       onBackgroundImageError: (e, d) {},
     );
   }

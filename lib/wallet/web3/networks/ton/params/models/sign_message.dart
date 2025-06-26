@@ -1,13 +1,43 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
+import 'package:blockchain_utils/helper/helper.dart';
 import 'package:blockchain_utils/utils/utils.dart';
 import 'package:on_chain_wallet/app/serialization/cbor/cbor.dart';
+import 'package:on_chain_wallet/wallet/constant/tags/constant.dart';
 import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/ton/methods/methods.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/ton/params/core/request.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/ton/permission/models/account.dart';
 
-class Web3TonSignMessage extends Web3TonRequestParam<List<int>> {
+class Web3TonSignMessageResponse with CborSerializable {
+  final List<int> signature;
+  Web3TonSignMessageResponse({required List<int> signature})
+      : signature = signature.asImmutableBytes;
+  factory Web3TonSignMessageResponse.deserialize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: object,
+        hex: hex,
+        tags: CborTagsConst.defaultTag);
+    return Web3TonSignMessageResponse(signature: values.elementAs(0));
+  }
+
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([signature]), CborTagsConst.defaultTag);
+  }
+
+  Map<String, dynamic> toWalletConnectJson() {
+    return {
+      "signature": StringUtils.decode(signature, type: StringEncoding.base64)
+    };
+  }
+}
+
+class Web3TonSignMessage
+    extends Web3TonRequestParam<Web3TonSignMessageResponse> {
   final Web3TonChainAccount accessAccount;
   final String challeng;
   final String? content;
@@ -51,13 +81,13 @@ class Web3TonSignMessage extends Web3TonRequestParam<List<int>> {
   }
 
   @override
-  Web3TonRequest<List<int>, Web3TonSignMessage> toRequest(
+  Web3TonRequest<Web3TonSignMessageResponse, Web3TonSignMessage> toRequest(
       {required Web3RequestInformation request,
       required Web3RequestAuthentication authenticated,
       required List<Chain> chains}) {
     final chain = super.findRequestChain(
         request: request, authenticated: authenticated, chains: chains);
-    return Web3TonRequest<List<int>, Web3TonSignMessage>(
+    return Web3TonRequest<Web3TonSignMessageResponse, Web3TonSignMessage>(
       params: this,
       authenticated: authenticated,
       chain: chain.$1,
@@ -68,4 +98,9 @@ class Web3TonSignMessage extends Web3TonRequestParam<List<int>> {
 
   @override
   List<Web3TonChainAccount> get requiredAccounts => [accessAccount];
+
+  @override
+  Object? toJsWalletResponse(Web3TonSignMessageResponse response) {
+    return response.toCbor().encode();
+  }
 }

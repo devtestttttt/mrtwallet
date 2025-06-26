@@ -39,7 +39,8 @@ class Web3StellarGlobalRequestController<RESPONSE,
                   digest: signingParams.chalengBytes(),
                   index: address.keyIndex.cast());
               final response = await generateSignature(signRequest);
-              return response.signature;
+              return Web3StellarSignMessageResponse(
+                  signature: response.signature);
             },
           ));
           return signature.result;

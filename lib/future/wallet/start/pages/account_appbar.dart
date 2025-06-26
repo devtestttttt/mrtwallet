@@ -29,6 +29,7 @@ class AccountPageSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
       surfaceTintColor: context.colors.transparent,
       backgroundColor: context.colors.surface,
       foregroundColor: context.colors.onSurface,
+      automaticallyImplyLeading: false,
       flexibleSpace: Stack(
         children: [
           APPAnimatedSwitcher(enable: enabled, widgets: {

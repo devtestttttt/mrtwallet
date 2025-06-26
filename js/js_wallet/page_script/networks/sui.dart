@@ -23,10 +23,7 @@ class SuiPageController extends WalletStandardPageController {
       {required JSSuiSignOrExcuteTransactionParams transaction,
       required String method}) async {
     final tx = await transaction.toRequest();
-    return waitForSuccessResponse(
-      method: method,
-      params: [tx].toJS,
-    );
+    return waitForSuccessResponse(method: method, params: [tx].toJS);
   }
 
   JSPromise<JSSuiSignTransactionResponse> _signTransaction(
@@ -69,9 +66,11 @@ class SuiPageController extends WalletStandardPageController {
   @override
   JSClientType get _client => JSClientType.sui;
 
-  JSPromise<JSSuiWalletConnectResponse> _connect() {
+  JSPromise<JSSuiWalletConnectResponse> _connect([JSString? chainId]) {
+    final network = JsUtils.asJSString(chainId);
+    final params = network == null ? null : [network].toJS;
     return waitForSuccessResponsePromise<JSSuiWalletConnectResponse>(
-        method: SuiJSConstant.requestAccountRequestName);
+        method: SuiJSConstant.requestAccountRequestName, params: params);
   }
 
   @override

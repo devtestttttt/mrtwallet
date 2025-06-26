@@ -8,60 +8,23 @@ import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
 import 'package:on_chain_wallet/wallet/wallet.dart';
 import 'package:on_chain_wallet/crypto/keys/access/crypto_keys/crypto_keys.dart';
 
-typedef OnGenerateDerivation = Future<Bip32AddressIndex?> Function();
-
-enum AddressDerivationMode {
-  hdWallet,
-  importedKey;
-
-  bool get isCustomKey => this == AddressDerivationMode.importedKey;
-}
-
-typedef OnSelectDerivation = void Function(
-    AddressDerivationMode mode, EncryptedCustomKey? selectedKey);
-
 class AddressDerivationController extends StateController {
   AddressDerivationController({required this.wallet, required this.chain});
   final Chain chain;
   final WalletProvider wallet;
-  final GlobalKey visibleContinue =
-      GlobalKey(debugLabel: "visibleGenerateAddress");
   WalletNetwork get network => chain.network;
-
-  bool showCustomKes = false;
-  bool showSetupPage = false;
-
   final GlobalKey<PageProgressState> pageProgressKey =
-      GlobalKey<PageProgressState>(debugLabel: "SetupEthereumAddressView");
+      GlobalKey<PageProgressState>(debugLabel: "AddressDerivationController");
   final GlobalKey<FormState> form = GlobalKey<FormState>();
-  final GlobalKey visibleGenerateAddress =
-      GlobalKey(debugLabel: "visibleContinue");
-  final GlobalKey visibleXAddressDetails =
-      GlobalKey(debugLabel: "visibleContinue");
-
   List<CryptoCoins> get coins => network.coins;
   CryptoCoins get coin => coins.first;
-
-  Bip32AddressIndex? customKeyIndex;
-  bool get derivationStandard => customKeyIndex == null;
-
-  bool inited = false;
-
-  void onChangeDerivation(OnGenerateDerivation onGenerateDerivation) async {
-    if (derivationStandard) {
-      customKeyIndex = await onGenerateDerivation();
-    } else {
-      customKeyIndex = null;
-    }
-    notify();
-  }
 
   Future<AddressDerivationIndex?> getCoin({
     required BuildContext context,
     required SeedTypes seedGeneration,
     CryptoCoins? selectedCoins,
   }) async {
-    if (!(form.currentState?.validate() ?? true)) return null;
+    if (!form.ready()) return null;
     if (selectedCoins != null) {
       if (!coins.contains(selectedCoins)) {
         throw WalletExceptionConst.invalidCoin;
@@ -82,7 +45,7 @@ class AddressDerivationController extends StateController {
   }
 
   Future<void> generateAddress(NewAccountParams newAccount) async {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     pageProgressKey.progressText("generating_new_addr".tr);
     final result = await wallet.wallet
         .deriveNewAccount(newAccountParams: newAccount, chain: chain);

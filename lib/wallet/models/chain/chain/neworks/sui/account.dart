@@ -80,6 +80,7 @@ final class SuiChain extends Chain<
   Future<void> updateAddressBalance(ISuiAddress address,
       {bool tokens = true, bool saveAccount = true}) async {
     _isAccountAddress(address);
+    await initAddress(address);
     await onClient(onConnect: (client) async {
       final balance = await client.getAcountBalances(address.networkAddress);
       final native = balance.firstWhereOrNull(

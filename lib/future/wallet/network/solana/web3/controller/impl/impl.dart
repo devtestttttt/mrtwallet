@@ -28,8 +28,10 @@ abstract class Web3SolanaImpl<RESPONSE,
       case Web3SolanaRequestMethods.signTransaction:
       case Web3SolanaRequestMethods.signAndSendAllTransactions:
       case Web3SolanaRequestMethods.sendTransaction:
+      case Web3SolanaRequestMethods.signAllTransactions:
         return Web3SolanaSendTransactionForm(
-            request: request as Web3SolanaRequest<List<List<int>>,
+            request: request as Web3SolanaRequest<
+                List<Web3SolanaTransactionResponse>,
                 Web3SolanaSendTransaction>);
       default:
         throw UnimplementedError();

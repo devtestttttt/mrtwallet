@@ -82,6 +82,7 @@ final class EthereumChain extends Chain<
   Future<void> updateAddressBalance(IEthAddress address,
       {bool tokens = true, bool saveAccount = true}) async {
     _isAccountAddress(address);
+    await initAddress(address);
     await onClient(onConnect: (client) async {
       final balance = await client.getBalance(address.networkAddress);
       _internalupdateAddressBalance(

@@ -52,6 +52,7 @@ class _SuiWeb3PermissionViewState extends State<SuiWeb3PermissionView>
         addAccount: addAccount,
         onChangeChain: onChangeChain,
         onChangeDefaultAccount: onChangeDefaultPermission,
-        activities: activities);
+        activities: activities,
+        menuItems: menuItems);
   }
 }

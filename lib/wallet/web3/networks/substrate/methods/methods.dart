@@ -10,9 +10,8 @@ class Web3SubstrateRequestMethods extends Web3NetworkRequestMethods {
 
   static const Web3SubstrateRequestMethods requestAccounts =
       Web3SubstrateRequestMethods._(
-    id: Web3SubstrateConst.requestAccountTag,
-    name: Web3SubstrateConst.requestAccounts,
-  );
+          id: Web3SubstrateConst.requestAccountTag,
+          name: Web3SubstrateConst.polkadotRequestAccounts);
   static const Web3SubstrateRequestMethods addSubstrateChain =
       Web3SubstrateRequestMethods._(
           id: Web3SubstrateConst.addChainTag,
@@ -20,7 +19,7 @@ class Web3SubstrateRequestMethods extends Web3NetworkRequestMethods {
           reloadAuthenticated: true);
   static const Web3SubstrateRequestMethods signMessage =
       Web3SubstrateRequestMethods._(
-          id: Web3SubstrateConst.signMessageV2Tag,
+          id: Web3SubstrateConst.signMessageTag,
           name: Web3SubstrateConst.signMessage);
   static const Web3SubstrateRequestMethods knownMetadata =
       Web3SubstrateRequestMethods._(
@@ -30,7 +29,7 @@ class Web3SubstrateRequestMethods extends Web3NetworkRequestMethods {
   static const Web3SubstrateRequestMethods signTransaction =
       Web3SubstrateRequestMethods._(
           id: Web3SubstrateConst.signTransactionTag,
-          name: Web3SubstrateConst.signTransaction);
+          name: Web3SubstrateConst.polkadotSignTransaction);
 
   @override
   NetworkType get network => NetworkType.substrate;

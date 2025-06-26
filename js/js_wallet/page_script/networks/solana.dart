@@ -7,7 +7,13 @@ class SolanaPageController extends WalletStandardPageController {
   void _initNetworkFeatures(JSWalletStandardFeature feature) {
     final signAndSendTransaction = _signAndSendTransaction.toJS;
     final signTransaction = _signTranaction.toJS;
+    final signAllTransactions = _signAllTranactions.toJS;
     final signMessage = _signMessage.toJS;
+    feature.solanaSignAllTransactions =
+        SolanaWalletAdapterSolanaSignAllTransactionsFeature.setup(
+            signAllTransactions: signAllTransactions,
+            supportedTransactionVersions:
+                SolanaJSConstant.solanaTransactionVersion);
     feature.solanaSignTransaction =
         SolanaWalletAdapterSolanaSignTransactionFeature.setup(
             signTransaction: signTransaction,
@@ -28,11 +34,15 @@ class SolanaPageController extends WalletStandardPageController {
         JSSolanaWalletStandardConnectFeature.setup(connect: _connect.toJS);
     feature.solanaSignIn =
         SolanaWalletAdapterSolanaSignInFeature.setup(signIn: _signIn.toJS);
+    feature.solanaDisconnect = JSWalletStandardDisconnectFeature.setup(
+        disconnect: _disconnectChain.toJS);
   }
 
-  JSPromise<JSSolanaWalletStandardConnect> _connect() {
+  JSPromise<JSSolanaWalletStandardConnect> _connect([JSString? chainId]) {
+    final network = JsUtils.asJSString(chainId);
+    final params = network == null ? null : [network].toJS;
     return waitForSuccessResponsePromise<JSSolanaWalletStandardConnect>(
-        method: SolanaJSConstant.requestAccounts);
+        method: SolanaJSConstant.requestAccounts, params: params);
   }
 
   JSPromise<JSSolanaSignInResponse> _signIn(JSSolanaSignInParams params) {
@@ -58,6 +68,14 @@ class SolanaPageController extends WalletStandardPageController {
         .toPromise;
   }
 
+  JSPromise<JSArray<SolanaSignTransactionOutput>> _signAllTranactions(
+      JSAny transaction) {
+    return waitForSuccessResponse<JSArray<SolanaSignTransactionOutput>>(
+            method: SolanaJSConstant.signAllTransaction,
+            params: JsUtils.asJSArray(transaction))
+        .toPromise;
+  }
+
   JSPromise<JSArray<SolanaSignAndSendTransactionOutput>>
       _signAndSendTransaction(
           JSSolanaSignAndSendTransactionParams transaction) {
@@ -71,10 +89,13 @@ class SolanaPageController extends WalletStandardPageController {
       _signAndSendAllTransactions(
           JSArray<JSSolanaSignAndSendTransactionParams> transaction,
           [JSSolanaSignAndSendAllTransactionMode? options]) {
+    final params = JsUtils.asJSArray(transaction);
+    if (options.isDefinedAndNotNull) {
+      params.add(options);
+    }
     return waitForSuccessResponsePromise<
             JSArray<SolanaSignAndSendTransactionOutput>>(
-        method: SolanaJSConstant.signAndSendAllTransactions,
-        params: [transaction, if (options.isDefinedAndNotNull) options!].toJS);
+        method: SolanaJSConstant.signAndSendAllTransactions, params: params);
   }
 
   @override

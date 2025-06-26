@@ -37,6 +37,8 @@ class _AddToContactListViewState<NETWORKADDRESS>
       GlobalKey<PageProgressState>();
   String address = '';
   late String name = widget.contact?.name ?? "";
+  String? err;
+  bool lockAddressField = false;
   void clearError() {
     if (err != null) {
       err = null;
@@ -51,8 +53,6 @@ class _AddToContactListViewState<NETWORKADDRESS>
   void onPaste(String v) {
     textFieldKey.currentState?.updateText(v);
   }
-
-  bool lockAddressField = false;
 
   void onChangeAddress(String v) {
     address = v;
@@ -75,10 +75,8 @@ class _AddToContactListViewState<NETWORKADDRESS>
     return null;
   }
 
-  String? err;
-
   ContactCore<NETWORKADDRESS>? getCurrentContact() {
-    if (!(formKey.currentState?.validate() ?? false)) return null;
+    if (!formKey.ready()) return null;
     if (this.contact != null) return contact;
     return _validate(address);
   }

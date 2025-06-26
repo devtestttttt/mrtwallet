@@ -46,6 +46,7 @@ class Web3TonTransactionRequestController
       request.error(Web3RequestExceptionConst.fromException(result.exception!));
       return;
     }
+    await account.updateAddressBalance(address);
     form.init(
         messages: result.result,
         client: apiProvider,

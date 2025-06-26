@@ -60,12 +60,16 @@ class Web3SubstrateChain extends Web3Chain<BaseSubstrateAddress, SubstrateChain,
               genesisHash: e.network.genesisBlock,
               specVersion: e.network.coinParam.specVersion,
               id: e.network.value,
+              wsIdentifier: e.network.wsIdentifier,
+              caip2: e.network.caip,
             ))
         .toList();
     final currentWeb3Network = Web3SubstrateChainIdnetifier(
       genesisHash: currentNetwork.genesisBlock,
       specVersion: currentNetwork.coinParam.specVersion,
       id: currentNetwork.value,
+      wsIdentifier: currentNetwork.wsIdentifier,
+      caip2: currentNetwork.caip,
     );
     return Web3SubstrateChainAuthenticated(
         accounts: activeAccounts,

@@ -8,13 +8,13 @@ class HTTPCaller {
   static final HttpClientManager _clientManager = HttpClientManager();
   static Future<HTTPCallerResponse> post({
     required Uri uri,
+    required Duration timeout,
     AppPlatform platform = AppPlatform.android,
     ProviderAuthenticated? authenticated,
     HTTPResponseType type = HTTPResponseType.binary,
     HTTPClientType clientType = HTTPClientType.cached,
     Map<String, String>? headers,
     Object? body,
-    Duration timeout = const Duration(seconds: 60),
   }) async {
     final data = await _clientManager.call(
       t: ({required client, required headers, required uri}) async {
@@ -33,14 +33,15 @@ class HTTPCaller {
         platform: platform);
   }
 
-  static Future<HTTPCallerResponse> get<T>(
-      {required Uri uri,
-      AppPlatform platform = AppPlatform.android,
-      ProviderAuthenticated? authenticated,
-      HTTPClientType clientType = HTTPClientType.cached,
-      HTTPResponseType type = HTTPResponseType.binary,
-      Map<String, String>? headers,
-      Duration timeout = const Duration(seconds: 60)}) async {
+  static Future<HTTPCallerResponse> get<T>({
+    required Uri uri,
+    required Duration timeout,
+    AppPlatform platform = AppPlatform.android,
+    ProviderAuthenticated? authenticated,
+    HTTPClientType clientType = HTTPClientType.cached,
+    HTTPResponseType type = HTTPResponseType.binary,
+    Map<String, String>? headers,
+  }) async {
     final data = await _clientManager.call(
         t: ({required client, required headers, required uri}) async {
           return client.get(uri, headers: headers).timeout(timeout);

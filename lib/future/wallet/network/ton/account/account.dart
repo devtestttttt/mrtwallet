@@ -33,7 +33,7 @@ class _TonServices extends StatelessWidget {
         child: Column(
           children: [
             AppListTile(
-              leading: const Icon(Icons.password),
+              trailing: const Icon(Icons.arrow_forward),
               title: Text("ton_mnemonic".tr),
               subtitle: Text("generate_ton_private_key".tr),
               onTap: () {

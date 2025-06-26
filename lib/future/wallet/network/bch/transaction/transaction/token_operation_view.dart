@@ -343,7 +343,7 @@ class _TokenCashOperationViewState extends State<TokenCashOperationView>
                                       style: context.colors.onSecondary
                                           .bodyMedium(context))
                               },
-                              itemBuilder: {
+                              selectedItemBuilder: {
                                 for (final i in CashTokenCapability.values)
                                   i: Text(i.name.tr)
                               },

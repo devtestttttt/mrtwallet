@@ -39,6 +39,7 @@ class _RippleServicesView extends StatelessWidget {
                 AppListTile(
                   title: Text("multi_sig_addr".tr),
                   subtitle: Text("establishing_multi_sig_addr".tr),
+                  trailing: const Icon(Icons.arrow_forward),
                   onTap: () {
                     context.to(PageRouter.rippleMultisigAddress,
                         argruments: chainAccount);
@@ -49,6 +50,7 @@ class _RippleServicesView extends StatelessWidget {
               AppListTile(
                 title: Text("trust_set".tr),
                 subtitle: Text("tust_line_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   final validator = LiveTransactionForm<RippleTrustSetForm>(
                       validator: RippleTrustSetForm());
@@ -60,6 +62,7 @@ class _RippleServicesView extends StatelessWidget {
               AppListTile(
                 title: Text("account_set".tr),
                 subtitle: Text("account_set_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   final validator = LiveTransactionForm<RippleAccountSetForm>(
                       validator: RippleAccountSetForm());
@@ -73,10 +76,12 @@ class _RippleServicesView extends StatelessWidget {
                     context.to(PageRouter.rippleAddNfts);
                   },
                   title: Text("manage_nfts".tr),
+                  trailing: const Icon(Icons.arrow_forward),
                   subtitle: Text("manage_nfts_desc".tr)),
               AppListTile(
                 title: const Text("NFTokenMint"),
                 subtitle: Text("ripple_mint_nftoken_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   final validator = LiveTransactionForm<RippleMintTokenForm>(
                       validator: RippleMintTokenForm());
@@ -87,6 +92,7 @@ class _RippleServicesView extends StatelessWidget {
               AppListTile(
                 title: const Text("NFTokenBurn"),
                 subtitle: Text("ripple_nftoken_burn_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   final validator = LiveTransactionForm<RippeBurnTokenForm>(
                       validator: RippeBurnTokenForm());
@@ -97,6 +103,7 @@ class _RippleServicesView extends StatelessWidget {
               AppListTile(
                 title: const Text("NFTokenCreateOffer"),
                 subtitle: Text("ripple_create_nftoken_offer_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   final validator = LiveTransactionForm<RippleCreateOfferForm>(
                       validator: RippleCreateOfferForm());
@@ -107,6 +114,7 @@ class _RippleServicesView extends StatelessWidget {
               AppListTile(
                 title: const Text("NFTokenCancelOffer"),
                 subtitle: Text("ripple_nftoken_cancel_offer_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   final validator = LiveTransactionForm<RippleCancelOfferForm>(
                       validator: RippleCancelOfferForm());
@@ -118,6 +126,7 @@ class _RippleServicesView extends StatelessWidget {
               AppListTile(
                 title: const Text("EscrowCreate"),
                 subtitle: Text("ripple_escrow_create_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   final validator = LiveTransactionForm<RippleEscrowCreateForm>(
                       validator: RippleEscrowCreateForm());
@@ -128,6 +137,7 @@ class _RippleServicesView extends StatelessWidget {
               AppListTile(
                 title: const Text("EscrowFinish"),
                 subtitle: Text("ripple_escrow_finish_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   final validator = LiveTransactionForm<RippleEscrowFinishForm>(
                       validator: RippleEscrowFinishForm());
@@ -138,6 +148,7 @@ class _RippleServicesView extends StatelessWidget {
               AppListTile(
                 title: const Text("EscrowCancel"),
                 subtitle: Text("ripple_escrow_cancel_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   final validator = LiveTransactionForm<RippleEscrowCancelForm>(
                       validator: RippleEscrowCancelForm());
@@ -149,6 +160,7 @@ class _RippleServicesView extends StatelessWidget {
               AppListTile(
                 title: const Text("SetRegularKey"),
                 subtitle: Text("ripple_regular_key_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   final validator = LiveTransactionForm<RippleRegularKeyForm>(
                       validator: RippleRegularKeyForm());
@@ -160,6 +172,7 @@ class _RippleServicesView extends StatelessWidget {
               AppListTile(
                 title: const Text("SignerListSet"),
                 subtitle: Text("ripple_set_signer_list_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   final validator = LiveTransactionForm<RippleSignerListForm>(
                       validator: RippleSignerListForm());
@@ -171,6 +184,7 @@ class _RippleServicesView extends StatelessWidget {
               AppListTile(
                 title: Text("ripple_key_conversion".tr),
                 subtitle: Text("ripple_key_conversion_desc".tr),
+                trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   context.to(PageRouter.rippleKeyConversion);
                 },

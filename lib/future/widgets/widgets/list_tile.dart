@@ -136,34 +136,44 @@ class AppSwitchListTile extends StatelessWidget {
       this.title,
       this.subtitle,
       this.maxLine = 2,
-      this.contentPadding});
+      this.contentPadding,
+      this.leading});
   final NullBoolVoid? onChanged;
   final bool value;
   final Widget? title;
   final Widget? subtitle;
   final int? maxLine;
   final EdgeInsets? contentPadding;
+  final Widget? leading;
   @override
   Widget build(BuildContext context) {
-    return SwitchListTile(
-      onChanged: onChanged,
+    return AppListTile(
       contentPadding: contentPadding,
-      value: value,
-      title: title == null
-          ? null
-          : DefaultTextStyle(
-              style: context.textTheme.bodyMedium!
-                  .copyWith(fontWeight: FontWeight.bold),
-              child: title!),
-      subtitle: subtitle == null
-          ? null
-          : DefaultTextStyle(
-              style: context.textTheme.bodyMedium!,
-              maxLines: maxLine,
-              overflow: TextOverflow.ellipsis,
-              child: subtitle!,
-            ),
+      leading: leading,
+      onTap: () => onChanged?.call(!value),
+      trailing: Switch(value: value, onChanged: onChanged),
+      title: title,
+      subtitle: subtitle,
     );
+    // return SwitchListTile(
+    //   onChanged: onChanged,
+    //   contentPadding: contentPadding,
+    //   value: value,
+    //   title: title == null
+    //       ? null
+    //       : DefaultTextStyle(
+    //           style: context.textTheme.bodyMedium!
+    //               .copyWith(fontWeight: FontWeight.bold),
+    //           child: title!),
+    //   subtitle: subtitle == null
+    //       ? null
+    //       : DefaultTextStyle(
+    //           style: context.textTheme.bodyMedium!,
+    //           maxLines: maxLine,
+    //           overflow: TextOverflow.ellipsis,
+    //           child: subtitle!,
+    //         ),
+    // );
   }
 }
 

@@ -5,10 +5,11 @@ import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/substrate/methods/methods.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/substrate/params/core/request.dart';
+import 'package:on_chain_wallet/wallet/web3/networks/substrate/params/models/transaction.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/substrate/permission/models/account.dart';
 
 class Web3SubstrateSignMessage
-    extends Web3SubstrateRequestParam<Map<String, dynamic>> {
+    extends Web3SubstrateRequestParam<Web3SubstrateSendTransactionResponse> {
   final Web3SubstrateChainAccount accessAccount;
   final String challeng;
   final String? content;
@@ -56,14 +57,16 @@ class Web3SubstrateSignMessage
   }
 
   @override
-  Web3SubstrateRequest<Map<String, dynamic>, Web3SubstrateSignMessage>
+  Web3SubstrateRequest<Web3SubstrateSendTransactionResponse,
+          Web3SubstrateSignMessage>
       toRequest(
           {required Web3RequestInformation request,
           required Web3RequestAuthentication authenticated,
           required List<Chain> chains}) {
     final chain = super.findRequestChain(
         request: request, authenticated: authenticated, chains: chains);
-    return Web3SubstrateRequest<Map<String, dynamic>, Web3SubstrateSignMessage>(
+    return Web3SubstrateRequest<Web3SubstrateSendTransactionResponse,
+        Web3SubstrateSignMessage>(
       params: this,
       authenticated: authenticated,
       chain: chain.$1,
@@ -74,4 +77,9 @@ class Web3SubstrateSignMessage
 
   @override
   List<Web3SubstrateChainAccount> get requiredAccounts => [accessAccount];
+
+  @override
+  Object? toJsWalletResponse(Web3SubstrateSendTransactionResponse response) {
+    return response.toCbor().encode();
+  }
 }

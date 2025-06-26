@@ -9,14 +9,16 @@ import 'package:on_chain_wallet/wallet/api/services/models/models.dart';
 
 abstract class HTTPService<P extends APIProvider>
     with HttpImpl
-    implements BaseServiceProtocol<P> {
+    implements NetworkServiceProtocol<P> {
+  HTTPService({this.timeout = const Duration(seconds: 30)});
+
   @override
   APPIsolate get isolate;
   @override
   ServiceProtocol get protocol => ServiceProtocol.http;
   @override
   final APIServiceTracker tracker = APIServiceTracker();
-  Duration get defaultTimeOut;
+  final Duration timeout;
 
   final _lock = SynchronizedLock();
 
@@ -71,7 +73,7 @@ abstract class HTTPService<P extends APIProvider>
         () async {
           return await serviceCaller.call(
               url: toUri,
-              timeout: timeout ?? defaultTimeOut,
+              timeout: timeout ?? this.timeout,
               body: params,
               headers: requestHeaders,
               responseType: _detectTemplateType<T>(responseType: responseType),
@@ -111,7 +113,7 @@ abstract class HTTPService<P extends APIProvider>
       response = await _callSynchronized<T>(() async {
         return await serviceCaller.call(
             url: toUri,
-            timeout: timeout ?? defaultTimeOut,
+            timeout: timeout ?? this.timeout,
             headers: requestHeaders,
             responseType: _detectTemplateType<T>(responseType: responseType),
             type: HTTPRequestType.get,
@@ -154,7 +156,7 @@ abstract class HTTPService<P extends APIProvider>
         return switch (request.type) {
           RequestServiceType.get => await serviceCaller.call(
               url: toUri,
-              timeout: timeout ?? defaultTimeOut,
+              timeout: timeout ?? this.timeout,
               headers: headers,
               responseType: type,
               type: HTTPRequestType.get,
@@ -162,7 +164,7 @@ abstract class HTTPService<P extends APIProvider>
               authenticated: authenticated),
           RequestServiceType.post => await serviceCaller.call(
               url: toUri,
-              timeout: timeout ?? defaultTimeOut,
+              timeout: timeout ?? this.timeout,
               headers: headers,
               responseType: type,
               body: request.body(),

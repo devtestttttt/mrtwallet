@@ -44,15 +44,15 @@ class _SolanaWeb3PermissionViewState extends State<SolanaWeb3PermissionView>
   @override
   Widget build(BuildContext context) {
     return UpdateChainPermissionWidget<SolAddress, SolanaChain, ISolanaAddress,
-        Web3SolanaChainAccount>(
-      chain: chain,
-      chains: chains,
-      onUpdateState: updateState,
-      hasPermission: hasPermission,
-      addAccount: addAccount,
-      onChangeChain: onChangeChain,
-      onChangeDefaultAccount: onChangeDefaultPermission,
-      activities: activities,
-    );
+            Web3SolanaChainAccount>(
+        chain: chain,
+        chains: chains,
+        onUpdateState: updateState,
+        hasPermission: hasPermission,
+        addAccount: addAccount,
+        onChangeChain: onChangeChain,
+        onChangeDefaultAccount: onChangeDefaultPermission,
+        activities: activities,
+        menuItems: menuItems);
   }
 }

@@ -1,40 +1,57 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
+import 'package:blockchain_utils/helper/helper.dart';
 import 'package:blockchain_utils/utils/utils.dart';
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
+import 'package:on_chain_wallet/wallet/wallet.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/substrate/methods/methods.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/substrate/params/core/request.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/substrate/permission/models/account.dart';
 import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 
-class Web3SubstrateSendTransactionResponse {
+class Web3SubstrateSendTransactionResponse with CborSerializable {
   final int id;
-  final String signature;
-  final String? signedTransaction;
-  Web3SubstrateSendTransactionResponse._(
-      {required this.signature,
-      required this.signedTransaction,
-      required this.id});
+  final List<int> signature;
+  final List<int>? signedTransaction;
   Web3SubstrateSendTransactionResponse(
       {this.id = 1, required List<int> signature, List<int>? signedTransaction})
-      : signature = BytesUtils.toHexString(signature, prefix: "0x"),
-        signedTransaction =
-            BytesUtils.tryToHexString(signedTransaction, prefix: "0x");
-  factory Web3SubstrateSendTransactionResponse.fromJson(
-      Map<String, dynamic> json) {
-    return Web3SubstrateSendTransactionResponse._(
-        signature: json["signature"],
-        signedTransaction: json["signedTransaction"],
-        id: json["id"]);
+      : signature = signature.asImmutableBytes,
+        signedTransaction = signedTransaction?.asImmutableBytes;
+
+  factory Web3SubstrateSendTransactionResponse.deserialize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: object,
+        hex: hex,
+        tags: CborTagsConst.defaultTag);
+    return Web3SubstrateSendTransactionResponse(
+        signature: values.elementAs(0),
+        signedTransaction: values.elementAs(1),
+        id: values.elementAs(2));
   }
 
-  Map<String, dynamic> toJson() {
+  String get signatureHex => BytesUtils.toHexString(signature, prefix: "0x");
+  String? get signedTransactionHex =>
+      BytesUtils.tryToHexString(signedTransaction, prefix: "0x");
+  Map<String, dynamic> toWalletConnectJson() {
     return {
-      "signature": signature,
-      "signedTransaction": signedTransaction,
+      "signature": BytesUtils.toHexString(signature, prefix: "0x"),
+      if (signedTransaction != null)
+        "signedTransaction": BytesUtils.tryToHexString(signedTransaction),
       "id": id
     };
+  }
+
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([
+          CborBytesValue(signature),
+          signedTransaction == null ? null : CborBytesValue(signedTransaction!),
+          id
+        ]),
+        CborTagsConst.defaultTag);
   }
 }
 
@@ -198,6 +215,6 @@ class Web3SubstrateSendTransaction
 
   @override
   Object? toJsWalletResponse(Web3SubstrateSendTransactionResponse response) {
-    return response.toJson();
+    return response.toCbor().encode();
   }
 }

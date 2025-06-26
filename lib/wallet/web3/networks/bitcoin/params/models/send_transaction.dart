@@ -34,15 +34,6 @@ class Web3BitcoinSendTransactionOutput with CborSerializable {
         hex: cborHex,
         object: object,
         tags: CborTagsConst.web3BitcoinSendTransactionParams);
-    final List<int>? cashtokenBytes = values.elementAs(3);
-    CashToken? cashtoken;
-    if (cashtokenBytes != null) {
-      cashtoken = CashToken.deserialize(cashtokenBytes).item1;
-      if (cashtoken == null) {
-        throw Web3BitcoinExceptionConstant.parsingScriptFailed(
-            "cashtoken", BytesUtils.toHexString(cashtokenBytes));
-      }
-    }
     return Web3BitcoinSendTransactionOutput(
         value: values.elementAs(0),
         scriptPubKey: Script.deserialize(bytes: values.elementAs(1)),
@@ -76,7 +67,7 @@ class Web3BitcoinSendTransaction extends Web3BitcoinRequestParam<String> {
       {required List<Web3BitcoinChainAccount> accounts,
       required List<Web3BitcoinSendTransactionOutput> outputs,
       Web3BitcoinChainAccount? requiredAccount}) {
-    final networks = accounts.map((e) => e.network).toSet();
+    final networks = accounts.map((e) => e.id).toSet();
     if (networks.length != 1) {
       throw Web3RequestExceptionConst.internalError;
     }

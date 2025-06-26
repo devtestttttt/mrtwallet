@@ -44,6 +44,7 @@ class WebSocketService<T extends APIProvider> extends BaseSocketService<T> {
 
   Map<String, dynamic>? onMessge(String event) {
     final Map<String, dynamic> decode = StringUtils.toJson(event);
+
     if (decode.containsKey("id")) {
       final int id = int.parse(decode["id"]!.toString());
       final request = _requests.remove(id);
@@ -56,11 +57,12 @@ class WebSocketService<T extends APIProvider> extends BaseSocketService<T> {
   }
 
   @override
-  Future<void> connect() async {
+  Future<void> connect(Duration timeout) async {
     await _lock.synchronized(() async {
       if (_status != SocketStatus.disconnect) return;
       final result = await MethodUtils.call(() async {
-        final socket = await PlatformWebScoket.connect(provider.callUrl);
+        final socket = await PlatformWebScoket.connect(
+            url: provider.callUrl, timeout: timeout);
         return socket;
       });
       if (result.hasResult) {
@@ -79,12 +81,15 @@ class WebSocketService<T extends APIProvider> extends BaseSocketService<T> {
   Future<Map<String, dynamic>> addMessage(
       SocketRequestCompleter message, Duration timeout) async {
     try {
-      return providerCaller(() async {
-        _requests[message.id] = message;
-        _add(message.params);
-        final result = await message.completer.future.timeout(timeout);
-        return result;
-      }, message);
+      return providerCaller(
+          t: () async {
+            _requests[message.id] = message;
+            _add(message.params);
+            final result = await message.completer.future.timeout(timeout);
+            return result;
+          },
+          param: message,
+          timeout: timeout);
     } finally {
       _requests.remove(message.id);
     }

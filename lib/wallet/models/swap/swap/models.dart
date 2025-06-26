@@ -1,8 +1,6 @@
 import 'package:blockchain_utils/blockchain_utils.dart';
-import 'package:cosmos_sdk/cosmos_sdk.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/crypto/utils/address/utils.dart';
-import 'package:on_chain_wallet/wallet/api/api.dart';
 import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
 import 'package:on_chain_wallet/wallet/models/network/core/network/network.dart';
 import 'package:on_chain_wallet/wallet/models/others/models/receipt_address.dart';
@@ -190,93 +188,6 @@ class RouteError {
   final SwapServiceProvider? provider;
   final String error;
   const RouteError({this.provider, required this.error});
-}
-
-class DefaultSwapServiceApiParams extends BaseSwapServiceApiParams {
-  final bool testnet;
-  final List<SwapKitSwapServiceProvider>? swapKitServiceProviders;
-  DefaultSwapServiceApiParams.testnet()
-      : testnet = true,
-        swapKitServiceProviders = null,
-        super([SwapServiceType.chainFlip]);
-  DefaultSwapServiceApiParams({
-    List<SwapServiceType> services = const [
-      SwapServiceType.chainFlip,
-      SwapServiceType.maya,
-      SwapServiceType.thor,
-      SwapServiceType.swapKit
-    ],
-    List<SwapKitSwapServiceProvider>? swapKitServiceProviders,
-  })  : swapKitServiceProviders = swapKitServiceProviders?.immutable,
-        testnet = false,
-        super(services);
-
-  /// 1339942095353
-  /// 1275848805863
-  @override
-  Future<MayaSwapService> loadMayaService() async {
-    return MayaSwapService(
-        provider: ThorNodeProvider(ThorNodeHTTPService(
-            isolate: APPIsolate.separate,
-            provider: CosmosAPIProvider(
-              uri: "https://mayanode.mayachain.info/mayachain",
-              identifier: 'identifier',
-            ))));
-  }
-
-  @override
-  Future<SkipGoSwapService> loadSkipGoService() async {
-    return SkipGoSwapService(
-        provider: SkipGoApiProvider(SkipGoHTTPService(
-      provider:
-          CustomAPIProvider(url: "https://api.skip.build", identifier: ''),
-      defaultTimeOut: const Duration(minutes: 1),
-      isolate: APPIsolate.separate,
-    )));
-  }
-
-  @override
-  Future<SwapKitSwapService> loadSwapKitService() async {
-    return SwapKitSwapService(
-        providers: swapKitServiceProviders ?? [],
-        provider: SwapKitProvider(SwapKitHTTPService(
-            isolate: APPIsolate.separate,
-            provider: CustomAPIProvider(
-                identifier: '',
-                url: "https://api.swapkit.dev",
-                auth: BasicProviderAuthenticated(
-                    type: ProviderAuthType.header,
-                    key: "x-api-key",
-                    value: "9e1a8dce-8e2d-4cad-9d09-9430df70743c")))));
-  }
-
-  @override
-  Future<ThorSwapService> loadThorService() async {
-    return ThorSwapService(
-        provider: ThorNodeProvider(ThorNodeHTTPService(
-            isolate: APPIsolate.separate,
-            provider: CosmosAPIProvider(
-                identifier: '',
-                uri: "https://thornode.ninerealms.com/thorchain"))));
-  }
-
-  @override
-  Future<CfSwapService> loadChainFlipService() async {
-    if (testnet) {
-      return CfSwapService(
-          chainType: ChainType.testnet,
-          provider: CfProvider(ChainFlipHTTPService(
-              isolate: APPIsolate.separate,
-              provider: CustomAPIProvider(
-                  url: 'https://chainflip-swap-perseverance.chainflip.io/',
-                  identifier: ''))));
-    }
-    return CfSwapService(
-        provider: CfProvider(ChainFlipHTTPService(
-            isolate: APPIsolate.separate,
-            provider: CustomAPIProvider(
-                url: 'https://chainflip-swap.chainflip.io/', identifier: ''))));
-  }
 }
 
 class APPSwapRoute {

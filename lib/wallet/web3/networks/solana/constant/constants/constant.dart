@@ -2,6 +2,7 @@ class Web3SolanaConst {
   static const String sendTransaction = "solana_signAndSendTransaction";
   static const String signAndSendAllTransactions =
       "solana_signAndSendAllTransactions";
+  static const String signAllTransactions = "solana_signAllTransactions";
   static const String signMessage = "solana_signMessage";
   static const String signTransaction = "solana_signTransaction";
   static const String requestAccounts = "solana_requestAccounts";
@@ -14,6 +15,7 @@ class Web3SolanaConst {
   static const int sendTransactionTag = 104;
   static const int sendAllTransactionsTag = 105;
   static const int signInTag = 106;
+  static const int signAllTransactionsTag = 107;
 
   static const List<int> sendTransactionDataTag = [1, 2];
   static const List<int> sendTransactionDataConfigTag = [1, 3];

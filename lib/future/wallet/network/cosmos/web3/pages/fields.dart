@@ -25,8 +25,6 @@ class CosmosWeb3FieldsView extends StatelessWidget {
       case Web3CosmosRequestMethods.signTransactionDirect:
         return CosmosWeb3TransactionFieldsView(
             request: request.cast(), wallet: wallet);
-      case Web3CosmosRequestMethods.switchNetwork:
-        return CosmosWeb3GlobalFieldsView(request: request, wallet: wallet);
       default:
     }
     return WidgetConstant.sizedBox;

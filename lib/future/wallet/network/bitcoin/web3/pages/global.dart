@@ -37,6 +37,7 @@ class _GlobalFieldsView extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (form.request.params.method) {
       case Web3BitcoinRequestMethods.signPersonalMessage:
+      case Web3BitcoinRequestMethods.signMessage:
         return BitcoinWeb3SignMessageRequestView(
           request: form as Web3BitcoinSignMessageForm,
         );

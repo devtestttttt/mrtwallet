@@ -1,6 +1,7 @@
 import 'package:bitcoin_base/bitcoin_base.dart';
 import 'package:blockchain_utils/bip/bip.dart';
 import 'package:blockchain_utils/utils/numbers/rational/big_rational.dart';
+import 'package:blockchain_utils/utils/string/string.dart';
 import 'package:cosmos_sdk/cosmos_sdk.dart';
 import 'package:monero_dart/monero_dart.dart';
 import 'package:on_chain_wallet/app/core.dart';
@@ -198,6 +199,19 @@ class _DefaultAppCoins {
         assetLogo: APPConst.arbitrum,
       ),
       providers: []);
+  static final EthereumNetworkParams arbitrumTestnet = EthereumNetworkParams(
+      chainId: BigInt.from(421614),
+      chainType: ChainType.testnet,
+      supportEIP1559: true,
+      token: Token(
+        name: "Arbitrum Sepolia",
+        symbol: "tARB",
+        market: const CoingeckoCoin(apiId: "arbitrum", coinName: "arbitrum"),
+        decimal: 18,
+        assetLogo: APPConst.arbitrum,
+      ),
+      providers: []);
+
   static final EthereumNetworkParams base = EthereumNetworkParams(
       chainId: BigInt.from(8453),
       chainType: ChainType.mainnet,
@@ -662,7 +676,10 @@ class _DefaultAppCoins {
       chainType: ChainType.testnet,
       ss58Format: SS58Const.polkadot,
       token: Token(
-          name: "ChainFlip", symbol: "tDOT", decimal: 10, assetLogo: null),
+          name: "ChainFlip",
+          symbol: "tDOT",
+          decimal: 10,
+          assetLogo: APPConst.cf),
       providers: [],
       substrateChainType: SubstrateChainType.substrate,
       specVersion: 1017001);
@@ -863,7 +880,7 @@ class _DefaultAppCoins {
           assetLogo: APPConst.stellar),
       providers: const [],
       chainType: ChainType.mainnet,
-      stellarChainType: StellarChainType.mainnet);
+      stellarChainType: StellarChainType.pubnet);
   static final StellarNetworkParams stellarTestnet = StellarNetworkParams(
       token: Token(
           name: "Stellar testnet",
@@ -1157,19 +1174,10 @@ class _DefaultAppCoins {
 }
 
 class ChainConst {
-  // static int suiMainnetId = 800;
-  // static int aptosMainnetId = 810;
-  // static int ethereumMainnetId = 100;
-  // static int solanaMainnetId = 33;
-  // static int stellarMainnetId = 600;
-  // static int polkadotMainnetId = 400;
-  // static int tonMainnetId = 300;
-  // static int tronMainnetId = 1001;
-  // static int cosmosHubMainnetId = 200;
-  // static int bitcoinMainnetId = 0;
-
   static const int importedNetworkStartId = 2000;
   static const int maxAccountTokens = 1000;
+  static const int cfTestnetNetworkId = 466;
+  static const int polkadotMainnetId = 400;
   static final Map<int, WalletNetwork> defaultCoins =
       Map<int, WalletNetwork>.unmodifiable({
     0: WalletBitcoinNetwork(0, _DefaultAppCoins.bitcoinMainnet),
@@ -1204,6 +1212,7 @@ class ChainConst {
     107: WalletEthereumNetwork(107, _DefaultAppCoins.arbitrum),
     108: WalletEthereumNetwork(108, _DefaultAppCoins.base),
     109: WalletEthereumNetwork(109, _DefaultAppCoins.optimism),
+    110: WalletEthereumNetwork(110, _DefaultAppCoins.arbitrumTestnet),
     200: WalletCosmosNetwork(200, _DefaultAppCoins.cosmos),
     201: WalletCosmosNetwork(201, _DefaultAppCoins.cosmosTestnet),
     202: WalletCosmosNetwork(202, _DefaultAppCoins.maya),
@@ -1271,10 +1280,12 @@ class ChainConst {
     if (network == null) return defaultNetwork;
     return defaultNetwork.copyWith(
       coinParam: defaultNetwork.coinParam.updateParams(
-          updateProviders: network.coinParam.providers,
-          token: network.coinParam.token,
-          addressExplorer: network.coinParam.addressExplorer,
-          transactionExplorer: network.coinParam.transactionExplorer),
+        updateProviders: network.coinParam.providers,
+        token: network.coinParam.token
+            .copyWith(assetLogo: defaultNetwork.coinParam.token.assetLogo),
+        addressExplorer: network.coinParam.addressExplorer,
+        transactionExplorer: network.coinParam.transactionExplorer,
+      ),
     );
   }
 
@@ -1301,6 +1312,22 @@ class ChainConst {
       throw WalletExceptionConst.networkDoesNotExist;
     }
     return genesis;
+  }
+
+  static String buildCaip2(NetworkType type, String identifier) {
+    String part = identifier;
+    switch (type) {
+      case NetworkType.bitcoinAndForked:
+      case NetworkType.monero:
+      case NetworkType.substrate:
+        if (!StringUtils.isHexBytes(part)) {
+          throw WalletExceptionConst.invalidHexBytes;
+        }
+        part = StringUtils.strip0x(identifier.toLowerCase()).substring(0, 32);
+        break;
+      default:
+    }
+    return "${type.caip2}:$part";
   }
 
   static String? getAddressExplorer(int value) {

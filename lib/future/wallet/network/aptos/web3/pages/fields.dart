@@ -22,8 +22,6 @@ class AptosWeb3FieldsView extends StatelessWidget {
                 Web3AptosSignMessage>,
             wallet: wallet);
       case Web3AptosRequestMethods.signTransaction:
-      case Web3AptosRequestMethods.signAllTransactions:
-      case Web3AptosRequestMethods.sendTransaction:
         return AptosWeb3TransactionFieldsView(
             request: request.cast(), wallet: wallet);
       case Web3AptosRequestMethods.switchNetwork:

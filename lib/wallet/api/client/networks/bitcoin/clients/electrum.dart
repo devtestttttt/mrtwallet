@@ -19,8 +19,8 @@ class BitcoinElectrumClient extends BitcoinClient<IBitcoinAddress> {
   final WalletBitcoinNetwork network;
 
   @override
-  BaseServiceProtocol<ElectrumAPIProvider> get service =>
-      provider.rpc as BaseServiceProtocol<ElectrumAPIProvider>;
+  NetworkServiceProtocol<ElectrumAPIProvider> get service =>
+      provider.rpc as NetworkServiceProtocol<ElectrumAPIProvider>;
 
   final ElectrumProvider provider;
 
@@ -67,11 +67,6 @@ class BitcoinElectrumClient extends BitcoinClient<IBitcoinAddress> {
         QuickCrypto.sha256DoubleHash(BytesUtils.fromHexString(header))
             .reversed
             .toList());
-  }
-
-  @override
-  Future<String> genesis() async {
-    return genesisHash();
   }
 
   @override

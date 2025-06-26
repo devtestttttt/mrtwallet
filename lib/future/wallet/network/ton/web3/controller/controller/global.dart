@@ -36,7 +36,7 @@ class Web3TonGlobalRequestController<RESPONSE,
                   digest: signingParams.chalengBytes(),
                   index: address.keyIndex.cast());
               final response = await generateSignature(signRequest);
-              return response.signature;
+              return Web3TonSignMessageResponse(signature: response.signature);
             },
           ));
           return signature.result;

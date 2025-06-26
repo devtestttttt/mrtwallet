@@ -12,6 +12,7 @@ class APPConst {
   static const String assetsTronWeb = "assets/webview/tron_web.js";
   static const String bnJs = "assets/webview/bn.js";
   static final APPImage logo = APPImage.local("assets/image/wallet.png");
+  static final APPImage wc = APPImage.local("assets/image/wc.png");
   static final APPImage telegramLogo = APPImage.local("assets/image/t.png");
   static final APPImage githubLogo = APPImage.local("assets/image/g.png");
   static final APPImage ltc = APPImage.local("assets/image/ltc.png");
@@ -46,7 +47,7 @@ class APPConst {
   static final APPImage moonriver =
       APPImage.local("assets/image/moonriver.png");
   static final APPImage astar = APPImage.local("assets/image/astar.png");
-
+  static final APPImage cf = APPImage.local("assets/image/cf.png");
   static final APPImage centrifuge = APPImage.local("assets/image/cfg.png");
   static final APPImage acala = APPImage.local("assets/image/acala.png");
 
@@ -55,7 +56,7 @@ class APPConst {
   static final APPImage monero = APPImage.local("assets/image/monero.png");
   static final APPImage aptos = APPImage.local("assets/image/aptos.png");
   static final APPImage sui = APPImage.local("assets/image/sui.png");
-  static const String name = "OnChain WALLET";
+  static const String name = "OnChain";
   static const Duration animationDuraion = Duration(milliseconds: 400);
   static const Duration milliseconds100 = Duration(milliseconds: 100);
   static const Duration milliseconds200 = Duration(milliseconds: 200);
@@ -106,4 +107,6 @@ class APPConst {
 
   static const double largeCircleRadius = 60;
   static const double largeCircleRadius120 = 120;
+
+  static const double disabledOpacity = 0.3;
 }

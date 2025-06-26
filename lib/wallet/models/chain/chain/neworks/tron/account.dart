@@ -128,6 +128,7 @@ final class TronChain extends Chain<
   Future<void> updateAddressBalance(ITronAddress address,
       {bool tokens = true, bool saveAccount = true}) async {
     _isAccountAddress(address);
+    await initAddress(address);
     await onClient(onConnect: (client) async {
       final balance = await client.getAccountInfo(address.networkAddress);
       final accountInfo = balance?.accountInfo;

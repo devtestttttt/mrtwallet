@@ -4,8 +4,6 @@ import 'package:on_chain_wallet/wallet/api/services/models/models.dart';
 class APIServiceTracker {
   final StreamValue<APIServiceStatus> status =
       StreamValue<APIServiceStatus>(APIServiceStatus.active);
-  // APIServiceStatus get status => status;
-  // APIServiceStatus get liveStatus => status;
   final List<ApiRequest> _requests = [];
   List<ApiRequest> get requests => List<ApiRequest>.from(_requests)
     ..sort((a, b) => b.time.compareTo(a.time));

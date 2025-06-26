@@ -3,20 +3,15 @@ import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/cosmos/constant/constants/constant.dart';
-import 'package:on_chain_wallet/wallet/web3/networks/ethereum/constant/constant.dart';
 
 class Web3CosmosRequestMethods extends Web3NetworkRequestMethods {
   const Web3CosmosRequestMethods._(
-      {required super.id,
-      required super.name,
-      super.methodsName,
-      super.reloadAuthenticated});
+      {required super.id, required super.name, super.reloadAuthenticated});
 
   static const Web3CosmosRequestMethods requestAccounts =
       Web3CosmosRequestMethods._(
           id: Web3CosmosConst.requestAccountTag,
-          name: Web3CosmosConst.requestAccounts,
-          methodsName: [Web3EthereumConst.requestAccounts]);
+          name: Web3CosmosConst.requestAccounts);
   static const Web3CosmosRequestMethods addNewChain =
       Web3CosmosRequestMethods._(
           id: Web3CosmosConst.addNewChainTag,
@@ -32,12 +27,6 @@ class Web3CosmosRequestMethods extends Web3NetworkRequestMethods {
           id: Web3CosmosConst.sendTransactionTag,
           name: Web3CosmosConst.sendTransaction);
 
-  static const Web3CosmosRequestMethods switchNetwork =
-      Web3CosmosRequestMethods._(
-          id: Web3CosmosConst.changeNetworkTag,
-          name: Web3CosmosConst.switchNetwork,
-          reloadAuthenticated: true);
-
   static const Web3CosmosRequestMethods signTransactionAmino =
       Web3CosmosRequestMethods._(
           id: Web3CosmosConst.signTransactionAminoTag,
@@ -47,10 +36,10 @@ class Web3CosmosRequestMethods extends Web3NetworkRequestMethods {
           id: Web3CosmosConst.signTransactionDirectTag,
           name: Web3CosmosConst.signTransactionDirect);
 
-  static const Web3CosmosRequestMethods signTransaction =
-      Web3CosmosRequestMethods._(
-          id: Web3CosmosConst.signTransactionTag,
-          name: Web3CosmosConst.signTransaction);
+  // static const Web3CosmosRequestMethods signTransaction =
+  //     Web3CosmosRequestMethods._(
+  //         id: Web3CosmosConst.signTransactionTag,
+  //         name: Web3CosmosConst.signTransaction);
 
   @override
   NetworkType get network => NetworkType.cosmos;
@@ -61,8 +50,6 @@ class Web3CosmosRequestMethods extends Web3NetworkRequestMethods {
     signTransactionDirect,
     signMessage,
     addNewChain,
-    switchNetwork,
-    signTransaction,
     sendTransaction
   ];
 

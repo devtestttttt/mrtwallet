@@ -52,12 +52,16 @@ class Web3SuiChain extends Web3Chain<SuiAddress, SuiChain, ISuiAddress,
         getCurrentPermissionNetwork(networks.map((e) => e.network).toList());
     final web3Networks = networks
         .map((e) => Web3ChainDefaultIdnetifier(
-            id: e.network.value,
-            identifier: e.network.coinParam.suiChain.identifier))
+              id: e.network.value,
+              wsIdentifier: e.network.wsIdentifier,
+              caip2: e.network.caip,
+            ))
         .toList();
     final currentWeb3Network = Web3ChainDefaultIdnetifier(
-        id: currentNetwork.value,
-        identifier: currentNetwork.coinParam.suiChain.identifier);
+      id: currentNetwork.value,
+      wsIdentifier: currentNetwork.wsIdentifier,
+      caip2: currentNetwork.caip,
+    );
     return Web3SuiChainAuthenticated(
         accounts: activeAccounts,
         networks: web3Networks,

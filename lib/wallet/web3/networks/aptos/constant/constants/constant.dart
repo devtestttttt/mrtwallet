@@ -1,6 +1,4 @@
 class Web3AptosConst {
-  static const String sendTransaction = "aptos_sendTransaction";
-  static const String signAllTransactions = "aptos_signAllTransactions";
   static const String signMessage = "aptos_signMessage";
   static const String signTransaction = "aptos_signTransaction";
   static const String requestAccounts = "aptos_requestAccounts";

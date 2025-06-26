@@ -2,18 +2,15 @@ import 'package:on_chain_wallet/app/utils/list/extension.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
-import 'package:on_chain_wallet/wallet/web3/networks/ethereum/constant/constant.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/solana/constant/constants/constant.dart';
 
 class Web3SolanaRequestMethods extends Web3NetworkRequestMethods {
-  const Web3SolanaRequestMethods._(
-      {required super.id, required super.name, super.methodsName});
+  const Web3SolanaRequestMethods._({required super.id, required super.name});
 
   static const Web3SolanaRequestMethods requestAccounts =
       Web3SolanaRequestMethods._(
           id: Web3SolanaConst.requestAccountTag,
-          name: Web3SolanaConst.requestAccounts,
-          methodsName: [Web3EthereumConst.requestAccounts]);
+          name: Web3SolanaConst.requestAccounts);
   static const Web3SolanaRequestMethods signMessage =
       Web3SolanaRequestMethods._(
           id: Web3SolanaConst.signMessageV2Tag,
@@ -23,6 +20,10 @@ class Web3SolanaRequestMethods extends Web3NetworkRequestMethods {
       Web3SolanaRequestMethods._(
           id: Web3SolanaConst.signTransactionTag,
           name: Web3SolanaConst.signTransaction);
+  static const Web3SolanaRequestMethods signAllTransactions =
+      Web3SolanaRequestMethods._(
+          id: Web3SolanaConst.signAllTransactionsTag,
+          name: Web3SolanaConst.signAllTransactions);
   static const Web3SolanaRequestMethods signAndSendAllTransactions =
       Web3SolanaRequestMethods._(
           id: Web3SolanaConst.signAndSendAllTransactionsTag,
@@ -42,6 +43,7 @@ class Web3SolanaRequestMethods extends Web3NetworkRequestMethods {
     requestAccounts,
     signTransaction,
     signAndSendAllTransactions,
+    signAllTransactions,
     sendTransaction,
     signIn,
     signMessage

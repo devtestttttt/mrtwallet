@@ -6,14 +6,10 @@ import 'package:stellar_dart/stellar_dart.dart';
 
 class StellarHTTPService extends HTTPService<StellarAPIProvider>
     implements StellarServiceProvider {
-  StellarHTTPService(
-      {required this.provider,
-      required this.isolate,
-      this.defaultTimeOut = const Duration(seconds: 30)});
+  StellarHTTPService({required this.provider, required this.isolate});
   @override
   final APPIsolate isolate;
-  @override
-  final Duration defaultTimeOut;
+
   @override
   final StellarAPIProvider provider;
 

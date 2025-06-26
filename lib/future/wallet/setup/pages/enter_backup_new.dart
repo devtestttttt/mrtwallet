@@ -8,7 +8,6 @@ import 'package:on_chain_wallet/future/wallet/setup/controller/controller.dart';
 import 'package:on_chain_wallet/future/wallet/controller/controller.dart';
 import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
 import 'package:on_chain_wallet/wallet/models/backup/backup.dart';
-import 'package:on_chain_wallet/wallet/provider/wallet_provider.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 
 enum _BackupPage { fields, verify }
@@ -73,7 +72,7 @@ class _EnterMnemonicBackupViewState extends State<EnterWalletBackupView>
   }
 
   void setup() async {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     backup = backupTextField.currentState?.getValue().trim();
     if (backup == null) return;
     final model = context.watch<SetupWalletController>(StateConst.setup);

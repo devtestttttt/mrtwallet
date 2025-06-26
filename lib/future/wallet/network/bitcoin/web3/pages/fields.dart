@@ -16,6 +16,7 @@ class BitcoinWeb3FieldsView extends StatelessWidget {
       case Web3BitcoinRequestMethods.requestAccounts:
         return BitcoinWeb3GlobalFieldsView(request: request, wallet: wallet);
       case Web3BitcoinRequestMethods.signPersonalMessage:
+      case Web3BitcoinRequestMethods.signMessage:
         return BitcoinWeb3GlobalFieldsView<Web3BitcoinSignMessageResponse,
             Web3BitcoinSignMessage>(request: request.cast(), wallet: wallet);
       case Web3BitcoinRequestMethods.sendTransaction:

@@ -106,7 +106,7 @@ class __CosmosImportNetworkViewState extends State<_CosmosImportNetworkView>
   }
 
   Future<void> importChain() async {
-    if (!(form.formKey.currentState?.validate() ?? false)) return;
+    if (!form.formKey.ready()) return;
     final rpcUrl = form.getRpcUrl();
     if (rpcUrl == null) return;
     progressKey.progressText("checking_rpc_network_info".tr);

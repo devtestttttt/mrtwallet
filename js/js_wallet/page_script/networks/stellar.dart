@@ -17,12 +17,16 @@ class StellarPageController extends WalletStandardPageController {
         JSStellarWalletStandardConnectFeature.setup(connect: _connect.toJS);
     feature.stellarEvents =
         JSWalletStandardEventsFeature.setup(on: _onEvents.toJS);
+
+    feature.stellarDisconnect = JSWalletStandardDisconnectFeature.setup(
+        disconnect: _disconnectChain.toJS);
   }
 
-  JSPromise<JSStellarWalletStandardConnect> _connect() {
+  JSPromise<JSStellarWalletStandardConnect> _connect([JSString? chainId]) {
+    final network = JsUtils.asJSString(chainId);
+    final params = network == null ? null : [network].toJS;
     return waitForSuccessResponsePromise<JSStellarWalletStandardConnect>(
-      method: StellarJSConst.requestAccounts,
-    );
+        method: StellarJSConst.requestAccounts, params: params);
   }
 
   JSPromise<JSStellarSignTransactionResponse> _signTransaction(

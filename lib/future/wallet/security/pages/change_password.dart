@@ -47,7 +47,6 @@ class _ChangePasswordViewState extends State<_ChangePasswordView>
   }
 
   bool _obscureText = true;
-
   void toggleObscure() {
     _obscureText = !_obscureText;
     setState(() {});
@@ -71,7 +70,7 @@ class _ChangePasswordViewState extends State<_ChangePasswordView>
   }
 
   void setupPassword() async {
-    if (form.currentState?.validate() ?? false) {
+    if (form.ready()) {
       progressKey.progressText("changing_password".tr);
       final model = context.watch<WalletProvider>(StateConst.main);
       final result =

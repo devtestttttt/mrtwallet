@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:on_chain_wallet/future/state_managment/extension/extension.dart';
 
 import 'package:on_chain_wallet/app/core.dart'
     show APPConst, MethodUtils, StateConst;
@@ -44,7 +43,7 @@ class __BipAccountPublicKeyState extends State<_BipAccountPublicKey>
   late PublicKeysView publicKey;
   String? keyInNetwork;
   final GlobalKey<PageProgressState> progressKey = GlobalKey();
-  bool inited = false;
+  ICardanoAddress? adaLegacyAddress;
   String comperessedToNetworkFormat(String key) {
     switch (widget.network.type) {
       case NetworkType.xrpl:
@@ -57,9 +56,7 @@ class __BipAccountPublicKeyState extends State<_BipAccountPublicKey>
   }
 
   void initPubKey() async {
-    if (inited) return;
-    inited = true;
-
+    adaLegacyAddress = isAdaLegacy();
     final wallet = context.watch<WalletProvider>(StateConst.main).wallet;
     final result = await wallet.getAccountPubKys(account: widget.account);
     if (result.hasResult) {
@@ -78,12 +75,11 @@ class __BipAccountPublicKeyState extends State<_BipAccountPublicKey>
     }
   }
 
-  late final ICardanoAddress? adaLegacyAddress = isAdaLegacy();
-
   ICardanoAddress? isAdaLegacy() {
     if (widget.account is ICardanoAddress) {
-      if ((widget.account as ICardanoAddress).addressDetails.isLegacy) {
-        return widget.account as ICardanoAddress;
+      final account = widget.account.cast<ICardanoAddress>();
+      if (account.addressDetails.isLegacy) {
+        return account;
       }
     }
     return null;
@@ -92,12 +88,12 @@ class __BipAccountPublicKeyState extends State<_BipAccountPublicKey>
   void onChangeKey(PublicKeysView? changeKey) {
     if (publicKey == changeKey || changeKey == null) return;
     publicKey = changeKey;
-    setState(() {});
+    updateState();
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void onInitOnce() {
+    super.onInitOnce();
     initPubKey();
   }
 

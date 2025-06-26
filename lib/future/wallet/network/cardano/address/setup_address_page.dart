@@ -252,7 +252,7 @@ class _SetupCardanoAddressViewState extends State<SetupCardanoAddressView>
   }
 
   void generateAddress() async {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     final result = await MethodUtils.call(() async {
       pageProgressKey.progressText("generating_new_addr".tr);
       final model = context.watch<WalletProvider>(StateConst.main);
@@ -285,20 +285,6 @@ class _SetupCardanoAddressViewState extends State<SetupCardanoAddressView>
                   customKeys: customKeys,
                   seedGenerationType: seedGenerationType,
                   defaultDerivation: defaultStakeKey,
-                  title: PageTitleSubtitle(
-                      title: "derive_network_address"
-                          .tr
-                          .replaceOne(network.coinParam.token.name),
-                      body: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("disable_standard_derivation".tr),
-                          WidgetConstant.height8,
-                          Text("stake_key_derivation".tr),
-                          WidgetConstant.height8,
-                          Text("ada_base_stake_key_same_error".tr)
-                        ],
-                      )),
                 ));
         if (stakeDerivation == null) return null;
         stakeDerivation = stakeDerivation.copyWith(keyName: "stake_key");

@@ -32,8 +32,8 @@ class SubstrateClient
   String get genesisBlock => metadata.genesis;
 
   @override
-  BaseServiceProtocol<SubstrateAPIProvider> get service =>
-      provider.rpc as BaseServiceProtocol<SubstrateAPIProvider>;
+  NetworkServiceProtocol<SubstrateAPIProvider> get service =>
+      provider.rpc as NetworkServiceProtocol<SubstrateAPIProvider>;
 
   Future<BigInt> getAccountBalance(BaseSubstrateAddress address) async {
     final storage =

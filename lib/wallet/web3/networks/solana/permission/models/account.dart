@@ -12,13 +12,13 @@ import 'package:on_chain_wallet/crypto/keys/access/crypto_keys/crypto_keys.dart'
 class Web3SolanaChainAccount extends Web3ChainAccount<SolAddress> {
   @override
   final int id;
-  final SolanaNetworkType network;
+  // final SolanaNetworkType network;
   Web3SolanaChainAccount({
     required super.keyIndex,
     required super.address,
     required super.defaultAddress,
     required this.id,
-    required this.network,
+    // required this.network,
   });
   @override
   Web3SolanaChainAccount clone({
@@ -27,14 +27,12 @@ class Web3SolanaChainAccount extends Web3ChainAccount<SolAddress> {
     bool? defaultAddress,
     int? id,
     List<int>? publicKey,
-    SolanaNetworkType? network,
   }) {
     return Web3SolanaChainAccount(
         keyIndex: keyIndex ?? this.keyIndex,
         address: address ?? this.address,
         defaultAddress: defaultAddress ?? this.defaultAddress,
-        id: id ?? this.id,
-        network: network ?? this.network);
+        id: id ?? this.id);
   }
 
   factory Web3SolanaChainAccount.fromChainAccount(
@@ -44,7 +42,6 @@ class Web3SolanaChainAccount extends Web3ChainAccount<SolAddress> {
       required bool isDefault}) {
     return Web3SolanaChainAccount(
         keyIndex: address.keyIndex,
-        network: network,
         address: address.networkAddress,
         id: id,
         defaultAddress: isDefault);
@@ -61,8 +58,7 @@ class Web3SolanaChainAccount extends Web3ChainAccount<SolAddress> {
         keyIndex: AddressDerivationIndex.deserialize(obj: values.getCborTag(0)),
         address: SolAddress(values.elementAt(1)),
         id: values.elementAt(2),
-        defaultAddress: values.elementAt(3),
-        network: SolanaNetworkType.fromValue(values.elementAs(4)));
+        defaultAddress: values.elementAt(3));
   }
 
   @override
@@ -73,7 +69,6 @@ class Web3SolanaChainAccount extends Web3ChainAccount<SolAddress> {
           address.address,
           id,
           defaultAddress,
-          network.value
         ]),
         CborTagsConst.web3SolanaAccount);
   }

@@ -6,17 +6,11 @@ import 'package:polkadot_dart/polkadot_dart.dart';
 
 class SubstrateHTTPService extends HTTPService<SubstrateAPIProvider>
     with SubstrateServiceProvider {
-  SubstrateHTTPService(
-      {required this.provider,
-      required this.isolate,
-      this.defaultTimeOut = const Duration(seconds: 30)});
+  SubstrateHTTPService({required this.provider, required this.isolate});
   @override
   final APPIsolate isolate;
   @override
   final SubstrateAPIProvider provider;
-
-  @override
-  final Duration defaultTimeOut;
 
   @override
   Future<BaseServiceResponse<T>> doRequest<T>(SubstrateRequestDetails params,

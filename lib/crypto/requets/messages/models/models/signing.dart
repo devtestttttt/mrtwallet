@@ -66,12 +66,12 @@ enum SigningRequestNetwork {
 }
 
 final class BitcoinSigning extends GlobalSignRequest {
-  final int sighash;
+  final int? sighash;
   final bool useTaproot;
   final bool useBchSchnorr;
   BitcoinSigning(
       {required super.digest,
-      required this.sighash,
+      this.sighash,
       required this.useTaproot,
       required Bip32AddressIndex super.index,
       required super.network,

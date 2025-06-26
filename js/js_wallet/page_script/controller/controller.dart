@@ -10,6 +10,9 @@ abstract class JSBasePageController {
 
   SynchronizedLock? _lock = SynchronizedLock();
   Completer<void>? _wait = Completer();
+  String? _walletId;
+  void postMessage(PageMessage message);
+  void initClients(String clientId);
 
   Future<void> _waitForActivation() async {
     return await _lock?.synchronized(() async {
@@ -34,8 +37,7 @@ abstract class JSBasePageController {
     JSClientType.cosmos: CosmosPageController(requestController),
     JSClientType.bitcoin: BitcoinPageController(requestController)
   };
-  void postMessage(PageMessage message);
-  String? _walletId;
+
   void _initControllers() {
     try {
       for (final i in _networks.entries) {
@@ -60,7 +62,6 @@ abstract class JSBasePageController {
     _wait?.completeError(err);
   }
 
-  void initClients(String clientId);
   void handleWalletMessage(WalletMessage walletResponse) {
     if (walletResponse.data.messageType == JSWalletMessageType.response) {
       requestController._completeRequest(walletResponse);

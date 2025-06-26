@@ -7,12 +7,8 @@ import 'package:on_chain/ada/src/provider/service/service.dart';
 
 class CardanoHTTPService extends HTTPService<CardanoAPIProvider>
     implements BlockFrostServiceProvider {
-  CardanoHTTPService({
-    required this.provider,
-    required this.isolate,
-    this.version = "v0",
-    this.defaultTimeOut = const Duration(seconds: 30),
-  });
+  CardanoHTTPService(
+      {required this.provider, required this.isolate, this.version = "v0"});
   @override
   final APPIsolate isolate;
 
@@ -26,9 +22,6 @@ class CardanoHTTPService extends HTTPService<CardanoAPIProvider>
     return await serviceRequest<T>(params,
         uri: params.toUri(url, version: version), allowStatus: [200, 404, 400]);
   }
-
-  @override
-  final Duration defaultTimeOut;
 
   @override
   final CardanoAPIProvider provider;

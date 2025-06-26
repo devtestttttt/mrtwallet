@@ -1,12 +1,19 @@
-part of 'package:on_chain_wallet/wallet/provider/wallet_provider.dart';
+import 'package:blockchain_utils/cbor/cbor.dart';
+import 'package:blockchain_utils/utils/utils.dart';
+import 'package:on_chain_wallet/app/constant/global/storage_key.dart';
+import 'package:on_chain_wallet/app/error/exception/wallet_ex.dart';
+import 'package:on_chain_wallet/app/serialization/cbor/cbor.dart';
+import 'package:on_chain_wallet/wallet/constant/tags/constant.dart';
+import 'package:on_chain_wallet/wallet/models/setting/models/lock_time.dart';
 
-class HDWalletsConst {
+final class HDWalletsConst {
   static const String initializeName = "Wallet";
   static const String firstWalletName = "$initializeName (1)";
 }
 
-class HDWallets with CborSerializable {
+final class HDWallets with CborSerializable {
   Map<String, HDWallet> _wallets;
+  Map<String, HDWallet> get wallets => _wallets;
   String? _defaultWallet;
   String? get defaultWallet => _defaultWallet;
   bool get hasWallet => _wallets.isNotEmpty;
@@ -33,7 +40,7 @@ class HDWallets with CborSerializable {
       {required Map<String, HDWallet> wallets, required String? defaultWallet})
       : _wallets = Map<String, HDWallet>.unmodifiable(wallets),
         _defaultWallet = defaultWallet;
-  factory HDWallets.fromCborBytesOrObject(
+  factory HDWallets.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
     final CborListValue cbor = CborSerializable.cborTagValue(
         cborBytes: bytes,
@@ -42,7 +49,7 @@ class HDWallets with CborSerializable {
         tags: CborTagsConst.wallets);
     final wallets = cbor
         .elementAt<List<dynamic>>(0)
-        .map((e) => HDWallet.fromCborBytesOrObject(obj: e));
+        .map((e) => HDWallet.deserialize(obj: e));
     return HDWallets._(
         wallets: Map<String, HDWallet>.fromEntries(
             wallets.map((e) => MapEntry<String, HDWallet>(e.name, e))),
@@ -78,7 +85,7 @@ class HDWallets with CborSerializable {
 
   void updateWallet(HDWallet wallet, {bool? asDefaultWallet}) {
     final current = _wallets.values.firstWhere(
-        (element) => element._checksum == wallet._checksum,
+        (element) => element.checksum == wallet.checksum,
         orElse: () => throw WalletExceptionConst.walletDoesNotExists);
     if (wallet.name != current.name && _wallets.containsKey(wallet.name)) {
       throw WalletExceptionConst.walletNameExists;
@@ -100,7 +107,7 @@ class HDWallets with CborSerializable {
   void validateImport(HDWallet newWallet) {
     if (_wallets.containsKey(newWallet.name) ||
         _wallets.values
-            .any((element) => element._checksum == newWallet._checksum)) {
+            .any((element) => element.checksum == newWallet.checksum)) {
       throw WalletExceptionConst.walletAlreadyExists;
     }
   }
@@ -108,7 +115,7 @@ class HDWallets with CborSerializable {
   void setupWallet(HDWallet newWallet, {bool asDefault = false}) {
     if (_wallets.containsKey(newWallet.name) ||
         _wallets.values
-            .any((element) => element._checksum == newWallet._checksum)) {
+            .any((element) => element.checksum == newWallet.checksum)) {
       throw WalletExceptionConst.walletAlreadyExists;
     }
 
@@ -133,10 +140,10 @@ class HDWallets with CborSerializable {
   }
 }
 
-class HDWallet {
-  final String _checksum;
+final class HDWallet {
+  final String checksum;
   final String name;
-  final String _data;
+  final String data;
   final bool requiredPassword;
   final bool protectWallet;
   final WalletLockTime locktime;
@@ -144,16 +151,14 @@ class HDWallet {
   final DateTime created;
 
   HDWallet._(
-      {required String checksum,
+      {required this.checksum,
       required this.name,
-      required String data,
+      required this.data,
       required this.requiredPassword,
       required this.locktime,
       required this.network,
       required this.created,
-      required this.protectWallet})
-      : _data = data,
-        _checksum = checksum;
+      required this.protectWallet});
   factory HDWallet({
     required String checksum,
     required String name,
@@ -197,9 +202,9 @@ class HDWallet {
         created: DateTime.now(),
         protectWallet: protectWallet);
   }
-  HDWallet _updateData(String updateData) {
+  HDWallet updateData(String updateData) {
     return HDWallet(
-        checksum: _checksum,
+        checksum: checksum,
         name: name,
         data: updateData,
         requiredPassword: requiredPassword,
@@ -211,9 +216,9 @@ class HDWallet {
 
   HDWallet updateNetwork(int updateNetworkId) {
     return HDWallet(
-        checksum: _checksum,
+        checksum: checksum,
         name: name,
-        data: _data,
+        data: data,
         requiredPassword: requiredPassword,
         network: updateNetworkId,
         locktime: locktime,
@@ -223,9 +228,9 @@ class HDWallet {
 
   HDWallet _updateCreated() {
     return HDWallet(
-        checksum: _checksum,
+        checksum: checksum,
         name: name,
-        data: _data,
+        data: data,
         requiredPassword: requiredPassword,
         network: network,
         locktime: locktime,
@@ -233,7 +238,7 @@ class HDWallet {
         protectWallet: protectWallet);
   }
 
-  HDWallet _updateSettings({
+  HDWallet updateSettings({
     required WalletLockTime newLockTime,
     required bool reqPassword,
     required String newName,
@@ -244,9 +249,9 @@ class HDWallet {
     }
 
     return HDWallet(
-        checksum: _checksum,
+        checksum: checksum,
         name: newName,
-        data: _data,
+        data: data,
         requiredPassword: reqPassword,
         network: network,
         locktime: newLockTime,
@@ -254,7 +259,7 @@ class HDWallet {
         protectWallet: protectWallet);
   }
 
-  factory HDWallet.fromCborBytesOrObject({List<int>? bytes, CborObject? obj}) {
+  factory HDWallet.deserialize({List<int>? bytes, CborObject? obj}) {
     final CborListValue cbor =
         CborSerializable.decodeCborTags(bytes, obj, CborTagsConst.wallet);
     final int? setting = cbor.elementAt(5);
@@ -277,9 +282,9 @@ class HDWallet {
   CborTagValue _toCbor() {
     return CborTagValue(
         CborListValue.fixedLength([
-          _checksum,
+          checksum,
           name,
-          _data,
+          data,
           CborBoleanValue(requiredPassword),
           network,
           locktime.value,
@@ -289,12 +294,14 @@ class HDWallet {
         CborTagsConst.wallet);
   }
 
-  List<int> get checkSumBytes => BytesUtils.fromHexString(_checksum);
-  String get storageKey => "${StorageConst.walletStorageKey}${_checksum}_";
-  String get chainStorageKey => "${StorageConst.chainSorageKey}${_checksum}_";
+  List<int> get checkSumBytes => BytesUtils.fromHexString(checksum);
+  String get storageKey => "${StorageConst.walletStorageKey}${checksum}_";
+  String get chainStorageKey => "${StorageConst.chainSorageKey}${checksum}_";
   String get sharedStorageKey =>
-      "${StorageConst.chainSharedSorageKey}${_checksum}_";
-  String get web3StorageKey => "${StorageConst.web3StorageKey}${_checksum}_";
+      "${StorageConst.chainSharedSorageKey}${checksum}_";
+  String get web3StorageKey => "${StorageConst.web3StorageKey}${checksum}_";
+  String get wcStorageKey =>
+      "${StorageConst.walletConnectStorageKey}${checksum}_";
 
   String web3ClientStorageKey(String applicationId) {
     return "$web3StorageKey$applicationId";

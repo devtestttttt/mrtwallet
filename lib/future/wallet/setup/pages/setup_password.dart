@@ -44,7 +44,7 @@ class _SetupWalletPasswordState extends State<SetupWalletPassword>
   }
 
   void setupPassword() {
-    if (formKey.currentState?.validate() ?? false) {
+    if (formKey.ready()) {
       final model = context.watch<SetupWalletController>(StateConst.setup);
       model.setPassword(password);
     }

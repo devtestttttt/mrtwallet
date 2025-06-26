@@ -5,19 +5,15 @@ import 'package:on_chain/aptos/src/aptos.dart';
 
 class AptosHTTPService extends HTTPService<AptosAPIProvider>
     implements AptosServiceProvider {
-  AptosHTTPService({
-    required this.provider,
-    required this.isolate,
-    required this.graphQlProvider,
-    this.defaultTimeOut = const Duration(seconds: 30),
-  });
+  AptosHTTPService(
+      {required this.provider,
+      required this.isolate,
+      required this.graphQlProvider});
   @override
   final AptosAPIProvider provider;
   final AptosAPIProvider graphQlProvider;
   @override
   final APPIsolate isolate;
-  @override
-  final Duration defaultTimeOut;
 
   @override
   Future<AptosServiceResponse<T>> doRequest<T>(AptosRequestDetails params,

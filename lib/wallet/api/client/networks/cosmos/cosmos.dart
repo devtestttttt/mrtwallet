@@ -33,17 +33,15 @@ mixin CosmosCustomRequest on HttpImpl {
         ?.firstWhereOrNull((e) => e.chain.chainName == name);
   }
 
-  Future<List<PingPubChain>> _getChains(String uri,
-      {Duration timeout = const Duration(seconds: 60)}) async {
+  Future<List<PingPubChain>> _getChains(String uri) async {
     final r = await httpGet<List<Map<String, dynamic>>>(uri,
-        responseType: HTTPResponseType.listOfMap, timeout: timeout);
+        responseType: HTTPResponseType.listOfMap);
     return CCRUtilities.readChainDirectories(r.result);
   }
 
-  Future<List<CosmosDirectoryChain>> _getCosmsmosChains(String uri,
-      {Duration timeout = const Duration(seconds: 60)}) async {
+  Future<List<CosmosDirectoryChain>> _getCosmsmosChains(String uri) async {
     final r = await httpGet<Map<String, dynamic>>(uri,
-        responseType: HTTPResponseType.map, timeout: timeout);
+        responseType: HTTPResponseType.map);
     final chains = (r.result["chains"] as List)
         .map((e) => CosmosDirectoryChain.fromJson(e))
         .toList();
@@ -51,27 +49,21 @@ mixin CosmosCustomRequest on HttpImpl {
   }
 
   Future<List<CosmosDirectoryChain>> _getCosmosDirectoryChains(
-      {ChainType chain = ChainType.mainnet,
-      Duration timeout = const Duration(seconds: 60)}) async {
+      {ChainType chain = ChainType.mainnet}) async {
     switch (chain) {
       case ChainType.mainnet:
-        return _mainnetCosmosDirectoryChains ??= await _getCosmsmosChains(
-            CCRConst.cosmosDirectoryUri,
-            timeout: timeout);
+        return _mainnetCosmosDirectoryChains ??=
+            await _getCosmsmosChains(CCRConst.cosmosDirectoryUri);
       case ChainType.testnet:
-        return _testnetCosmosDirectoryChains ??= await _getCosmsmosChains(
-            CCRConst.cosmosTestnetDirectoryUri,
-            timeout: timeout);
+        return _testnetCosmosDirectoryChains ??=
+            await _getCosmsmosChains(CCRConst.cosmosTestnetDirectoryUri);
     }
   }
 
   Future<CosmosDirectoryChain?> _getCosmosDirectoryChain(
-      {required String? chainId,
-      ChainType chain = ChainType.mainnet,
-      Duration timeout = const Duration(seconds: 60)}) async {
+      {required String? chainId, ChainType chain = ChainType.mainnet}) async {
     try {
-      final data =
-          await _getCosmosDirectoryChains(chain: chain, timeout: timeout);
+      final data = await _getCosmosDirectoryChains(chain: chain);
       return data.firstWhereNullable((e) => e.chainId == chainId);
     } catch (_) {
       return null;
@@ -79,8 +71,7 @@ mixin CosmosCustomRequest on HttpImpl {
   }
 
   Future<List<PingPubChain>> getCosmosChains(
-      {ChainType chain = ChainType.mainnet,
-      Duration timeout = const Duration(seconds: 60)}) async {
+      {ChainType chain = ChainType.mainnet}) async {
     final baseUrl = _getChainUrl(chain);
     return _lock.synchronized(() async {
       switch (chain) {
@@ -99,9 +90,10 @@ mixin CosmosCustomRequest on HttpImpl {
     return CCRConst.chainRegisteryUriTestnets;
   }
 
-  Future<(CCRChainData, CosmosDirectoryChain?)> getChainData(String chainName,
-      {ChainType chainType = ChainType.mainnet,
-      Duration timeout = const Duration(seconds: 60)}) async {
+  Future<(CCRChainData, CosmosDirectoryChain?)> getChainData(
+    String chainName, {
+    ChainType chainType = ChainType.mainnet,
+  }) async {
     return _lock.synchronized(() async {
       final localChain = _getLocalChain(chainType: chainType, name: chainName);
       if (localChain != null) {
@@ -114,12 +106,12 @@ mixin CosmosCustomRequest on HttpImpl {
           baseUrl: baseUrl, chain: chainName, schema: CCRSchemaType.chain);
       MethodResult<Map<String, dynamic>> r =
           await httpGet<Map<String, dynamic>>(uri.toString(),
-              responseType: HTTPResponseType.map, timeout: timeout);
+              responseType: HTTPResponseType.map);
       final chain = CCRChain.fromJson(r.result);
       uri = CCRUtilities.getChainUri(
           baseUrl: baseUrl, chain: chainName, schema: CCRSchemaType.assetlist);
       r = await httpGet<Map<String, dynamic>>(uri.toString(),
-          responseType: HTTPResponseType.map, timeout: timeout);
+          responseType: HTTPResponseType.map);
       final asset = CCRAssetList.fromJson(r.result);
       final chainData = CCRChainData(chain: chain, assetList: asset);
       _chains[chainType]?.add(chainData);
@@ -176,11 +168,10 @@ mixin CosmosCustomRequest on HttpImpl {
   Future<CCRAsset?> findAsset(
       {required String denom,
       required String? chainName,
-      ChainType chainType = ChainType.mainnet,
-      Duration timeout = const Duration(seconds: 60)}) async {
+      ChainType chainType = ChainType.mainnet}) async {
     if (chainName == null) return null;
     final chain = await MethodUtils.call(
-        () => getChainData(chainName, timeout: timeout, chainType: chainType));
+        () => getChainData(chainName, chainType: chainType));
     assert(!chain.hasError, "fetching asset failed. Error: ${chain.error}");
     if (chain.hasResult) {
       return chain.result.$1.assetList.assets

@@ -48,15 +48,15 @@ class _EthereumWeb3PermissionViewState extends State<EthereumWeb3PermissionView>
   @override
   Widget build(BuildContext context) {
     return UpdateChainPermissionWidget<ETHAddress, EthereumChain, IEthAddress,
-        Web3EthereumChainAccount>(
-      chain: chain,
-      chains: chains,
-      onUpdateState: updateState,
-      hasPermission: hasPermission,
-      addAccount: addAccount,
-      onChangeChain: onChangeChain,
-      onChangeDefaultAccount: onChangeDefaultPermission,
-      activities: activities,
-    );
+            Web3EthereumChainAccount>(
+        chain: chain,
+        chains: chains,
+        onUpdateState: updateState,
+        hasPermission: hasPermission,
+        addAccount: addAccount,
+        onChangeChain: onChangeChain,
+        onChangeDefaultAccount: onChangeDefaultPermission,
+        activities: activities,
+        menuItems: menuItems);
   }
 }

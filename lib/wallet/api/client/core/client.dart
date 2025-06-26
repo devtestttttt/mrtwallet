@@ -22,42 +22,17 @@ abstract class NetworkClient<TRANSACTION extends ChainTransaction,
     P extends APIProvider> {
   NetworkClient();
   abstract final WalletNetwork? network;
-  abstract final BaseServiceProtocol<P> service;
-
+  abstract final NetworkServiceProtocol<P> service;
   NetworkType get networkType;
   ProviderIdentifier get serviceIdentifier => DefaultProviderIdentifier(
       identifier: service.provider.identifier, network: networkType);
-
-  // NodeClientStatus _status = NodeClientStatus.disconnect;
-  // NodeClientStatus get status => _status;
-
-  // bool get isConnect => _status.isConnect;
-
   Future<bool> onInit();
-
-  // final _lock = SynchronizedLock();
-
-  Future<bool> _init({ONCLIENTSTATUS? onStatusChanged}) async {
-    // if (_status.isConnect) return true;
-    // _status = NodeClientStatus.pending;
-    // onStatusChanged?.call(_status);
+  Future<bool> init({ONCLIENTSTATUS? onStatusChanged}) async {
     final init = await MethodUtils.call(() async => await onInit());
-    // if (init.hasResult && init.result) {
-    //   _status = NodeClientStatus.connect;
-    // } else {
-    //   _status = NodeClientStatus.disconnect;
-    // }
-    // onStatusChanged?.call(_status);
     return init.hasResult && init.result;
   }
 
-  Future<bool> init({ONCLIENTSTATUS? onStatusChanged}) async {
-    // if (_status.isConnect) return true;
-    return await _init(onStatusChanged: onStatusChanged);
-  }
-
-  Future<WalletTransactionStatus> transactionStatus({required String txId}) =>
-      throw UnimplementedError();
+  Future<WalletTransactionStatus> transactionStatus({required String txId});
 
   Stream<T> trackMempoolTransaction<T extends TRANSACTION>(
       List<T> transactions) {
@@ -75,10 +50,7 @@ abstract class NetworkClient<TRANSACTION extends ChainTransaction,
     final totalSec = maxBlockIntervalSec * maxTxConfirmationBlock;
 
     Timer? timer;
-    final StreamController<T> controller = StreamController(onCancel: () {
-      timer?.cancel();
-      timer = null;
-    });
+    StreamController<T>? controller = StreamController();
     Future<void> run(List<T> unconfirmedTx) async {
       final future = unconfirmedTx.map((e) => getTxStatus(e));
       final result = await future.wait;
@@ -91,20 +63,27 @@ abstract class NetworkClient<TRANSACTION extends ChainTransaction,
           if (end.isAfter(now)) continue;
         }
         tx.updateStatus(result[i]);
-        controller.add(tx);
+        controller?.add(tx);
       }
+    }
+
+    void close() {
+      controller?.close();
+      controller = null;
+      timer?.cancel();
+      timer = null;
     }
 
     Future<bool> fetchTxStatus() async {
       List<T> unconfirmedTx =
           transactions.where((e) => e.status.inMempool).toList();
       if (unconfirmedTx.isEmpty) {
-        controller.close();
+        close();
         return true;
       }
       await run(unconfirmedTx);
       if (transactions.every((e) => !e.status.inMempool)) {
-        controller.close();
+        close();
         return true;
       }
       return false;
@@ -120,7 +99,7 @@ abstract class NetworkClient<TRANSACTION extends ChainTransaction,
 
     runTimer();
 
-    return controller.stream;
+    return controller!.stream;
   }
 
   void dispose() {
@@ -129,6 +108,6 @@ abstract class NetworkClient<TRANSACTION extends ChainTransaction,
 
   @override
   String toString() {
-    return "Client: ${network?.token.name}";
+    return "Client: ${network?.token.name ?? runtimeType}";
   }
 }

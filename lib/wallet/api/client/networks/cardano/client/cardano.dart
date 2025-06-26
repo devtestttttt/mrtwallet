@@ -18,8 +18,8 @@ class CardanoClient
   @override
   final WalletCardanoNetwork network;
   @override
-  BaseServiceProtocol<CardanoAPIProvider> get service =>
-      provider.rpc as BaseServiceProtocol<CardanoAPIProvider>;
+  NetworkServiceProtocol<CardanoAPIProvider> get service =>
+      provider.rpc as NetworkServiceProtocol<CardanoAPIProvider>;
 
   Future<BigInt> getAccountBalance(ADAAddress address) async {
     try {

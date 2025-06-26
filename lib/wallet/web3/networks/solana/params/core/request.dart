@@ -35,6 +35,7 @@ abstract class Web3SolanaRequestParam<RESPONSE> extends Web3RequestParams<
       case Web3SolanaRequestMethods.signTransaction:
       case Web3SolanaRequestMethods.signAndSendAllTransactions:
       case Web3SolanaRequestMethods.sendTransaction:
+      case Web3SolanaRequestMethods.signAllTransactions:
         param = Web3SolanaSendTransaction.deserialize(
             bytes: bytes, object: object, hex: hex);
       case Web3SolanaRequestMethods.signIn:

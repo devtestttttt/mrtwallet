@@ -14,7 +14,7 @@ import 'package:on_chain_wallet/wallet/web3/web3.dart';
 import 'package:on_chain/tron/tron.dart';
 
 class Web3TronTransactionRequestController
-    extends Web3TronImpl<String, Web3TronSendTransaction> {
+    extends Web3TronImpl<Transaction, Web3TronSendTransaction> {
   TronFee? _consumedFee;
   TronFee? get consumedFee => _consumedFee;
 
@@ -260,7 +260,7 @@ class Web3TronTransactionRequestController
       final signedTx = Transaction(
           rawData: transaction.rawData,
           signature: [...transaction.signature, ...result.result]);
-      request.completeResponse(signedTx.toHex);
+      request.completeResponse(signedTx);
       progressKey.response(text: "transaction_signed".tr);
     }
   }

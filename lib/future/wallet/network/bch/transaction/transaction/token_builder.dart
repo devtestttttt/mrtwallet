@@ -177,10 +177,6 @@ class __BchCashTokenBuilderViewState extends State<BchCashTokenBuilderView>
                   for (final i in widget.utxos)
                     i.txHash: OneLineTextWidget(i.txHash)
                 },
-                itemBuilder: {
-                  for (final i in widget.utxos)
-                    i.txHash: OneLineTextWidget(i.txHash)
-                },
                 hint: "token_id".tr,
                 value: categoryId,
                 onChanged: onChangeTokenId,

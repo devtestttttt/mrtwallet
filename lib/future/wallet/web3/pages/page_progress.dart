@@ -20,15 +20,15 @@ enum Web3ProgressStatus {
   const Web3ProgressStatus(this.canUpdate);
 
   static Web3ProgressStatus fromWeb3Status(
-      Web3RequestCompleterErrorType? status) {
+      Web3RequestCompleterEventType? status) {
     switch (status) {
-      case Web3RequestCompleterErrorType.response:
+      case Web3RequestCompleterEventType.response:
         return Web3ProgressStatus.successResponse;
-      case Web3RequestCompleterErrorType.error:
+      case Web3RequestCompleterEventType.error:
         return Web3ProgressStatus.errorResponse;
-      case Web3RequestCompleterErrorType.closed:
+      case Web3RequestCompleterEventType.closed:
         return Web3ProgressStatus.failedRequest;
-      case Web3RequestCompleterErrorType.success:
+      case Web3RequestCompleterEventType.success:
         return Web3ProgressStatus.successRequest;
       default:
         return Web3ProgressStatus.idle;
@@ -58,16 +58,18 @@ class Web3PageProgressState extends State<Web3PageProgress>
   Web3ProgressStatus get status => _statusLive.value;
   Widget? _responseWidget;
   Widget? _child;
+  ScaffoldMessengerState? key;
 
   @override
   void onInitOnce() {
     super.onInitOnce();
     _statusLive = StreamValue(widget.initialStatus);
     _responseWidget = widget.initialWidget;
+    key = ScaffoldMessenger.maybeOf(context);
+    key?.clearSnackBars();
   }
 
   void _shwoRequestStatus() async {
-    final key = ScaffoldMessenger.maybeOf(context);
     controller ??= key?.showSnackBar(_requestStatusView(
       context: context,
       status: _statusLive,
@@ -125,10 +127,10 @@ class Web3PageProgressState extends State<Web3PageProgress>
     }
   }
 
-  void closedRequest() {
+  void closedRequest({String? error}) {
     if (_responseWidget == null || status == Web3ProgressStatus.progress) {
       _responseWidget = PageProgressChildWidget(ProgressWithTextView(
-          text: "client_closed_durning_request".tr,
+          text: error?.tr ?? "client_closed_durning_request".tr,
           icon: WidgetConstant.errorIconLarge));
     }
 
@@ -149,16 +151,13 @@ class Web3PageProgressState extends State<Web3PageProgress>
   }
 
   @override
-  void didUpdateWidget(covariant Web3PageProgress oldWidget) {
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
   void safeDispose() {
-    super.safeDispose();
     _child = null;
-    controller?.close();
     _statusLive.dispose();
+    MethodUtils.after(() async {
+      key?.clearSnackBars();
+    });
+    super.safeDispose();
   }
 
   @override
@@ -336,8 +335,8 @@ extension QuickAccsessWeb3PageProgressState
     }
   }
 
-  void closedRequest() {
-    currentState?.closedRequest();
+  void closedRequest({String? error}) {
+    currentState?.closedRequest(error: error);
   }
 
   void successRequest() {

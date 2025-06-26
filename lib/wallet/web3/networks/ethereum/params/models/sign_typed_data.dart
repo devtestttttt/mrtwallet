@@ -30,6 +30,20 @@ class Web3EthreumTypdedData extends Web3EthereumRequestParam<String> {
     return Web3EthreumTypdedData._(
         accessAccount: account, typedData: typedData, domain: domain);
   }
+  factory Web3EthreumTypdedData.fromJson(
+      {required Map<String, dynamic> json,
+      required Web3EthereumChainAccount account,
+      EIP712Version? version}) {
+    if (json["typedData"] is List) {
+      final typedData = EIP712Legacy.fromJson(json["typedData"]);
+      return Web3EthreumTypdedData(typedData, account);
+    }
+    final typedData =
+        Eip712TypedData.fromJson(json["typedData"], version: version);
+    final domain = EIP712Domain.fromJson(typedData.domain);
+    return Web3EthreumTypdedData._(
+        accessAccount: account, typedData: typedData, domain: domain);
+  }
 
   factory Web3EthreumTypdedData.deserialize({
     List<int>? bytes,

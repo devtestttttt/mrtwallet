@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/future/theme/theme.dart';
 import 'package:on_chain_wallet/future/wallet/controller/controller.dart';
-import 'package:on_chain_wallet/future/wallet/controller/tabs/tabs.dart';
-import 'package:on_chain_wallet/future/wallet/global/pages/switch_network.dart';
-import 'package:on_chain_wallet/future/wallet/setting/color_selector.dart';
-import 'package:on_chain_wallet/future/wallet/start/pages/platform_widgets/widgets.dart';
 import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
 import 'package:on_chain_wallet/wallet/models/others/models/status.dart';
-import 'package:on_chain_wallet/wallet/wallet.dart' show Chain, HDWallet;
 import 'account_page.dart';
 import 'login_page.dart';
-import 'package:on_chain_wallet/future/router/page_router.dart';
 import 'setup.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 
@@ -31,7 +24,7 @@ class WalletScreen extends StatelessWidget {
               canPop: controller.canPop,
               onPopInvokedWithResult: controller.onPop,
               child: APPAnimatedSwitcher(enable: status.status, widgets: {
-                APPStatusType.ready: (context) => _APPISReady(wallet),
+                APPStatusType.ready: (context) => _APPPage(wallet),
                 APPStatusType.init: (context) => ProgressWithAPPLogo(),
                 APPStatusType.failed: (context) => Text(status.error!),
               }),
@@ -42,203 +35,54 @@ class WalletScreen extends StatelessWidget {
   }
 }
 
-class _APPISReady extends StatelessWidget {
+class _APPPage extends StatelessWidget {
   final WalletProvider wallet;
-  const _APPISReady(this.wallet);
-
+  const _APPPage(this.wallet);
   @override
   Widget build(BuildContext context) {
     return StreamWidget(
       value: wallet.wallet.status,
       builder: (context, value) {
-        return MaterialPageView(
-          child: RefreshIndicator(
-            onRefresh: wallet.onRefresh,
-            notificationPredicate: (notification) {
-              return wallet.allowRefresh;
+        return APPAnimated(
+            isActive: wallet.wallet.isOpen,
+            onDeactive: (context) {
+              if (wallet.wallet.inProgress) {
+                return ProgressWithAPPLogo();
+              }
+              return switch (value) {
+                WStatus.init => ProgressWithAPPLogo(),
+                WStatus.setup => const WalletSetupPageWidget(),
+                WStatus.lock => const WalletLoginPageView(),
+                _ => WidgetConstant.sizedBox
+              };
             },
-            child: CustomScrollView(
-              slivers: [
-                _WalletAppBar(wallet),
-                SliverFillRemaining(
-                  // fillOverscroll: true,
-                  hasScrollBody: false,
-                  child: APPAnimated(
-                      isActive: value.isOpen,
-                      onDeactive: (context) => APPAnimated(
-                          isActive: value.isInit || wallet.wallet.inProgress,
-                          onActive: (context) => ProgressWithAPPLogo(),
-                          onDeactive: (context) => APPAnimatedSwitcher<WStatus>(
-                                  enable: value,
-                                  widgets: {
-                                    WStatus.init: (c) => Container(),
-                                    WStatus.setup: (c) =>
-                                        const WalletSetupPageWidget(),
-                                    WStatus.lock: (context) =>
-                                        const WalletLoginPageView()
-                                  })),
-                      onActive: (context) => Shimmer(
-                          onActive: (e, context) => NetworkAccountPageView(
-                              wallet: wallet,
-                              account: wallet.wallet.currentChain),
-                          enable: !wallet.wallet.inProgress)),
-                ),
-              ],
-            ),
-          ),
-        );
+            onActive: (context) => _UnlockWalletView(wallet));
       },
     );
   }
 }
 
-class _WalletAppBar extends StatelessWidget {
-  const _WalletAppBar(this.wallet);
+class _UnlockWalletView extends StatelessWidget {
   final WalletProvider wallet;
-  @override
-  Widget build(BuildContext context) {
-    final bool isReady = wallet.wallet.homePageStatus.isReady;
-    final bool isOpen = wallet.wallet.isOpen;
-    return SliverAppBar(
-      centerTitle: false,
-      snap: false,
-      toolbarHeight: isReady ? kToolbarHeight : 0,
-      title: ConditionalWidget(
-          onActive: (context) {
-            if (isOpen) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  OneLineTextWidget(
-                      wallet.wallet.currentChain.network.networkName,
-                      style: context.textTheme.titleMedium),
-                  if (wallet.wallet.currentChain.network.coinParam.isTestNet)
-                    ToolTipView(
-                      message: "testnet_price_desc".tr,
-                      child: Text("testnet".tr,
-                          style: context.textTheme.labelSmall
-                              ?.copyWith(color: context.colors.error)),
-                    ),
-                ],
-              );
-            }
-            return Text(wallet.wallet.wallet.name);
-          },
-          enable: isReady),
-      pinned: true,
-      floating: false,
-      actions: [
-        WidgetConstant.width8,
-        ConditionalWidget(
-            enable: isOpen,
-            onDeactive: (context) => _AppbarLockActions(wallet),
-            onActive: (context) => _AppbarUnlockActions(
-                account: wallet.wallet.currentChain, wallet: wallet))
-      ],
-      leading: IconButton(
-          onPressed: () {
-            context
-                .openSliverDialog<HDWallet>(
-                    (c) => _SwitchWalletView(
-                          wallets: wallet.wallet.wallets,
-                          selectedWallet: wallet.wallet.wallet,
-                        ),
-                    "switch_wallets".tr,
-                    content: (c) => [
-                          IconButton(
-                              onPressed: () {
-                                context.offTo(PageRouter.createWallet);
-                              },
-                              icon: const Icon(Icons.add))
-                        ])
-                .then(wallet.wallet.switchWallet);
-          },
-          icon: const Icon(Icons.account_balance_wallet_rounded)),
-    );
-  }
-}
-
-class _SwitchWalletView extends StatelessWidget {
-  const _SwitchWalletView(
-      {required this.wallets, required this.selectedWallet});
-  final List<HDWallet> wallets;
-  final HDWallet selectedWallet;
+  const _UnlockWalletView(this.wallet);
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemBuilder: (context, index) {
-        final wallet = wallets[index];
-        final bool selected = selectedWallet.name == wallet.name;
-        return ContainerWithBorder(
-          onRemove: () {
-            context.pop(wallet);
-          },
-          enableTap: selected ? false : true,
-          onRemoveWidget: selected
-              ? const Icon(Icons.check_circle)
-              : WidgetConstant.sizedBox,
-          child: Row(
-            children: [
-              wallet.requiredPassword
-                  ? const Icon(Icons.lock)
-                  : const Icon(Icons.lock_open),
-              WidgetConstant.width8,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(wallet.name, style: context.textTheme.labelLarge),
-                    Text(wallet.created.toString(),
-                        style: context.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
+    return RefreshIndicator(
+      onRefresh: wallet.onRefresh,
+      notificationPredicate: (notification) {
+        return wallet.allowRefresh;
       },
-      itemCount: wallets.length,
-      shrinkWrap: true,
-    );
-  }
-}
-
-class _AppbarLockActions extends StatelessWidget {
-  final WalletProvider wallet;
-  const _AppbarLockActions(this.wallet);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(children: [
-      BrightnessToggleIcon(
-          onToggleBrightness: () => wallet.toggleBrightness(),
-          brightness: ThemeController.appTheme.brightness),
-      ColorSelectorIconView(
-        (p0) {
-          if (p0 == null) return;
-          return wallet.changeColor(p0);
-        },
+      child: CustomScrollView(
+        slivers: [
+          SliverFillRemaining(
+              hasScrollBody: false,
+              child: Shimmer(
+                  onActive: (e, context) => NetworkAccountPageView(
+                      wallet: wallet, account: wallet.wallet.currentChain),
+                  enable: !wallet.wallet.inProgress)),
+        ],
       ),
-      appbarWidgets(false),
-    ]);
-  }
-}
-
-class _AppbarUnlockActions extends StatelessWidget {
-  final Chain account;
-  final WalletProvider wallet;
-  const _AppbarUnlockActions({required this.account, required this.wallet});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(children: [
-      WidgetConstant.width8,
-      APPAnimatedSwitcher<WalletPage>(enable: wallet.walletPage, widgets: {
-        WalletPage.swap: (context) => SwitchNetworkIcon(account: account),
-        WalletPage.webview: (context) => SwitchNetworkIcon(account: account),
-      }),
-      appbarWidgets(true),
-    ]);
+    );
   }
 }

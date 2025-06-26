@@ -14,7 +14,6 @@ class Web3AptosChainAccount extends Web3ChainAccount<AptosAddress> {
   final int id;
   final List<int> publicKey;
   final int signingScheme;
-  final AptosChainType network;
 
   String get publicKeyHex {
     return BytesUtils.toHexString(publicKey, prefix: '0x');
@@ -26,7 +25,6 @@ class Web3AptosChainAccount extends Web3ChainAccount<AptosAddress> {
       required super.defaultAddress,
       required this.id,
       required this.signingScheme,
-      required this.network,
       required List<int> publicKey})
       : publicKey = publicKey.asImmutableBytes;
   factory Web3AptosChainAccount.fromChainAccount({
@@ -40,7 +38,6 @@ class Web3AptosChainAccount extends Web3ChainAccount<AptosAddress> {
         address: address.networkAddress,
         id: id,
         defaultAddress: isDefault,
-        network: network,
         publicKey: address.aptosPublicKey().toBytes(),
         signingScheme: address.keyScheme.toSigningScheme.value);
   }
@@ -58,8 +55,7 @@ class Web3AptosChainAccount extends Web3ChainAccount<AptosAddress> {
         id: values.elementAt(2),
         defaultAddress: values.elementAt(3),
         publicKey: values.elementAs(4),
-        signingScheme: values.elementAs(5),
-        network: AptosChainType.fromValue(values.elementAs(6)));
+        signingScheme: values.elementAs(5));
   }
 
   @override
@@ -71,8 +67,7 @@ class Web3AptosChainAccount extends Web3ChainAccount<AptosAddress> {
           id,
           defaultAddress,
           CborBytesValue(publicKey),
-          signingScheme,
-          network.id
+          signingScheme
         ]),
         CborTagsConst.web3AptosAccount);
   }
@@ -95,19 +90,19 @@ class Web3AptosChainAccount extends Web3ChainAccount<AptosAddress> {
         defaultAddress: defaultAddress ?? this.defaultAddress,
         id: id ?? this.id,
         signingScheme: signingScheme ?? this.signingScheme,
-        network: network ?? this.network,
         publicKey: publicKey ?? this.publicKey);
   }
 }
 
 class Web3AptosChainIdnetifier extends Web3ChainIdnetifier {
   final int? chainId;
-  @override
-  final String identifier;
   late final AptosChainType aptosChain = AptosChainType.fromValue(chainId);
 
   Web3AptosChainIdnetifier(
-      {required this.chainId, required this.identifier, required super.id});
+      {required this.chainId,
+      required super.wsIdentifier,
+      required super.caip2,
+      required super.id});
   factory Web3AptosChainIdnetifier.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
     final CborListValue values = CborSerializable.cborTagValue(
@@ -118,12 +113,13 @@ class Web3AptosChainIdnetifier extends Web3ChainIdnetifier {
     return Web3AptosChainIdnetifier(
         chainId: values.elementAs(0),
         id: values.elementAs(1),
-        identifier: values.elementAs(2));
+        wsIdentifier: values.elementAs(2),
+        caip2: values.elementAs(3));
   }
   @override
   CborTagValue toCbor() {
     return CborTagValue(
-      CborListValue.fixedLength([chainId, id, identifier]),
+      CborListValue.fixedLength([chainId, id, wsIdentifier, caip2]),
       CborTagsConst.web3AptosChainIdentifier,
     );
   }

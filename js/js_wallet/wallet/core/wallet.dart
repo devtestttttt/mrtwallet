@@ -3,6 +3,8 @@ import 'dart:js_interop';
 import 'package:blockchain_utils/blockchain_utils.dart';
 import 'package:on_chain_bridge/models/events/models/wallet_event.dart';
 import 'package:on_chain_wallet/app/core.dart';
+import 'package:on_chain_wallet/crypto/models/networks.dart';
+import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 import 'package:on_chain_wallet/wallet/web3/web3.dart';
 import '../../../webview.dart';
 import '../../constant/constant.dart';
@@ -29,11 +31,7 @@ part 'wallet_standard.dart';
 external set onMessage(JSFunction _);
 typedef SendMessageToClient = void Function(
     WalletMessageEvent, JSClientType client);
-typedef SENDINTERNALWALLETMESSAGE = Future<Web3MessageCore> Function(
-    {required JSClientType client, required Web3WalletRequestParams request});
 typedef ONCHANGESTATE = void Function();
-
-extension _FindClient on JSClientType {}
 
 enum JSWalletMode {
   extension,
@@ -42,47 +40,47 @@ enum JSWalletMode {
   bool get isExtension => this == extension;
 }
 
-abstract class JSWalletHandler with JSWalletStandardHandler {
+abstract class Web3JSWalletHandler
+    extends Web3WalletHandler<Web3JSStateHandler, Web3JsClientRequest>
+    with JSWalletStandardHandler {
   JSWalletMode get mode;
   @override
-  late final Map<JSClientType, JSWalletStandardNetworkHandler> _networks = {
-    JSClientType.ethereum: JSEthereumHandler(
+  late final Map<JSClientType, Web3JSStateHandler> _networks = {
+    JSClientType.ethereum: EthereumWeb3JSStateHandler(
         sendMessageToClient: _sendEventToClient,
         sendInternalMessage: _sendInternalWalletMessage),
-    JSClientType.tron: JSTronHandler(
+    JSClientType.tron: TronWeb3JSStateHandler(
         sendMessageToClient: _sendEventToClient,
         sendInternalMessage: _sendInternalWalletMessage),
-    JSClientType.solana: JSSolanaHandler(
+    JSClientType.solana: SolanaWeb3JSStateHandler(
         sendMessageToClient: _sendEventToClient,
         sendInternalMessage: _sendInternalWalletMessage),
-    JSClientType.ton: JSTonHandler(
+    JSClientType.ton: TonWeb3JSStateHandler(
         sendMessageToClient: _sendEventToClient,
         sendInternalMessage: _sendInternalWalletMessage),
-    JSClientType.stellar: JSStellarHandler(
+    JSClientType.stellar: StellarWeb3JSStateHandler(
         sendMessageToClient: _sendEventToClient,
         sendInternalMessage: _sendInternalWalletMessage),
-    JSClientType.substrate: JSSubstrateHandler(
+    JSClientType.substrate: SubstrateWeb3JSStateHandler(
         sendMessageToClient: _sendEventToClient,
         sendInternalMessage: _sendInternalWalletMessage),
-    JSClientType.aptos: JSAptosHandler(
+    JSClientType.aptos: AptosWeb3JSStateHandler(
         sendMessageToClient: _sendEventToClient,
         sendInternalMessage: _sendInternalWalletMessage),
-    JSClientType.sui: JSSuiHandler(
+    JSClientType.sui: SuiWeb3JSStateHandler(
         sendMessageToClient: _sendEventToClient,
         sendInternalMessage: _sendInternalWalletMessage),
-    JSClientType.cosmos: JSCosmosHandler(
+    JSClientType.cosmos: CosmosWeb3JSStateHandler(
         sendMessageToClient: _sendEventToClient,
         sendInternalMessage: _sendInternalWalletMessage),
-    JSClientType.bitcoin: JSBitcoinHandler(
+    JSClientType.bitcoin: BitcoinWeb3JSStateHandler(
         sendMessageToClient: _sendEventToClient,
         sendInternalMessage: _sendInternalWalletMessage),
   };
-
   String get clientId;
   late final String _id = JsUtils.toWalletId(clientId);
-  final MessageCompleterHandler completer = MessageCompleterHandler();
   final ChaCha20Poly1305 _crypto;
-  JSWalletHandler._(this._crypto);
+  Web3JSWalletHandler._(this._crypto);
 
   void handleClientMessage(PageMessage request) {
     final client = request.clientType;
@@ -91,14 +89,16 @@ abstract class JSWalletHandler with JSWalletStandardHandler {
         if (client == null) {
           _onGlobalEvent(request.data.asEvent());
         } else {
-          _networks[client]?.event(request.data.asEvent());
+          final event = request.data.asEvent();
+          final stateEvent = Web3NetworkEvent.fromName(event.event);
+          _networks[client]?.event(stateEvent!);
         }
 
         break;
       case PageMessageType.request:
         final result = _completeJsRequest(request);
         result.then(_sendMessageToClient);
-        result.catchError((e) {
+        result.catchError((e, s) {
           final message = WalletMessage.response(
               client: request.clientType,
               requestId: request.requestId,
@@ -146,9 +146,10 @@ abstract class JSWalletHandler with JSWalletStandardHandler {
   }
 
   Future<Web3MessageCore> _sendInternalWalletMessage(
-      {required JSClientType client,
+      {required NetworkType network,
       required Web3WalletRequestParams request}) async {
-    final result = await _buildAndSendMessage(client: client, message: request);
+    final result = await _buildAndSendMessage(
+        client: JSClientType.fromNetworkName(network.name), message: request);
     final Web3MessageCore response = result.$1;
     if (response.type == Web3MessageTypes.error) {
       final result = response.cast<Web3ExceptionMessage>();
@@ -157,7 +158,7 @@ abstract class JSWalletHandler with JSWalletStandardHandler {
     return response.cast();
   }
 
-  Future<(Web3MessageCore, Web3RequestParams?)> _buildAndSendMessage(
+  Future<(Web3MessageCore, Web3WalletRequestParams?)> _buildAndSendMessage(
       {PageMessage? params,
       Web3MessageCore? message,
       JSClientType? client}) async {
@@ -168,12 +169,15 @@ abstract class JSWalletHandler with JSWalletStandardHandler {
         if (params == null) {
           throw WalletExceptionConst.invalidRequest;
         }
-        final request = params.data.asRequest();
+        final request = Web3JsClientRequest(params.data.asRequest());
         Web3GlobalRequestMethods? globalMethod =
             Web3GlobalRequestMethods.fromName(request.method);
         if (globalMethod != null) {
           message = await _onGlobalRequest(
-              globalMethod: globalMethod, client: client);
+            request: request,
+            globalMethod: globalMethod,
+            client: client,
+          );
         } else {
           final handler = _networks[client];
           if (handler == null) {
@@ -202,33 +206,35 @@ abstract class JSWalletHandler with JSWalletStandardHandler {
       this.completer.complete(response: exception, requestId: requestId);
     }
     final response = await completer.wait;
-    if (message?.type != Web3MessageTypes.walletRequest) {
+    if (message?.type != Web3MessageTypes.walletRequest &&
+        message?.type != Web3MessageTypes.walletGlobalRequest) {
       return (response, null);
     }
-    return (response, message?.cast<Web3RequestParams>());
+    return (response, message?.cast<Web3WalletRequestParams>());
   }
 
   Future<WalletMessage> _completeJsRequest(PageMessage params) async {
     final client = params.clientType;
     final handler = _networks[client];
+    final clientRequest = Web3JsClientRequest(params.data.asRequest());
     try {
       final result = await _buildAndSendMessage(params: params, client: client);
       final Web3MessageCore response = result.$1;
-      final Web3RequestParams? request = result.$2;
+      final Web3WalletRequestParams? request = result.$2;
       final WalletMessageResponse message = switch (response.type) {
         Web3MessageTypes.globalResponse => await _finalizeGlobalResponse(
             message: params.data.asRequest(),
             response: response.cast(),
-            params: request),
+            params: request?.cast()),
         Web3MessageTypes.walletResponse => await handler!
             .finalizeWalletResponse(
-                message: params.data.asRequest(),
+                message: clientRequest,
                 response: response.cast(),
-                params: request),
+                params: request?.cast()),
         Web3MessageTypes.error => await handler?.finalizeError(
-                message: params.data.asRequest(),
+                message: clientRequest,
                 error: response.cast(),
-                params: request) ??
+                params: request?.cast()) ??
             WalletMessageResponse.fail(
                 response.cast<Web3ExceptionMessage>().toWalletError()),
         _ => WalletMessageResponse.fail(Web3RequestExceptionConst.invalidRequest
@@ -240,13 +246,13 @@ abstract class JSWalletHandler with JSWalletStandardHandler {
           client: params.clientType,
           data: message);
     } finally {
-      handler?.onRequestDone(params.data.asRequest());
+      handler?.onRequestDone(clientRequest);
     }
   }
 
   Future<void> _updateAuthenticated(Web3APPData authenticated) async {
     for (final i in authenticated.networks) {
-      final client = JSClientType.fronNetworkName(i.name);
+      final client = JSClientType.fromNetworkName(i.name);
       final event = await _networks[client]?.initChain(authenticated);
       if (event == null) continue;
       _sendEventToClient(WalletMessageEvent.build(data: event), client);
@@ -254,7 +260,7 @@ abstract class JSWalletHandler with JSWalletStandardHandler {
     _sendGlobalEvent();
   }
 
-  void _handleOnResponse(WalletEvent request) async {
+  void _onWalletResponse(WalletEvent request) async {
     try {
       final data = List<int>.from(request.data);
       final encryptedMessage = Web3EncryptedMessage.deserialize(bytes: data);
@@ -276,7 +282,6 @@ abstract class JSWalletHandler with JSWalletStandardHandler {
           if (msg.authenticated != null) {
             await _updateAuthenticated(msg.authenticated!);
           }
-
           completer.complete(response: msg, requestId: request.requestId);
           break;
         case Web3MessageTypes.error:
@@ -313,7 +318,7 @@ abstract class JSWalletHandler with JSWalletStandardHandler {
         completer.complete(response: message, requestId: request.requestId);
         break;
       default:
-        _handleOnResponse(request);
+        _onWalletResponse(request);
         break;
     }
     return true;

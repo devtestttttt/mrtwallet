@@ -37,10 +37,16 @@ class _AppbarExtentionWidget extends StatelessWidget {
               builder: (context, client) => Web3ClientInfoIconView(
                   client: client,
                   onTap: (s) {
-                    context.openDialogPage(
-                      "update_permission".tr,
-                      fullWidget: (context) =>
-                          Web3PermissionUpdateView(controller: extension),
+                    extension.updateApplicationAuthenticated(
+                      (authenticated, onPermissionUpdate) async {
+                        if (authenticated == null) return;
+                        context.openDialogPage(
+                          "update_permission".tr,
+                          fullWidget: (context) => Web3PermissionUpdateView(
+                              authenticated: authenticated,
+                              onPermissionUpdate: onPermissionUpdate),
+                        );
+                      },
                     );
                   })),
         PopupMenuButton<ExtensionWalletContextType?>(

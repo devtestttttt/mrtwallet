@@ -24,6 +24,12 @@ mixin WalletStorageWriter {
     await AppNativeMethods.platform.removeAllSecure(prefix: prefix);
   }
 
+  Future<void> _remove(String key) async {
+    assert(key.isNotEmpty, "invalid key");
+    if (key.isEmpty) return;
+    await AppNativeMethods.platform.removeSecure(key);
+  }
+
   Future<Map<String, String>> _readAll({String? prefix}) async {
     if (useMemoryStorage) {
       if (prefix != null) {

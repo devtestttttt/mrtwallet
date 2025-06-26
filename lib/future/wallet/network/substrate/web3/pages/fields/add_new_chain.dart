@@ -36,7 +36,7 @@ class _SubstrateWeb3AddNewChainRequestViewState
   Future<void> checkNetwork() async {
     final controller = context.watch<Web3SubstrateGlobalRequestController>(
         request.request.info.requestId);
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     uri = rpcKey.currentState?.getEndpoint();
     if (uri == null) return;
     controller.checkNetwork(
@@ -60,7 +60,12 @@ class _SubstrateWeb3AddNewChainRequestViewState
     networkName = network?.token.name ?? params.chain;
     explorerAddressLink = network?.addressExplorer ?? '';
     explorerTransaction = network?.transactionExplorer ?? '';
-    final provider = network?.providers.elementAt(0);
+    SubstrateAPIProvider? provider = network?.providers.elementAt(0);
+    final rpcUrl = params.rpcUrl;
+    if (rpcUrl != null) {
+      provider ??= SubstrateAPIProvider(
+          uri: rpcUrl, identifier: APIUtils.getProviderIdentifier());
+    }
     if (provider != null) {
       uri = RPCURL(url: provider.callUrl, auth: provider.auth);
     }

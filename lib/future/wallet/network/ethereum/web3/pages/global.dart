@@ -40,6 +40,7 @@ class _GlobalFieldsView extends StatelessWidget {
         return EthereumWeb3TypedDataSignRequestView(
             request: form as Web3EthereumSignTypedDataForm);
       case Web3EthereumRequestMethods.persoalSign:
+      case Web3EthereumRequestMethods.ethSign:
         return EthereumWeb3PersonalSignRequestView(
             request: form as Web3EthereumPersonalSignForm);
       default:

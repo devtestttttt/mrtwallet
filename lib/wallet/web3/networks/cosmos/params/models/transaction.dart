@@ -4,11 +4,13 @@ import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
+import 'package:on_chain_wallet/wallet/web3/networks/cosmos/constant/constants/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/cosmos/methods/methods.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/cosmos/params/core/request.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/cosmos/permission/models/account.dart';
+import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 
-abstract class Web3CosmosSignTransactionResponse {
+abstract class Web3CosmosSignTransactionResponse with CborSerializable {
   final Web3CosmosRequestMethods method;
   final List<int> signature;
   final Any publicKey;
@@ -21,15 +23,17 @@ abstract class Web3CosmosSignTransactionResponse {
       required List<int> signature,
       required this.publicKey})
       : signature = signature.asImmutableBytes;
-  Map<String, dynamic> toJson();
-  factory Web3CosmosSignTransactionResponse.fromJson(
-      Map<String, dynamic> json) {
-    final method = Web3CosmosRequestMethods.fromName(json["method"]);
+  Map<String, dynamic> toWalletConnectJson();
+  factory Web3CosmosSignTransactionResponse.deserialize(
+      {List<int>? bytes, String? hex, CborObject? obj}) {
+    final CborTagValue cbor =
+        CborSerializable.decode(cborBytes: bytes, object: obj, hex: hex);
+    final method = Web3NetworkRequestMethods.fromTag(cbor.tags);
     return switch (method) {
       Web3CosmosRequestMethods.signTransactionDirect =>
-        Web3CosmosSignTransactionDirectSignResponse.fromJson(json),
+        Web3CosmosSignTransactionDirectSignResponse.deserialize(obj: cbor),
       Web3CosmosRequestMethods.signTransactionAmino =>
-        Web3CosmosSignTransactionAminoSignResponse.fromJson(json),
+        Web3CosmosSignTransactionAminoSignResponse.deserialize(obj: cbor),
       _ => throw Web3RequestExceptionConst.invalidRequest
     };
   }
@@ -49,6 +53,35 @@ class Web3CosmosSignTransactionDirectSignResponse
   final String chainId;
   final BigInt accountNumber;
 
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([
+          CborBytesValue(signature),
+          CborBytesValue(publicKey.toBuffer()),
+          CborBytesValue(bodyBytes),
+          CborBytesValue(authInfoBytes),
+          chainId,
+          accountNumber
+        ]),
+        method.tag);
+  }
+
+  factory Web3CosmosSignTransactionDirectSignResponse.deserialize(
+      {List<int>? bytes, String? hex, CborObject? obj}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: obj,
+        hex: hex,
+        tags: Web3CosmosRequestMethods.signTransactionDirect.tag);
+    return Web3CosmosSignTransactionDirectSignResponse(
+        signature: values.elementAs(0),
+        publicKey: Any.deserialize(values.elementAs(1)),
+        bodyBytes: values.elementAs(2),
+        authInfoBytes: values.elementAs(3),
+        chainId: values.elementAs(4),
+        accountNumber: values.elementAs(5));
+  }
   Web3CosmosSignTransactionDirectSignResponse(
       {required List<int> bodyBytes,
       required List<int> authInfoBytes,
@@ -72,15 +105,19 @@ class Web3CosmosSignTransactionDirectSignResponse
   }
 
   @override
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toWalletConnectJson() {
     return {
-      "method": method.name,
-      "bodyBytes": bodyBytes,
-      "authInfoBytes": authInfoBytes,
-      "chainId": chainId,
-      "accountNumber": accountNumber.toString(),
-      "signature": signature,
-      "pubKey": publicKey.toJson()
+      "signed": {
+        "bodyBytes": StringUtils.decode(bodyBytes, type: StringEncoding.base64),
+        "authInfoBytes":
+            StringUtils.decode(authInfoBytes, type: StringEncoding.base64),
+        "chainId": chainId,
+        "accountNumber": accountNumber.toString()
+      },
+      "signature": {
+        "signature": singaureAsBase64(),
+        "pub_key": {"type": publicKey.typeUrl, "value": publicKey.toBase64}
+      },
     };
   }
 }
@@ -93,6 +130,19 @@ class Web3CosmosSignTransactionAminoSignResponse
     required this.tx,
     required super.publicKey,
   }) : super._(method: Web3CosmosRequestMethods.signTransactionAmino);
+  factory Web3CosmosSignTransactionAminoSignResponse.deserialize(
+      {List<int>? bytes, String? hex, CborObject? obj}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: obj,
+        hex: hex,
+        tags: Web3CosmosRequestMethods.signTransactionAmino.tag);
+    return Web3CosmosSignTransactionAminoSignResponse(
+        signature: values.elementAs(0),
+        publicKey: Any.deserialize(values.elementAs(1)),
+        tx: AminoTx.fromJson(
+            StringUtils.decodeJson<Map<String, dynamic>>(values.elementAs(2))));
+  }
   factory Web3CosmosSignTransactionAminoSignResponse.fromJson(
       Map<String, dynamic> json) {
     return Web3CosmosSignTransactionAminoSignResponse(
@@ -102,13 +152,26 @@ class Web3CosmosSignTransactionAminoSignResponse
   }
 
   @override
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toWalletConnectJson() {
     return {
-      "method": method.name,
       "tx": tx.toJson(),
-      "signature": signature,
-      "pubKey": publicKey.toJson()
+      "signed": tx.toJson(),
+      "signature": {
+        "signature": singaureAsBase64(),
+        "pub_key": {"type": publicKey.typeUrl, "value": publicKey.toBase64}
+      },
     };
+  }
+
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([
+          CborBytesValue(signature),
+          CborBytesValue(publicKey.toBuffer()),
+          CborBytesValue(StringUtils.encodeJson(tx.toJson())),
+        ]),
+        method.tag);
   }
 }
 
@@ -177,8 +240,8 @@ class Web3CosmosSignTransactionAminoParams
         object: obj,
         hex: hex,
         tags: [Web3CosmosRequestMethods.signTransactionAmino.id]);
-    final data =
-        StringUtils.toJson(StringUtils.decode(values.elementAs<List<int>>(0)));
+    final data = StringUtils.decodeJson<Map<String, dynamic>>(
+        values.elementAs<List<int>>(0));
     return Web3CosmosSignTransactionAminoParams(AminoTx.fromJson(data));
   }
   @override
@@ -233,6 +296,47 @@ class Web3CosmosSignTransaction
         timeoutHeight: timeoutHeight);
   }
 
+  factory Web3CosmosSignTransaction.fromJson(
+      {required Map<String, dynamic> json,
+      required Web3CosmosRequestMethods method,
+      required Web3CosmosChainAccount account,
+      required String chainId}) {
+    // final String? requestChainId = Web3ValidatorUtils.parseString(
+    //     key: "chainId", method: method, json: json);
+    if (method == Web3CosmosRequestMethods.signTransactionAmino) {
+      final aminoJson = Web3ValidatorUtils.tryObjectAsMap(json["signDoc"]);
+      if (aminoJson == null) {
+        throw Web3CosmosExceptionConstant.invalidAminoSignDoc;
+      }
+      final AminoTx amino = AminoTx.fromJson(aminoJson);
+      if (chainId != amino.chainId) {
+        throw Web3CosmosExceptionConstant.mismatchChainId;
+      }
+      return Web3CosmosSignTransaction(
+          account: account,
+          chainId: amino.chainId,
+          transaction: Web3CosmosSignTransactionAminoParams(amino));
+    }
+    final Map<String, dynamic> signDoc = Web3ValidatorUtils.parseMap(
+        key: "signDoc",
+        method: method,
+        json: json,
+        requiredKeys: ["bodyBytes"]);
+    final List<int> bodyBytes = Web3ValidatorUtils.parseBase64(
+        key: "bodyBytes", method: method, json: signDoc, allowBytes: true);
+    final List<int>? authInfoBytes = Web3ValidatorUtils.parseBase64(
+        key: "authInfoBytes", method: method, json: signDoc, allowBytes: true);
+    final BigInt? accountNumber = Web3ValidatorUtils.parseBigInt(
+        key: "accountNumber", method: method, json: signDoc);
+    return Web3CosmosSignTransaction(
+        account: account,
+        chainId: chainId,
+        transaction: Web3CosmosSignTransactionDirectParams(
+            bodyBytes: bodyBytes,
+            authInfos: authInfoBytes,
+            accountNumber: accountNumber));
+  }
+
   factory Web3CosmosSignTransaction.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
     final CborListValue values = CborSerializable.cborTagValue(
@@ -271,7 +375,7 @@ class Web3CosmosSignTransaction
 
   @override
   Object? toJsWalletResponse(Web3CosmosSignTransactionResponse response) {
-    return response.toJson();
+    return response.toCbor().encode();
   }
 
   @override

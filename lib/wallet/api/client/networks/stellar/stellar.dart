@@ -19,8 +19,8 @@ class StellarClient
   @override
   final WalletStellarNetwork network;
   @override
-  BaseServiceProtocol<StellarAPIProvider> get service =>
-      provider.rpc as BaseServiceProtocol<StellarAPIProvider>;
+  NetworkServiceProtocol<StellarAPIProvider> get service =>
+      provider.rpc as NetworkServiceProtocol<StellarAPIProvider>;
 
   Future<StellarAccountResponse?> getAccount(StellarAddress address) async {
     try {

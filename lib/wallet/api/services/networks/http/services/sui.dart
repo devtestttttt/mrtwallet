@@ -5,14 +5,9 @@ import 'package:on_chain/sui/sui.dart';
 
 class SuiHTTPService extends HTTPService<SuiAPIProvider>
     implements SuiServiceProvider {
-  SuiHTTPService(
-      {required this.provider,
-      required this.isolate,
-      this.defaultTimeOut = const Duration(seconds: 30)});
+  SuiHTTPService({required this.provider, required this.isolate});
   @override
   final APPIsolate isolate;
-  @override
-  final Duration defaultTimeOut;
 
   @override
   Future<SuiServiceResponse<T>> doRequest<T>(SuiRequestDetails params,

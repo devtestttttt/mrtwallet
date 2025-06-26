@@ -5,9 +5,16 @@ import '../platform_impl/cross.dart'
 abstract class PlatformWebScoket {
   void close();
   void sink(List<int> message);
-  Stream<dynamic> get stream;
+  Stream<String> get stream;
   bool get isConnected;
-  static Future<PlatformWebScoket> connect(String url,
-          {List<String>? protocols}) async =>
-      connectSoc(url, protocols: protocols);
+
+  static Future<PlatformWebScoket> connect(
+          {required String url,
+          required Duration timeout,
+          List<String>? protocols}) async =>
+      connectSoc(url: url, timeout: timeout, protocols: protocols);
+
+  int? get closeCode;
+
+  String? get closeReason;
 }

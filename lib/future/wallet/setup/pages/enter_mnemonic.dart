@@ -64,7 +64,7 @@ class _EnterMnemonicViewState extends State<EnterMnemonicView> with SafeState {
   }
 
   void setup() async {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     final model = context.watch<SetupWalletController>(StateConst.setup);
 
     progressKey.progressText("launch_the_wallet".tr);

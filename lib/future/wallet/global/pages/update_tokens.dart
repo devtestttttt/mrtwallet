@@ -115,7 +115,7 @@ class _UpdateTokenDetailsViewState extends State<UpdateTokenDetailsView>
   }
 
   void onUpdate() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     final apiId = apiIdTextField.currentState!.getValue();
     final wallet = context.watch<WalletProvider>(StateConst.main);
     int? currectDecimal = tokenDecimal;

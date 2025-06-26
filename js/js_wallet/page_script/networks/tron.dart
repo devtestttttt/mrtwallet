@@ -2,6 +2,7 @@ part of '../scripts.dart';
 
 class _TronPageControllerConst {
   static const String signMessage = "tron_signMessageV2";
+
   static const String signTransaction = "tron_signTransaction";
   static const String requestAccount = "tron_requestAccounts";
   static const String providedPrivateKeyError =
@@ -179,7 +180,7 @@ class TronPageController extends WalletStandardPageController {
   JSPromise<JSAny?> _onRequest(EthereumRequestParams params) {
     return waitForSuccessResponsePromise(
       method: params.method,
-      params: params.params,
+      params: JsUtils.asJSArray(params.params),
       provider: PageRequestType.eip1993,
     );
   }
@@ -205,6 +206,7 @@ class TronPageController extends WalletStandardPageController {
           break;
         case JSNetworkEventType.message:
           _eventTIPListeners(JSEventType.message, jsObject: data.message);
+
           break;
         case JSNetworkEventType.networkAccountsChanged:
           _eventTIPListeners(JSEventType.accountsChanged,
@@ -237,10 +239,11 @@ class TronPageController extends WalletStandardPageController {
     }
   }
 
-  JSPromise<JSTronWalletStandardConnect> _connect() {
+  JSPromise<JSTronWalletStandardConnect> _connect([JSString? chainId]) {
+    final network = JsUtils.asJSString(chainId);
+    final params = network == null ? null : [network].toJS;
     return waitForSuccessResponsePromise<JSTronWalletStandardConnect>(
-      method: _TronPageControllerConst.requestAccount,
-    );
+        method: _TronPageControllerConst.requestAccount, params: params);
   }
 
   JSPromise<JSTronSignatureResponse> _signMessage(
@@ -271,6 +274,8 @@ class TronPageController extends WalletStandardPageController {
         signAndSendTransaction: _signTransaction.toJS);
     feature.tronSignTransaction = TronWalletAdapterSignTransactionFeature.setup(
         signAndSendTransaction: _signTransaction.toJS);
+    feature.tronDisconnect = JSWalletStandardDisconnectFeature.setup(
+        disconnect: _disconnectChain.toJS);
     feature.tronEvents =
         JSWalletStandardEventsFeature.setup(on: _onEvents.toJS);
   }

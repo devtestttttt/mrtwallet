@@ -49,15 +49,15 @@ class _StellarWeb3PermissionViewState extends State<StellarWeb3PermissionView>
   @override
   Widget build(BuildContext context) {
     return UpdateChainPermissionWidget<StellarAddress, StellarChain,
-        IStellarAddress, Web3StellarChainAccount>(
-      chain: chain,
-      chains: chains,
-      onUpdateState: updateState,
-      hasPermission: hasPermission,
-      addAccount: addAccount,
-      onChangeChain: onChangeChain,
-      onChangeDefaultAccount: onChangeDefaultPermission,
-      activities: activities,
-    );
+            IStellarAddress, Web3StellarChainAccount>(
+        chain: chain,
+        chains: chains,
+        onUpdateState: updateState,
+        hasPermission: hasPermission,
+        addAccount: addAccount,
+        onChangeChain: onChangeChain,
+        onChangeDefaultAccount: onChangeDefaultPermission,
+        activities: activities,
+        menuItems: menuItems);
   }
 }

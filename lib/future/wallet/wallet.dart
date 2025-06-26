@@ -6,3 +6,4 @@ export 'security/security.dart';
 export 'setting/setting.dart';
 export 'start/start.dart';
 export 'web3/web3.dart';
+export 'wc/wc.dart';

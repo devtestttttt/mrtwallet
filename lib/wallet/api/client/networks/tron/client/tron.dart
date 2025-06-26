@@ -30,8 +30,8 @@ class TronClient extends NetworkClient<TronWalletTransaction, TronAPIProvider>
   @override
   final WalletTronNetwork network;
   @override
-  BaseServiceProtocol<TronAPIProvider> get service =>
-      provider.rpc as BaseServiceProtocol<TronAPIProvider>;
+  NetworkServiceProtocol<TronAPIProvider> get service =>
+      provider.rpc as NetworkServiceProtocol<TronAPIProvider>;
 
   Future<TronAccountInfo?> getAccount(TronAddress account) async {
     final tronAccount =

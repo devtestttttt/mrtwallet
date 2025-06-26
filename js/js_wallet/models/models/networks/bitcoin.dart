@@ -15,6 +15,7 @@ class BitcoinJSConstant {
   static const String requestAccountRequestName = "bitcoin_requestAccounts";
   static const String signTransactionRequestName = "bitcoin_signTransaction";
   static const String sendTransactionRequestName = "bitcoin_sendTransaction";
+  static const String getAccountAddresses = "bitcoin_getAccountAddresses";
   static const String signPersonalMessageRequestName =
       "bitcoin_signPersonalMessage";
 }
@@ -58,17 +59,24 @@ extension type JSBitcoinSignTransactionParams(JSAny _) implements JSAny {
   static const List<String> properties = ['accounts', 'psbt'];
 }
 
-extension type JSBitcoinSendTransactionOutput(JSAny _) implements JSAny {
-  external String? get address;
-  external String? get script;
-  external String? get value;
-}
 extension type JSBitcoinSendTransactionParams(JSAny _) implements JSAny {
   external JSArray<JSAny> get accounts;
-  external JSArray<JSBitcoinSendTransactionOutput> get outputs;
+  external String? get recipientAddress;
+  external String? get script;
+  external String get amount;
   static const List<String> properties = ['accounts', 'outputs'];
 }
-
+extension type JSBitcoinGetAccountAddressParams(JSAny _) implements JSAny {
+  external JSAny get account;
+}
+extension type JSBitcoinGetAccountAddressResponse(JSAny _) implements JSAny {
+  external String get address;
+  external String get script;
+  external String get type;
+  external String? get witnessScript;
+  external String? get redeemScript;
+  external String? get publicKey;
+}
 extension type JSBitcoinSignTransactionResponse(JSAny _) implements JSAny {
   factory JSBitcoinSignTransactionResponse.setup(String psbt) {
     return JSBitcoinSignTransactionResponse(JSObject())..psbt = psbt;
@@ -78,10 +86,10 @@ extension type JSBitcoinSignTransactionResponse(JSAny _) implements JSAny {
 }
 extension type JSBitcoinSendTransactionResponse(JSAny _) implements JSAny {
   factory JSBitcoinSendTransactionResponse.setup(String txId) {
-    return JSBitcoinSendTransactionResponse(JSObject())..txId = txId;
+    return JSBitcoinSendTransactionResponse(JSObject())..txid = txId;
   }
-  external String get txId;
-  external set txId(String _);
+  external String get txid;
+  external set txid(String _);
 }
 extension type JSBitcoinSignMessageParams(JSAny _) implements JSAny {
   external APPJSUint8Array get message;

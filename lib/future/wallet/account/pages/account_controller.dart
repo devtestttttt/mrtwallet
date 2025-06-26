@@ -70,7 +70,6 @@ class _NetworkAccountControllerViewState<CL extends NetworkClient?,
     }
     this.address = updateAddress;
     progressKey.backToIdle();
-    // updateState();
   }
 
   Future<void> _checkAccounts() async {

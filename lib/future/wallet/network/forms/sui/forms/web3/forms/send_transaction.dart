@@ -71,7 +71,8 @@ class Web3SuiSendTransactionForm extends SuiWeb3Form<SuiClient, ISuiAddress,
     Web3SuiSignOrExecuteTransaction> {
   Web3SuiSendTransactionForm({required this.request});
   @override
-  Web3SuiRequest<Map<String, dynamic>, Web3SuiSignOrExecuteTransaction> request;
+  Web3SuiRequest<Web3SuiSignOrExcuteTransactionResponse,
+      Web3SuiSignOrExecuteTransaction> request;
   Web3SuiTransactionDataV2 get transaction => request.params.transaction;
   late final List<Web3SuiTransactionCallArg> _inputs =
       List.from(transaction.inputs);
@@ -103,7 +104,7 @@ class Web3SuiSendTransactionForm extends SuiWeb3Form<SuiClient, ISuiAddress,
       final data = v.data;
       if (v.error != null || data == null) {
         throw Web3SuiExceptionConstant.retrieveObjectFailed(
-            v.error?.errorMessage);
+            objectId: k.address, error: v.error?.errorMessage);
       }
       if (data.owner?.type == SuiApiObjectOwnerType.shared) {
         initialVersion = (v.data!.owner as SuiApiObjectOwnerShared)

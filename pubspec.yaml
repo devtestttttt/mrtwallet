@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.2.0+2
+version: 0.3.0+3
 
 homepage: "https://github.com/mrtnetwork/onchain_wallet"
 repository: "https://github.com/mrtnetwork/onchain_wallet"
@@ -52,8 +52,12 @@ dependencies:
     sdk: flutter
   http: ^1.2.2
 
-  blockchain_utils: ^5.0.0
-  cosmos_sdk: ^2.6.0
+  blockchain_utils: ^5.1.0
+  # blockchain_utils:
+  #   path: ../blockchain_utils
+  cosmos_sdk: ^2.8.0
+  # cosmos_sdk:
+  #   path: ../cosmos_sdk
   on_chain_swap:
     # path: ../onchain_swap
     git:
@@ -64,13 +68,27 @@ dependencies:
     git:
       url: https://github.com/mrtnetwork/onchain_bridge.git
       ref: main
-  bitcoin_base: ^6.5.0
-  xrpl_dart: ^5.8.0
-  on_chain: ^6.4.0
-  ton_dart: ^1.7.0
-  polkadot_dart: ^3.7.0
-  stellar_dart: ^1.7.0
-  monero_dart: ^1.1.0
+  bitcoin_base: ^6.6.0
+  # bitcoin_base:
+  #   path: ../bitcoin_base
+  xrpl_dart: ^6.0.0
+  # xrpl_dart:
+  #   path: ../xrpl_dart
+  on_chain: ^6.8.0
+  # on_chain:
+  #   path: ../On_chain
+  ton_dart: ^1.8.0
+  # ton_dart:
+  #   path: ../ton_dart
+  polkadot_dart: ^3.9.0
+  # polkadot_dart:
+  #   path: ../polkadot_dart
+  stellar_dart: ^1.8.0
+  # stellar_dart:
+  #   path: ../stellar_dart
+  monero_dart: ^1.2.0
+  # monero_dart:
+  #   path: ../monero_dart
   
   cupertino_icons: ^1.0.2
 
@@ -102,6 +120,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/image/
+    - assets/fonts/
     - assets/wasm/
     - assets/solidity/
     - assets/webview/
@@ -117,6 +136,11 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
+  fonts:
+    - family:  CustomIcons
+      fonts:
+       - asset: assets/fonts/CustomIcons.ttf
+
   # fonts:
   #   - family: Schyler
   #     fonts:
@@ -151,7 +175,7 @@ msix_config:
     display_name: OnChain Wallet
     publisher_display_name: mrtnetwork
     identity_name: com.mrtnetwork.on_chain_wallet
-    msix_version: 1.0.0.0
+    msix_version: 2.0.0.0
     logo_path: D:\
     publish_folder_path: D:\
     store: false

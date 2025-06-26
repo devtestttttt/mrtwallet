@@ -12,7 +12,8 @@ class AptosKeyConversionView extends StatelessWidget {
   const AptosKeyConversionView({super.key});
   @override
   Widget build(BuildContext context) {
-    return NetworkAccountControllerView<SuiClient?, ISuiAddress?, SuiChain>(
+    return NetworkAccountControllerView<AptosClient?, IAptosAddress?,
+        AptosChain>(
       title: "aptos_key_conversion".tr,
       addressRequired: false,
       clientRequired: false,
@@ -25,7 +26,7 @@ class AptosKeyConversionView extends StatelessWidget {
 
 class _AptosConversionView extends StatefulWidget {
   const _AptosConversionView(this.network);
-  final WalletSuiNetwork network;
+  final WalletAptosNetwork network;
 
   @override
   State<_AptosConversionView> createState() => __AptosKeyConversionViewState();
@@ -54,7 +55,7 @@ class __AptosKeyConversionViewState extends State<_AptosConversionView>
   ImportCustomKeys? generatedKey;
 
   void onSubmit() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     progressKey.progressText("generating_private_key".tr);
     final result = await MethodUtils.call(() async {
       final value = keyController.currentState?.getValue();

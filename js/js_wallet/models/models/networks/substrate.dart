@@ -69,6 +69,19 @@ extension type SubstrateWalletAdapterSubstrateSignTransactionFeature(JSAny _)
   external set version(String version);
   external set signTransaction(JSFunction _);
 }
+@JS()
+extension type SubstrateWalletAdapterSubstrateAddNewChainFeature(JSAny _)
+    implements JSAny {
+  factory SubstrateWalletAdapterSubstrateAddNewChainFeature.setup(
+      {required JSFunction addNewChain,
+      String version = JSWalletStandardConst.defaultVersion}) {
+    return SubstrateWalletAdapterSubstrateAddNewChainFeature(JSObject())
+      ..addNewChain = addNewChain
+      ..version = version;
+  }
+  external set version(String version);
+  external set addNewChain(JSFunction _);
+}
 
 @JS()
 extension type SubstrateWalletAdapterSubstrateSignMessageFeature(JSAny _)
@@ -108,8 +121,45 @@ extension type JSSubstrateWalletAdapterSigner(JSObject _) implements JSAny {
   @JS("update")
   external set update(JSFunction _);
 }
+@JS()
+extension type JSSubstrateTransaction._(JSObject _) implements JSAny {
+  external factory JSSubstrateTransaction(
+      {required String address,
+      required String? assetId,
+      required String blockHash,
+      required String blockNumber,
+      required String era,
+      required String genesisHash,
+      required String? metadataHash,
+      required String method,
+      required int? mode,
+      required String nonce,
+      required String specVersion,
+      required String tip,
+      required String transactionVersion,
+      required JSArray<JSString> signedExtensions,
+      required int version,
+      required bool? withSignedTransaction});
+  JSSubstrateTransaction clone() {
+    return JSSubstrateTransaction(
+        address: address,
+        assetId: assetId,
+        blockHash: blockHash,
+        blockNumber: blockNumber,
+        era: era,
+        genesisHash: genesisHash,
+        metadataHash: metadataHash,
+        method: method,
+        mode: mode,
+        nonce: nonce,
+        specVersion: specVersion,
+        tip: tip,
+        transactionVersion: transactionVersion,
+        signedExtensions: signedExtensions,
+        version: version,
+        withSignedTransaction: withSignedTransaction);
+  }
 
-extension type JSSubstrateTransaction(JSObject _) implements JSAny {
   external String get address;
   external String? get assetId;
   external String get blockHash;
@@ -126,6 +176,20 @@ extension type JSSubstrateTransaction(JSObject _) implements JSAny {
   external JSArray<JSString> get signedExtensions;
   external int version;
   external bool? withSignedTransaction;
+  static List<String> properties = [
+    "address",
+    "blockHash",
+    "blockNumber",
+    "era",
+    "genesisHash",
+    "method",
+    "nonce",
+    "specVersion",
+    "tip",
+    "transactionVersion",
+    "signedExtensions",
+    "version"
+  ];
   Map<String, dynamic> toJson() {
     return {
       "address": address,
@@ -153,11 +217,34 @@ extension type JSSubstrateTxResponse._(JSObject _) implements JSAny {
 }
 extension type JSSubstrateSign(JSObject _) implements JSAny {
   external String get address;
-  external String get type;
+  external String? get type;
   external String get data;
+  static const List<String> properties = ["address", "data"];
 }
+@JS()
+extension type JSSubstrateMetadataProvide._(JSObject _) implements JSAny {
+  external factory JSSubstrateMetadataProvide({
+    String chain,
+    String genesisHash,
+    int ss58Format,
+    String? chainType,
+    int specVersion,
+    int tokenDecimals,
+    String tokenSymbol,
+    String? rawMetadata,
+  });
+  JSSubstrateMetadataProvide clone() {
+    return JSSubstrateMetadataProvide(
+        chain: chain,
+        genesisHash: genesisHash,
+        ss58Format: ss58Format,
+        chainType: chainType,
+        specVersion: specVersion,
+        tokenDecimals: tokenDecimals,
+        tokenSymbol: tokenSymbol,
+        rawMetadata: rawMetadata);
+  }
 
-extension type JSSubstrateMetadataProvide(JSObject _) implements JSAny {
   external String get chain;
   external String get genesisHash;
   external int get ss58Format;
@@ -166,6 +253,14 @@ extension type JSSubstrateMetadataProvide(JSObject _) implements JSAny {
   external int get tokenDecimals;
   external String get tokenSymbol;
   external String? get rawMetadata;
+  static const List<String> properties = [
+    "chain",
+    "genesisHash",
+    "ss58Format",
+    "specVersion",
+    "tokenDecimals",
+    "tokenSymbol"
+  ];
   Map<String, dynamic> toJson() {
     return {
       "chain": chain,
@@ -180,8 +275,8 @@ extension type JSSubstrateMetadataProvide(JSObject _) implements JSAny {
   }
 }
 
-extension type JSSubstrateKownMetadata._(JSObject _) implements JSAny {
-  external factory JSSubstrateKownMetadata(
+extension type JSSubstrateKnownMetadata._(JSObject _) implements JSAny {
+  external factory JSSubstrateKnownMetadata(
       {String genesisHash, int specVersion, String identifier});
   external String get genesisHash;
   external int get specVersion;

@@ -22,6 +22,7 @@ mixin WalletsManager on _WalletCore {
   bool get isUnlock => homePageStatus.isUnlock;
   bool get isReadOnly => homePageStatus.isReadOnly;
   bool get isReady => homePageStatus.isReady;
+
   HDWallets _wallets = HDWallets.init();
 
   void _onCurrentChainListener(ChainEvent _) {
@@ -44,6 +45,9 @@ mixin WalletsManager on _WalletCore {
       _homePageStatus.updateValue = status;
     } else {
       _homePageStatus.value = status;
+    }
+    if (homePageStatus.isLock) {
+      _wallet?.walletConnectHandler.dispose();
     }
     if (!homePageStatus.isUnlock) {
       _timeout.dispose();
@@ -99,10 +103,9 @@ mixin WalletsManager on _WalletCore {
   Future<MethodResult<T>> _callSynchronized<T>(Future<T> Function() t,
       {required bool conditionStatus,
       Duration? delay = APPConst.animationDuraion,
-      SynchronizedLock? lock,
-      bool progress = false}) async {
-    final currentLock = lock ?? _lock;
-    return await currentLock.synchronized(() async {
+      bool progress = false,
+      LockId lockId = LockId.one}) async {
+    return await _lock.synchronized(() async {
       if (progress) _setProgress();
       try {
         return await _walletAction(() async {
@@ -117,53 +120,54 @@ mixin WalletsManager on _WalletCore {
           _listenOnChainEvent();
         }
       }
-    });
+    }, lockId: lockId);
   }
 
   Future<void> _initPage({HDWallet? slectedWallet}) async {
+    final currentController = _wallet;
     if (_wallets.hasWallet) {
       final wallet = _wallets.getInitializeWallet(name: slectedWallet?.name);
       final controller =
           await WalletController._setup(this as WalletCore, wallet);
-      final currentController = _wallet;
-      currentController?._dispose();
       _wallet = controller;
     } else {
       _wallet = null;
     }
+    currentController?._dispose();
   }
 
   Future<void> _setup(
       {required HDWallet hdWallet,
       required String password,
       required WalletUpdateInfosData walletInfos,
-      List<WalletChainBackup> chains = const []}) async {
+      WalletRestoreV2? backup}) async {
     if (!StrUtils.isStrongPassword(password)) {
       throw WalletExceptionConst.incorrectPassword;
     }
     final updatedWallet = HDWallet(
-        checksum: hdWallet._checksum,
+        checksum: hdWallet.checksum,
         name: walletInfos.name,
-        data: hdWallet._data,
+        data: hdWallet.data,
         requiredPassword: walletInfos.requirmentPassword,
         locktime: walletInfos.lockTime,
         network: 0,
         protectWallet: walletInfos.protectWallet);
     _wallets.validateImport(updatedWallet);
-    final pw = await _toWalletPassword(password, updatedWallet._checksum);
+    final pw = await _toWalletPassword(password, updatedWallet.checksum);
     await crypto.cryptoIsolateRequest(
         CryptoRequestGenerateMasterKey.fromStorage(
-            storageData: updatedWallet._data, key: pw));
+            storageData: updatedWallet.data, key: pw));
     _wallets.setupWallet(updatedWallet, asDefault: walletInfos.asDefaultWallet);
-    await _initializeWallet(updatedWallet, chains: chains);
+    await _initializeWallet(wallet: updatedWallet, backup: backup);
     await _initPage(slectedWallet: updatedWallet);
     await _writeHdWallet(_wallets);
   }
 
-  Future<void> _initializeWallet(HDWallet wallet,
-      {List<WalletChainBackup> chains = const []}) async {
+  Future<void> _initializeWallet(
+      {required HDWallet wallet, WalletRestoreV2? backup}) async {
     await _removeWalletStorage(wallet);
-    await _setupWalletAccounts(chains, wallet);
+    if (backup == null) return;
+    await _setupWalletBackupAccounts(wallet: wallet, backup: backup);
   }
 
   Future<List<int>> _toWalletPassword(

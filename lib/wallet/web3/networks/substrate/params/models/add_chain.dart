@@ -1,6 +1,8 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
 import 'package:on_chain_wallet/app/core.dart';
+import 'package:on_chain_wallet/wallet/api/services/models/models/protocols.dart';
 import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
+import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/substrate/methods/methods.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/substrate/params/core/request.dart';
@@ -14,6 +16,7 @@ class Web3SubstrateAddNewChain extends Web3SubstrateRequestParam<bool> {
   final int specVersion;
   final int tokenDecimals;
   final String tokenSymbol;
+  final String? rpcUrl;
   Web3SubstrateAddNewChain(
       {required this.chain,
       required this.genesisHash,
@@ -21,10 +24,16 @@ class Web3SubstrateAddNewChain extends Web3SubstrateRequestParam<bool> {
       required this.chainType,
       required this.specVersion,
       required this.tokenDecimals,
-      required this.tokenSymbol});
+      required this.tokenSymbol,
+      this.rpcUrl});
 
   factory Web3SubstrateAddNewChain.fromJson(Map<String, dynamic> json) {
     const method = Web3SubstrateRequestMethods.addSubstrateChain;
+    final String? rpcUrl = Web3ValidatorUtils.parseString<String?>(
+        key: "rpcUrl", method: method, json: json);
+    if (rpcUrl != null && !ServiceProtocol.isValid(rpcUrl)) {
+      throw Web3RequestExceptionConst.invalidRpcUrl;
+    }
     return Web3SubstrateAddNewChain(
         chain: Web3ValidatorUtils.parseString<String>(
             key: "chain", method: method, json: json),
@@ -39,7 +48,8 @@ class Web3SubstrateAddNewChain extends Web3SubstrateRequestParam<bool> {
         tokenDecimals: Web3ValidatorUtils.parseInt<int>(
             key: "tokenDecimals", method: method, json: json, sign: false),
         tokenSymbol: Web3ValidatorUtils.parseString<String>(
-            key: "tokenSymbol", method: method, json: json));
+            key: "tokenSymbol", method: method, json: json),
+        rpcUrl: rpcUrl);
   }
 
   factory Web3SubstrateAddNewChain.deserialize(
@@ -74,7 +84,8 @@ class Web3SubstrateAddNewChain extends Web3SubstrateRequestParam<bool> {
           specVersion,
           ss58Format,
           tokenDecimals,
-          tokenSymbol
+          tokenSymbol,
+          rpcUrl,
         ]),
         type.tag);
   }

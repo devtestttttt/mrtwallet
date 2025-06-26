@@ -97,7 +97,7 @@ class __GenerateMoneroMnemonicViewState
   }
 
   void onTapContinue() {
-    if (formKey.currentState?.validate() ?? false) {
+    if (formKey.ready()) {
       page = _MnemonicPage.fromOption(option);
       updateState();
     }
@@ -135,7 +135,7 @@ class __GenerateMoneroMnemonicViewState
   }
 
   void generateMnemonic() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     progressKey.progressText("generating_mnemonic".tr);
     final result = await MethodUtils.call(() async => widget.wallet.wallet
         .cryptoIsolateRequest(MoneroMenmonicGenerateMessage(
@@ -151,14 +151,14 @@ class __GenerateMoneroMnemonicViewState
   }
 
   void generatePrivateKey() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     mnemonic = mnemonicKey.currentState?.getValue() ?? "";
     mnemonicList = CryptoKeyUtils.normalizeMnemonic(mnemonic);
     _generatePrivateKey();
   }
 
   void _generatePrivateKey() async {
-    if (formKey.currentState?.validate() ?? false) {
+    if (formKey.ready()) {
       progressKey.progressText("generating_private_key".tr);
       final key = await MethodUtils.call<ImportCustomKeys>(
         () async {

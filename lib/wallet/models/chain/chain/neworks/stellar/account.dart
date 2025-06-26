@@ -81,6 +81,7 @@ final class StellarChain extends Chain<
   Future<void> updateAddressBalance(IStellarAddress address,
       {bool tokens = true, bool saveAccount = true}) async {
     _isAccountAddress(address);
+    await initAddress(address);
     await onClient(onConnect: (client) async {
       final accountInfo = await client.getAccount(address.networkAddress);
       final balance = accountInfo?.balances

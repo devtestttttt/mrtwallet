@@ -124,7 +124,7 @@ class Web3StellarTransactionRequestController extends Web3StellarImpl<
       final tx = MethodUtils.nullOnException(
           () => Envelope.fromXdr(request.params.transaction));
       if (tx == null) {
-        throw Web3StellarExceptionConstant.invalidAccountOrTransaction;
+        throw Web3RequestExceptionConst.invalidTransaction;
       }
       await account.updateAddressBalance(address);
       final accountResponse =

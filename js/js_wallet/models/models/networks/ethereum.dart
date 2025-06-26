@@ -10,6 +10,7 @@ class JSEthereumConst {
 
   static const String sendTransaction = "eth_sendTransaction";
   static const String personalSign = "personal_sign";
+  static const String ethSign = "eth_sign";
   static const String requestAccounts = "eth_requestAccounts";
   static const String typedData = "eth_signTypedData";
   static const String typedDataV3 = "eth_signTypedData_v3";
@@ -19,58 +20,7 @@ class JSEthereumConst {
   static const String eip6963AnnounceProvider = "eip6963:announceProvider";
 }
 
-@JSExport()
-class ProxyMethodHandler<T> {
-  final String? debugKey;
-  final T object;
-  ProxyMethodHandler(this.object, {this.debugKey});
-
-  @JSExport("set")
-  bool set(JSAny object, JSAny? prop, JSAny? value, JSAny? receiver) {
-    try {
-      final r = Reflect.get(object, prop, receiver);
-      if (r.isUndefined) {
-        return Reflect.set(object, prop, value, receiver);
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  @JSExport("get")
-  JSAny? get(JSAny object, JSAny? prop, JSAny? receiver) {
-    if (prop?.isDefinedAndNotNull ?? false) {
-      if (prop.isA<JSString>()) {
-        final pr = prop.dartify() as String;
-        if (pr.startsWith("is")) {
-          final r = Reflect.get(object, prop, receiver);
-          if (r.isDefinedAndNotNull) return r;
-          return true.toJS;
-        }
-      }
-    }
-    return Reflect.get(object, prop, receiver);
-  }
-}
-
-@JS("Reflect")
-extension type Reflect._(JSObject _) implements JSAny {
-  external factory Reflect();
-  @JS("get")
-  external static JSAny? get(JSAny? object, JSAny? prop, JSAny? receiver);
-  @JS("set")
-  external static bool set(
-      JSAny? object, JSAny? prop, JSAny? value, JSAny? receiver);
-}
-
-@JS("Proxy")
-extension type Proxy<T extends JSAny>._(JSObject _) implements JSAny {
-  external factory Proxy(T target, JSObject handler);
-}
-
 extension type EIP1193(JSObject _) implements JSAny {
-  /// The request method is intended as a transport- and protocol-agnostic wrapper function for Remote Procedure Calls (RPCs).
   external set request(JSFunction f);
   @JS("request")
   external JSPromise<JSAny?> requestPromis(EthereumRequestParams params);
@@ -162,7 +112,7 @@ extension type EthereumRequestParams._(JSObject o) implements JSAny {
       {String? method, JSAny? params, int? id});
   external String get method;
   external set method(String? method);
-  external JSArray<JSAny>? get params;
+  external JSAny? get params;
 }
 
 @JS()
@@ -281,6 +231,18 @@ extension type EthereumWalletAdapterPersonalSignFeature(JSAny _)
   }
   external set version(String version);
   external set personalSign(JSFunction _);
+}
+@JS()
+extension type EthereumWalletAdapterEthSignFeature(JSAny _) implements JSAny {
+  factory EthereumWalletAdapterEthSignFeature.setup(
+      {required JSFunction ethSign,
+      String version = JSWalletStandardConst.defaultVersion}) {
+    return EthereumWalletAdapterEthSignFeature(JSObject())
+      ..ethSign = ethSign
+      ..version = version;
+  }
+  external set version(String version);
+  external set ethSign(JSFunction _);
 }
 @JS()
 extension type EthereumWalletAdapterSendTransactionFeature(JSAny _)

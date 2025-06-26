@@ -137,9 +137,8 @@ class HTTPWorkerMessageCompleter {
     _messageCompleter.completeError(err);
   }
 
-  Future<HTTPWorkerResponse> getResult({Duration? timeout}) async {
-    final result = await _messageCompleter.future
-        .timeout(timeout ?? const Duration(seconds: 60));
+  Future<HTTPWorkerResponse> getResult(Duration timeout) async {
+    final result = await _messageCompleter.future.timeout(timeout);
     return result;
   }
 }

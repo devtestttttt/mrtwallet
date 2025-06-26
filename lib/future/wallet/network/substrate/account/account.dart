@@ -33,6 +33,7 @@ class _SubstrateServices extends StatelessWidget {
           AppListTile(
             title: Text("constants".tr),
             subtitle: Text("access_network_constants".tr),
+            trailing: const Icon(Icons.arrow_forward),
             onTap: () {
               context.openMaxExtendSliverBottomSheet(
                 'constants'.tr,
@@ -44,6 +45,7 @@ class _SubstrateServices extends StatelessWidget {
           AppListTile(
             title: Text("storages".tr),
             subtitle: Text("query_network_storages".tr),
+            trailing: const Icon(Icons.arrow_forward),
             onTap: () {
               context.openMaxExtendSliverBottomSheet(
                 'storages'.tr,
@@ -55,6 +57,7 @@ class _SubstrateServices extends StatelessWidget {
           AppListTile(
             title: Text("runtime_apis".tr),
             subtitle: Text("interact_with_substrate_network_run_time_api".tr),
+            trailing: const Icon(Icons.arrow_forward),
             onTap: () {
               context.openMaxExtendSliverBottomSheet(
                 'runtime_apis'.tr,
@@ -66,6 +69,7 @@ class _SubstrateServices extends StatelessWidget {
           AppListTile(
             title: Text("create_extrinsic".tr),
             subtitle: Text("create_and_sign_extrinsic".tr),
+            trailing: const Icon(Icons.arrow_forward),
             onTap: () {
               context.to(PageRouter.substrateTransaction,
                   argruments:

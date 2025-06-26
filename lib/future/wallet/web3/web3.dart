@@ -4,4 +4,5 @@ export 'pages/view_controller.dart';
 export 'controller/controller.dart';
 export 'pages/page_progress.dart';
 export 'pages/chain_permission.dart';
+export 'pages/daps.dart';
 export 'global/global.dart';

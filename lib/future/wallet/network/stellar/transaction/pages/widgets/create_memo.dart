@@ -117,7 +117,7 @@ class _CreateStellarMemoViewState extends State<CreateStellarMemoView>
   }
 
   void onSetupMemo() {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     final memo = MethodUtils.nullOnException(() => createMemo());
     if (memo == null) return;
     context.pop(memo);

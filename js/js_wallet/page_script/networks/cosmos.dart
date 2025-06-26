@@ -12,9 +12,11 @@ class CosmosPageController extends WalletStandardPageController {
     return (adapter.toProxy(), adapter);
   }
 
-  JSPromise<JSCosmosWalletStandardConnect> connect() {
+  JSPromise<JSCosmosWalletStandardConnect> connect([JSString? chainId]) {
+    final network = JsUtils.asJSString(chainId);
+    final params = network == null ? null : [network].toJS;
     return waitForSuccessResponsePromise<JSCosmosWalletStandardConnect>(
-        method: JSCosmosConst.requestAccount);
+        method: JSCosmosConst.requestAccount, params: params);
   }
 
   JSPromise<JSCosmosSignMessageResponse> _signMessage(
@@ -23,6 +25,18 @@ class CosmosPageController extends WalletStandardPageController {
       method: JSCosmosConst.signMessage,
       params: [params].toJS,
     );
+  }
+
+  JSPromise<JSCosmosDirectSignResponse> signDirect(
+      JSCosmosSignDirectRequest params) {
+    return waitForSuccessResponsePromise<JSCosmosDirectSignResponse>(
+        method: JSCosmosConst.signTransactionDirect, params: [params].toJS);
+  }
+
+  JSPromise<JSCosmosAminoSignResponse> signAmino(
+      JSCosmosSignAminoRequest params) {
+    return waitForSuccessResponsePromise<JSCosmosAminoSignResponse>(
+        method: JSCosmosConst.signTransactionAmino, params: [params].toJS);
   }
 
   Proxy<JSCosmosOfflineDirectSigner> _getOfflineSigner(String chainId,
@@ -126,6 +140,12 @@ class CosmosPageController extends WalletStandardPageController {
         JSWalletStandardEventsFeature.setup(on: _onEvents.toJS);
     feature.cosmosSigner =
         CosmosWalletAdapterSignerFeature.setup(signer: _signer.toJS);
+    feature.cosmosSignTransactionDirect =
+        CosmosWalletAdapterStandardSignTransactionDirectFeature.setup(
+            signTransactionDirect: signDirect.toJS);
+    feature.cosmosSignTransactionAmino =
+        CosmosWalletAdapterStandardSignTransactionAminoFeature.setup(
+            signTransactionAmino: signAmino.toJS);
     feature.cosmosAddNewChain = CosmosWalletAdapterAddNewChainFeature.setup(
         addNewChain: _addNewChain.toJS);
     feature.cosmosSignMessage =
@@ -134,5 +154,7 @@ class CosmosPageController extends WalletStandardPageController {
     feature.cosmosSignTransaction =
         CosmosWalletAdapterStandardSignTransactionFeature.setup(
             signTransaction: _signTransaction.toJS);
+    feature.cosmosDisconnect = JSWalletStandardDisconnectFeature.setup(
+        disconnect: _disconnectChain.toJS);
   }
 }

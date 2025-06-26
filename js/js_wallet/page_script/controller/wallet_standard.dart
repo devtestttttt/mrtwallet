@@ -37,20 +37,16 @@ class JSPageWalletStandardController {
     if (event.chains != null) {
       _walletStandard.chains = event.chains!;
     }
-    _emit(JSWalletStandardEvent(event).toProxy());
+    _emit(JSWalletStandardEvent(event));
   }
 
   JSPromise<JSWalletStandardConnect> _connect(
-      [JSWalletStandardConnectParams? silent]) {
+      [JSWalletStandardConnectParams? param]) {
     Future<JSWalletStandardConnect> connect() async {
-      bool s = false;
-      if (silent.isDefinedAndNotNull) {
-        s = silent!.silent ?? false;
-      }
       final response = await _requestController
           .waitForSuccessResponse<JSWalletStandardConnect>(
               method: JSWalletStandardConst.standardConnectName,
-              params: [s.toJS].toJS);
+              params: param.isDefinedAndNotNull ? [param!].toJS : null);
       _walletStandard.accounts = response.accounts;
       return response;
     }

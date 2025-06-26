@@ -57,12 +57,16 @@ class Web3SolanaChain extends Web3Chain<SolAddress, SolanaChain, ISolanaAddress,
         getCurrentPermissionNetwork(networks.map((e) => e.network).toList());
     final web3Networks = networks
         .map((e) => Web3ChainDefaultIdnetifier(
-            id: e.network.value,
-            identifier: e.network.coinParam.type.identifier))
+              id: e.network.value,
+              wsIdentifier: e.network.wsIdentifier,
+              caip2: e.network.caip,
+            ))
         .toList();
     final currentWeb3Network = Web3ChainDefaultIdnetifier(
-        id: currentNetwork.value,
-        identifier: currentNetwork.coinParam.type.identifier);
+      id: currentNetwork.value,
+      wsIdentifier: currentNetwork.wsIdentifier,
+      caip2: currentNetwork.caip,
+    );
     return Web3SolanaChainAuthenticated(
         accounts: activeAccounts,
         networks: web3Networks,

@@ -45,6 +45,7 @@ abstract class NetworkCoinParams<PROVIDER extends APIProvider>
   bool get hasMarketUrl => token.market != null;
   int get averageBlockTime => 10;
   int get maxTxConfirmationBlock => 20;
+
   String? get marketUri {
     return token.marketUri;
   }

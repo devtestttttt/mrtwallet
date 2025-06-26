@@ -8,8 +8,8 @@ import 'package:on_chain_wallet/wallet/web3/web3.dart';
 class SuiWeb3TransactionFieldsView extends StatelessWidget {
   const SuiWeb3TransactionFieldsView(
       {required this.wallet, super.key, required this.request});
-  final Web3SuiRequest<Map<String, dynamic>, Web3SuiSignOrExecuteTransaction>
-      request;
+  final Web3SuiRequest<Web3SuiSignOrExcuteTransactionResponse,
+      Web3SuiSignOrExecuteTransaction> request;
   final WalletProvider wallet;
 
   @override

@@ -1,97 +1,9 @@
-import 'package:blockchain_utils/helper/helper.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/wallet/api/api.dart';
 import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
 import 'package:on_chain_wallet/wallet/models/others/models/receipt_address.dart';
 import 'package:on_chain_wallet/wallet/models/token/token/token.dart';
 import 'package:on_chain/solana/solana.dart';
-
-// enum SolanaWeb3TransactionResponseType {
-//   send,
-//   sign,
-//   error;
-
-//   static SolanaWeb3TransactionResponseType fromName(String name) {
-//     return values.firstWhere((e) => e.name == name);
-//   }
-// }
-
-// abstract class SolanaWeb3TransactionResponse {
-//   SolanaWeb3TransactionResponse({
-//     required this.signer,
-//     required List<int> signerAddressBytes,
-//   }) : signerAddressBytes = signerAddressBytes.asImmutableBytes;
-//   factory SolanaWeb3TransactionResponse.fromJson(Map<String, dynamic> json) {
-//     final type = SolanaWeb3TransactionResponseType.fromName(json["type"]);
-//     switch (type) {
-//       case SolanaWeb3TransactionResponseType.error:
-//         return SolanaWeb3TransactionErrorResponse.fromJson(json);
-//       case SolanaWeb3TransactionResponseType.sign:
-//         return SolanaWeb3TransactionSignResponse.fromJson(json);
-//       default:
-//         return SolanaWeb3TransactionSendResponse.fromJson(json);
-//     }
-//   }
-//   abstract final SolanaWeb3TransactionResponseType type;
-//   final String signer;
-//   final List<int> signerAddressBytes;
-//   Map<String, dynamic> toJson();
-//   T cast<T extends SolanaWeb3TransactionResponse>() => this as T;
-// }
-
-// class SolanaWeb3TransactionErrorResponse extends SolanaWeb3TransactionResponse {
-//   SolanaWeb3TransactionErrorResponse(
-//       {required this.message,
-//       required super.signer,
-//       required super.signerAddressBytes});
-//   factory SolanaWeb3TransactionErrorResponse.fromJson(
-//       Map<String, dynamic> json) {
-//     return SolanaWeb3TransactionErrorResponse(
-//         message: json["message"],
-//         signer: json["signer"],
-//         signerAddressBytes: List<int>.from(json["signerAddressBytes"]));
-//   }
-//   final String message;
-//   @override
-//   Map<String, dynamic> toJson() {
-//     return {"type": type.name, "message": message, "signer": signer};
-//   }
-
-//   @override
-//   SolanaWeb3TransactionResponseType get type =>
-//       SolanaWeb3TransactionResponseType.error;
-// }
-
-class SolanaWeb3TransactionSignResponse {
-  SolanaWeb3TransactionSignResponse({
-    required List<int> signedTransaction,
-  }) : signedTransaction = signedTransaction.asImmutableBytes;
-  factory SolanaWeb3TransactionSignResponse.fromJson(
-      Map<String, dynamic> json) {
-    return SolanaWeb3TransactionSignResponse(
-        signedTransaction: List<int>.from(json["signedTransaction"]));
-  }
-  final List<int> signedTransaction;
-
-  Map<String, dynamic> toJson() {
-    return {"signedTransaction": signedTransaction};
-  }
-}
-
-class SolanaWeb3TransactionSendResponse {
-  SolanaWeb3TransactionSendResponse({required List<int> signature})
-      : signature = signature.asImmutableBytes;
-  factory SolanaWeb3TransactionSendResponse.fromJson(
-      Map<String, dynamic> json) {
-    return SolanaWeb3TransactionSendResponse(
-        signature: (json["signature"] as List).cast());
-  }
-  final List<int> signature;
-
-  Map<String, dynamic> toJson() {
-    return {"signature": signature};
-  }
-}
 
 enum SolanaAccountOwnerTypes {
   system("system_program"),

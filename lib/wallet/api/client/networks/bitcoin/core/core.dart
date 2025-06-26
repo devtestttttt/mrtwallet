@@ -24,14 +24,15 @@ abstract class BitcoinClient<T extends IBitcoinAddress>
   Future<BitcoinFeeRate?> getFeeRate();
   @override
   Future<WalletTransactionStatus> transactionStatus({required String txId});
-  Future<String> genesis();
+  @override
+  Future<String> genesisHash();
   Future<BtcTransaction> getTx(String txId);
 
   BitcoinClient clone();
 
   @override
   Future<bool> onInit() async {
-    final genesisHash = await genesis();
+    final genesisHash = await this.genesisHash();
     return genesisHash == network.genesisBlock;
   }
 

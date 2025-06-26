@@ -138,7 +138,7 @@ class __ImportEthereumNetworkState extends State<_ImportEthereumNetwork>
   _Page page = _Page.infos;
 
   void confirmChainId() {
-    if (formKey.currentState?.validate() ?? false) {
+    if (formKey.ready()) {
       page = _Page.infos;
       updateState();
     }
@@ -209,7 +209,7 @@ class __ImportEthereumNetworkState extends State<_ImportEthereumNetwork>
   }
 
   void onAddChain() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     rpcUrl = rpcKey.currentState?.getEndpoint();
     if (rpcUrl == null) return;
     final provider = EthereumAPIProvider(

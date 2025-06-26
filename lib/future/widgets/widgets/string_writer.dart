@@ -77,7 +77,7 @@ class _StringWriterViewState extends State<StringWriterView> with SafeState {
   }
 
   void onPressed() {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     if (context.mounted) {
       context.pop(text);
     }

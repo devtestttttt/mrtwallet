@@ -30,28 +30,36 @@ void main(List<String> args) async {
 
   final workerCompleter = Completer<(JSWebviewWallet, JSWebviewTraget)>();
   bool onActivation(JSWalletEvent data) {
-    final walletEvent = data.toEvent();
-    if (walletEvent == null || walletEvent.clientId != onChain.clientId) {
+    try {
+      final walletEvent = data.toEvent();
+      if (walletEvent == null || walletEvent.clientId != onChain.clientId) {
+        return false;
+      }
+      if (walletEvent.type == WalletEventTypes.exception) {
+        workerCompleter.completeError(
+            JSWalletError(message: String.fromCharCodes(walletEvent.data)));
+        return false;
+      }
+      final target = JSWebviewTraget.fromName(walletEvent.platform);
+      if (target == null) return false;
+      final wallet = JSWebviewWallet.initialize(
+          request: walletEvent,
+          clientId: walletEvent.clientId,
+          isWorker: false,
+          target: JSWebviewTraget.fromName(walletEvent.platform)!);
+      workerCompleter.complete((wallet, target));
+      return true;
+    } catch (e) {
       return false;
     }
-    if (walletEvent.type == WalletEventTypes.exception) {
-      workerCompleter.completeError(
-          JSWalletError(message: String.fromCharCodes(walletEvent.data)));
-      return false;
-    }
-    final target = JSWebviewTraget.fromName(walletEvent.platform);
-    if (target == null) return false;
-    final wallet = JSWebviewWallet.initialize(
-        request: walletEvent,
-        clientId: walletEvent.clientId,
-        isWorker: false,
-        target: JSWebviewTraget.fromName(walletEvent.platform)!);
-    workerCompleter.complete((wallet, target));
-    return true;
   }
 
   onChain.onWebViewMessage = onActivation.toJS;
-  final activation = await workerCompleter.future;
-  pageController.initClients(onChain.clientId);
-  activation.$1.initClients();
+  try {
+    final activation = await workerCompleter.future;
+    pageController.initClients(onChain.clientId);
+    activation.$1.initClients();
+  } catch (e) {
+    jsConsole.error("wallet initialize failed. ${e.toString()}");
+  }
 }

@@ -32,10 +32,10 @@ enum CryptoRequestMethod {
   generateBip39Mnemonic(CryptoKeyConst.generateBip39Mnemonic),
   walletKey(CryptoKeyConst.walletKey),
   randomGenerator(CryptoKeyConst.randomGenerator),
-  hexToBytes(CryptoKeyConst.hexToBytes),
+  jwt(CryptoKeyConst.jwt),
+  // hexToBytes(CryptoKeyConst.hexToBytes),
   hashing(CryptoKeyConst.hashing),
-
-  moneroAccountTxesTracker(CryptoKeyConst.moneroAccountTexesTracker);
+  symkey(CryptoKeyConst.generateSymKey);
 
   final List<int> _tag;
   const CryptoRequestMethod(this._tag);
@@ -167,8 +167,13 @@ abstract class CryptoRequest<T, A extends CborMessageResponseArgs>
       case CryptoRequestMethod.hashing:
         args = CryptoRequestHashing.deserialize(object: decode);
         break;
-      default:
-        throw WalletExceptionConst.invalidRequest;
+      case CryptoRequestMethod.symkey:
+        args = CryptoRequestGenerateWalletConnectSymKeyInfo.deserialize(
+            object: decode);
+        break;
+      case CryptoRequestMethod.jwt:
+        args = CryptoRequestGenerateJwt.deserialize(object: decode);
+        break;
     }
     if (args is! CryptoRequest<T, A>) {
       throw WalletExceptionConst.invalidArgruments(

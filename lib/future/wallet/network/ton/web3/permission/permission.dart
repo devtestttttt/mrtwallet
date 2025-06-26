@@ -48,15 +48,15 @@ class _TonWeb3PermissionViewState extends State<TonWeb3PermissionView>
   @override
   Widget build(BuildContext context) {
     return UpdateChainPermissionWidget<TonAddress, TheOpenNetworkChain,
-        ITonAddress, Web3TonChainAccount>(
-      chain: chain,
-      chains: chains,
-      onUpdateState: updateState,
-      hasPermission: hasPermission,
-      addAccount: addAccount,
-      onChangeChain: onChangeChain,
-      onChangeDefaultAccount: onChangeDefaultPermission,
-      activities: activities,
-    );
+            ITonAddress, Web3TonChainAccount>(
+        chain: chain,
+        chains: chains,
+        onUpdateState: updateState,
+        hasPermission: hasPermission,
+        addAccount: addAccount,
+        onChangeChain: onChangeChain,
+        onChangeDefaultAccount: onChangeDefaultPermission,
+        activities: activities,
+        menuItems: menuItems);
   }
 }

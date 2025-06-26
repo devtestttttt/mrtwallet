@@ -129,7 +129,7 @@ class _SubstrateMetadataStoragesWidgetState
   List<String> _results = [];
   List<String> get results => _results;
   Future<void> callStorage() async {
-    if (!(formState.currentState?.validate() ?? false)) return;
+    if (!formState.ready()) return;
     final error = fields.any((e) => e.form?.error != null);
     if (error) return;
     progressKey.progressText("retrieving_data_please_wait".tr);

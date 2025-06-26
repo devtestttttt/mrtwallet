@@ -60,12 +60,17 @@ class Web3EthereumChain extends Web3Chain<ETHAddress, EthereumChain,
               id: e.network.value,
               chainId: e.network.coinParam.chainId,
               supportEIP1559: e.network.coinParam.supportEIP1559,
+              wsIdentifier: e.network.wsIdentifier,
+              caip2: e.network.caip,
             ))
         .toList();
     final currentWeb3Network = Web3EthereumChainIdnetifier(
-        id: currentNetwork.value,
-        chainId: currentNetwork.coinParam.chainId,
-        supportEIP1559: currentNetwork.coinParam.supportEIP1559);
+      id: currentNetwork.value,
+      chainId: currentNetwork.coinParam.chainId,
+      supportEIP1559: currentNetwork.coinParam.supportEIP1559,
+      wsIdentifier: currentNetwork.wsIdentifier,
+      caip2: currentNetwork.caip,
+    );
     final network =
         networks.firstWhere((e) => e.network.value == currentNetwork.value);
     final provider = APIUtils.findNetworkProvider<EthereumAPIProvider>(

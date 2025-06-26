@@ -20,7 +20,7 @@ class Web3BitcoinSignTransaction extends Web3BitcoinRequestParam<String> {
   });
   factory Web3BitcoinSignTransaction(
       {required List<Web3BitcoinChainAccount> accounts, required Psbt psbt}) {
-    final networks = accounts.map((e) => e.network).toSet();
+    final networks = accounts.map((e) => e.id).toSet();
     if (networks.length != 1) {
       throw Web3RequestExceptionConst.internalError;
     }

@@ -6,6 +6,23 @@ import 'package:on_chain_wallet/future/widgets/widgets/widget_constant.dart';
 
 typedef SHIMMERBUILDER = Widget Function(bool enable, BuildContext context);
 
+class ShimmerActionView extends StatelessWidget {
+  final bool sliver;
+  final SHIMMERBUILDER onActive;
+  final ShimmerAction action;
+  const ShimmerActionView({
+    required this.action,
+    required this.onActive,
+    this.sliver = false,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer(onActive: onActive, enable: !action.action, sliver: sliver);
+  }
+}
+
 class Shimmer extends StatelessWidget {
   final bool sliver;
   final bool enable;
@@ -114,5 +131,15 @@ class ShimmerBox extends StatelessWidget {
       constraints: constraints,
       child: Row(children: []),
     );
+  }
+}
+
+class ShimmerAction<T> {
+  final T object;
+  bool _action = false;
+  bool get action => _action;
+  ShimmerAction({required this.object});
+  void toggleAction() {
+    _action = !action;
   }
 }

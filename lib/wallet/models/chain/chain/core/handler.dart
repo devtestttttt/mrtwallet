@@ -1,30 +1,24 @@
-part of 'package:on_chain_wallet/wallet/provider/wallet_provider.dart';
+part of 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
 
-class ChainsHandler with CborSerializable {
-  final Map<int, Chain> _networks;
-  final String id;
-  int _network;
-  ChainsHandler._(this._networks, this._network, this.id);
+class ChainsHandler {
+  HDWallet _wallet;
+  HDWallet get wallet => _wallet;
 
-  factory ChainsHandler.fromWeb3(
-      {String? hex, CborObject? obj, List<int>? bytes}) {
-    final CborListValue values = CborSerializable.cborTagValue(
-        cborBytes: bytes,
-        object: obj,
-        hex: hex,
-        tags: CborTagsConst.chainHandler);
-    final String id = values.elementAs(2);
-    final chains = values
-        .elementAsListOf<CborObject>(0)
-        .map((e) => Chain.deserialize(obj: e))
-        .toList();
-    return ChainsHandler.__(
-        chains: chains, currentNetwork: values.elementAs(1), id: id);
-  }
+  StreamSubscription<bool>? _networkStream;
+  StreamSubscription<dynamic>? _ping;
+
+  ChainsHandler._(
+      {required Map<int, Chain> networks,
+      required int network,
+      required HDWallet wallet})
+      : _network = network,
+        _networks = networks,
+        _wallet = wallet;
+
   factory ChainsHandler(
-      {required List<Chain> chains, required String id, int? currentNetwork}) {
+      {required List<Chain> chains, required HDWallet wallet}) {
     for (final i in chains) {
-      if (i.id != id) {
+      if (i.id != wallet.checksum) {
         throw WalletExceptionConst.invalidData(
             messsage: "Invalid chain data. different wallet ids detected.");
       }
@@ -35,31 +29,19 @@ class ChainsHandler with CborSerializable {
         continue;
       }
       final network = ChainConst.defaultCoins[i]!;
-      final chain = Chain.setup(network: network, id: id);
+      final chain = Chain.setup(network: network, id: wallet.checksum);
       toMap.addAll({chain.network.value: chain});
     }
-    if (!toMap.containsKey(currentNetwork)) {
+    int currentNetwork = wallet.network;
+    if (!toMap.containsKey(wallet.network)) {
       currentNetwork = 0;
     }
-    return ChainsHandler._(toMap, currentNetwork ?? 0, id);
+    return ChainsHandler._(
+        networks: toMap, network: currentNetwork, wallet: wallet);
   }
-  factory ChainsHandler.__(
-      {required List<Chain> chains, required String id, int? currentNetwork}) {
-    final toMap = {for (final i in chains) i.network.value: i};
-    if (!toMap.containsKey(currentNetwork)) {
-      currentNetwork = 0;
-    }
-    for (final i in chains) {
-      if (i.id != id) {
-        throw WalletExceptionConst.invalidData(
-            messsage: "Invalid chain data. different wallet ids detected.");
-      }
-    }
-    return ChainsHandler._(toMap, currentNetwork ?? 0, id);
-  }
-  factory ChainsHandler.setup(String id) {
-    return ChainsHandler._({}, 0, id);
-  }
+  final Map<int, Chain> _networks;
+  String get id => _wallet.checksum;
+  int _network;
 
   bool get hasChain => _networks.isNotEmpty;
   WalletNetwork get network => _networks[_network]!.network;
@@ -68,6 +50,13 @@ class ChainsHandler with CborSerializable {
       _networks.values.map((e) => e.addresses).expand((e) => e).toList();
   List<WalletNetwork> networks() =>
       _networks.values.map((e) => e.network).toList();
+
+  void updateWalletData(HDWallet wallet) {
+    if (_wallet.checksum != wallet.checksum) {
+      throw WalletExceptionConst.walletDoesNotExists;
+    }
+    _wallet = wallet;
+  }
 
   List<String> coinIds() {
     final ids = _networks.values
@@ -80,7 +69,13 @@ class ChainsHandler with CborSerializable {
     return List<String>.from([...ids, ...networkIds]);
   }
 
-  List<Chain> chains() => _networks.values.toList();
+  List<Chain> chains({NetworkType? type}) {
+    if (type == null) return _networks.values.toList();
+    if (type.isBitcoin) {
+      return _networks.values.where((e) => e.network.type.isBitcoin).toList();
+    }
+    return _networks.values.where((e) => e.network.type == type).toList();
+  }
 
   Future<bool> switchNetwork(int networkId) async {
     if (_network == networkId || !_networks.containsKey(networkId)) {
@@ -90,6 +85,9 @@ class ChainsHandler with CborSerializable {
     _network = networkId;
     await currentChain.dispose();
     await chain.init();
+    final emit = ChainWalletChainChangeEvent(prv: currentChain, current: chain);
+    await _emitChainChanged(emit);
+    updateWalletData(_wallet.updateNetwork(networkId));
     return true;
   }
 
@@ -158,24 +156,6 @@ class ChainsHandler with CborSerializable {
     _networks.remove(removeChain.network.value);
   }
 
-  @override
-  CborTagValue toCbor({bool onlyWeb3Chains = false}) {
-    return CborTagValue(
-        CborListValue.fixedLength([
-          if (onlyWeb3Chains)
-            CborListValue.fixedLength(_networks.values
-                .where((e) => e.network.supportWeb3)
-                .map((e) => e.toCbor())
-                .toList())
-          else
-            CborListValue.fixedLength(
-                _networks.values.map((e) => e.toCbor()).toList()),
-          _network,
-          id
-        ]),
-        CborTagsConst.chainHandler);
-  }
-
   List<Web3ChainNetworkData> getWeb3NetworkData() {
     return _networks.values
         .where((e) => e.network.supportWeb3)
@@ -220,5 +200,47 @@ class ChainsHandler with CborSerializable {
         })
         .toList()
         .cast();
+  }
+
+  Future<void> _emitChainChanged(ChainWalletChainChangeEvent event) async {
+    for (final i in _networks.entries) {
+      await i.value._onWalletEvent(event);
+    }
+  }
+
+  void _onConnectionStatus(bool isOnline) {
+    final event = ChainWalletConnectionEvent(isOnline);
+    for (final i in _networks.entries) {
+      i.value._onWalletEvent(event);
+    }
+  }
+
+  Future<void> _onPing(var _) async {
+    final event = ChainWalletPingEvent();
+    final aciveNetworks = _networks.values.where((e) => e.haveAddress);
+    for (final i in aciveNetworks) {
+      await i._onWalletEvent(event);
+    }
+  }
+
+  Future<void> init() async {
+    await chain.init();
+    assert(_networkStream == null && _ping == null);
+    return;
+    _networkStream =
+        PlatformInterface.instance.onNetworkStatus.listen(_onConnectionStatus);
+    _ping = Stream.periodic(const Duration(minutes: 10)).listen(_onPing);
+    final emit = ChainWalletChainChangeEvent(prv: null, current: chain);
+    _emitChainChanged(emit);
+  }
+
+  void dispose() {
+    _networkStream?.cancel();
+    _ping?.cancel();
+    _networkStream = null;
+    _ping = null;
+    for (final i in _networks.values) {
+      i._disposeInternal();
+    }
   }
 }

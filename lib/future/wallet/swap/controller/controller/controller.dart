@@ -22,7 +22,12 @@ enum SwapRouteStatus {
   bool get isIdle => this == idle;
 }
 
-enum SwapPage { swap, review }
+enum SwapPage {
+  swap,
+  review;
+
+  bool get inReview => this == review;
+}
 
 typedef ONUPDATEPROVIDERS = Future<APPSwapSettings?> Function(
     SwapStateController);
@@ -259,7 +264,8 @@ class SwapStateController extends StreamStateController
     final sChain = sourceChain;
     final dChain = destinationChain;
     final amount = inputAmount;
-    if (source == null ||
+    if (_page.inReview ||
+        source == null ||
         out == null ||
         amount == null ||
         sChain == null ||
@@ -277,7 +283,7 @@ class SwapStateController extends StreamStateController
   }
 
   Future<void> createSwapTransaction({required ONREVIEWTX onPage}) async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     final route = currentRoute?.route;
     final sourceAddress = sourceAddresses;
     final destinationAddress = this.destinationAddress;
@@ -318,7 +324,6 @@ class SwapStateController extends StreamStateController
     if (r.hasError) {
       _txError = r.error!.tr;
     }
-
     _page = SwapPage.swap;
     notify();
   }
@@ -343,7 +348,7 @@ class SwapStateController extends StreamStateController
     _cleanRoute();
     cleanDestinationState();
     cleanSourceState();
-    notifier.notify();
+    notify();
     await MethodUtils.after(initSwap, duration: APPConst.animationDuraion);
     await initSwap();
   }
@@ -378,7 +383,7 @@ class SwapStateController extends StreamStateController
         updateSourceAsset(assets.values.first.first);
       }
       _status = SwapRouteStatus.idle;
-      notifier.notify();
+      notify();
     });
   }
 
@@ -394,10 +399,10 @@ class SwapStateController extends StreamStateController
   @override
   void dispose() {
     super.dispose();
-    _chains = [];
-    _cleanRoute();
     _timer?.cancel();
     _timer = null;
+    _chains = [];
+    _cleanRoute();
   }
 
   @override

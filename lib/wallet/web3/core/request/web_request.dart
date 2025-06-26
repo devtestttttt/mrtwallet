@@ -1,15 +1,16 @@
 import 'dart:async';
 
+import 'package:blockchain_utils/blockchain_utils.dart';
 import 'package:on_chain_bridge/models/models.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/wallet/models/models.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/exception/exception.dart';
+import 'package:on_chain_wallet/wallet/web3/core/messages/types/message.dart';
 import 'package:on_chain_wallet/wallet/web3/core/permission/permission.dart';
-import 'package:on_chain_wallet/wallet/web3/models/models.dart';
 import 'params.dart';
 
-enum Web3RequestCompleterErrorType {
+enum Web3RequestCompleterEventType {
   response,
   error,
 
@@ -30,13 +31,20 @@ enum Web3RequestCompleterErrorType {
   bool get isSuccess => this == success;
 }
 
+class Web3RequestCompleterEvent {
+  final Web3RequestCompleterEventType type;
+  final String? message;
+  const Web3RequestCompleterEvent({required this.type, this.message});
+}
+
 abstract class Web3RequestInformation with Equatable {
-  String? get origin;
+  // String? get origin;
   bool get isClosed => _controller.isClosed;
-  Stream<Web3RequestCompleterErrorType> get stream => _controller.stream;
+  Stream<Web3RequestCompleterEvent> get stream =>
+      _controller.stream.asBroadcastStream();
   bool get hasListener => _controller.hasListener;
-  late final StreamController<Web3RequestCompleterErrorType> _controller =
-      StreamController<Web3RequestCompleterErrorType>.broadcast(sync: true);
+  late final StreamController<Web3RequestCompleterEvent> _controller =
+      StreamController<Web3RequestCompleterEvent>.broadcast(sync: true);
 
   final Completer<WalletEvent> _requestComoleter = Completer<WalletEvent>();
   final Completer<Object?> _responseCompleter = Completer();
@@ -44,7 +52,9 @@ abstract class Web3RequestInformation with Equatable {
   void completeResponse(Object? response) {
     if (_responseCompleter.isCompleted) return;
     _responseCompleter.complete(response);
-    _controller.add(Web3RequestCompleterErrorType.response);
+    final event =
+        Web3RequestCompleterEvent(type: Web3RequestCompleterEventType.response);
+    _controller.add(event);
   }
 
   void errorResponse(
@@ -53,21 +63,27 @@ abstract class Web3RequestInformation with Equatable {
     _responseCompleter.completeError(error is Web3RequestException
         ? error
         : Web3RequestExceptionConst.fromException(error));
-    _controller.add(Web3RequestCompleterErrorType.error);
+    final event =
+        Web3RequestCompleterEvent(type: Web3RequestCompleterEventType.error);
+    _controller.add(event);
   }
 
-  void completeError() {
-    _controller.add(Web3RequestCompleterErrorType.closed);
+  void completeError({AppException? error}) {
+    final event = Web3RequestCompleterEvent(
+        type: Web3RequestCompleterEventType.closed, message: error?.message);
+    _controller.add(event);
     _controller.close();
     if (!_responseCompleter.isCompleted) {
-      _responseCompleter.completeError(Web3RejectException.instance);
+      _responseCompleter.completeError(error ?? Web3RejectException.instance);
     }
   }
 
   void completeSuccess() {
-    _controller.add(Web3RequestCompleterErrorType.success);
+    final event =
+        Web3RequestCompleterEvent(type: Web3RequestCompleterEventType.success);
+    _controller.add(event);
     _controller.close();
-    assert(_requestComoleter.isCompleted, "must be completed.");
+    // assert(_requestComoleter.isCompleted, "must be completed.");
   }
 
   // String get applicationId => info.applicationId;
@@ -89,6 +105,7 @@ abstract class Web3RequestInformation with Equatable {
 
 class Web3RequestLocalInformation extends Web3RequestInformation {
   Web3RequestLocalInformation(this.requestId);
+
   @override
   final String requestId;
 
@@ -110,30 +127,59 @@ class Web3RequestLocalInformation extends Web3RequestInformation {
   @override
   List get variabels => [requestId];
 
-  @override
-  String? get origin => null;
+  // @override
+  // String? get origin => null;
 }
 
 class Web3RequestApplicationInformation extends Web3RequestInformation {
-  final Web3ClientInfo info;
-  final WalletEvent request;
+  final List<int> data;
+  @override
+  final String requestId;
+  final String applicationId;
+
   Web3RequestApplicationInformation._(
-      {required this.info, required this.request});
+      {required this.requestId,
+      required List<int> data,
+      required this.applicationId})
+      : data = data.asImmutableBytes;
   factory Web3RequestApplicationInformation(
-      {required Web3ClientInfo info, required WalletEvent request}) {
-    return Web3RequestApplicationInformation._(info: info, request: request);
+      {required Web3ClientInfo info,
+      required List<int> data,
+      required String requestId,
+      required String applicationId}) {
+    return Web3RequestApplicationInformation._(
+        data: data, requestId: requestId, applicationId: applicationId);
   }
 
-  String get applicationId => info.applicationId;
+  // String get applicationId => info.identifier;
 
   @override
-  List get variabels => [info, request.requestId];
+  List get variabels => [applicationId, requestId];
+
+  // @override
+  // String? get origin => info.url;
+}
+
+class Web3RequestWalletConnectpplicationInformation
+    extends Web3RequestInformation {
+  final Web3ClientInfo info;
+  final Web3MessageCore request;
+  @override
+  final String requestId;
+  Web3RequestWalletConnectpplicationInformation._(
+      {required this.info, required this.request, required this.requestId});
+  factory Web3RequestWalletConnectpplicationInformation(
+      {required Web3ClientInfo info,
+      required Web3MessageCore request,
+      required String requestId}) {
+    return Web3RequestWalletConnectpplicationInformation._(
+        info: info, request: request, requestId: requestId);
+  }
+
+  String get applicationId => info.identifier;
 
   @override
-  String get requestId => request.requestId;
-
-  @override
-  String? get origin => info.url;
+  List get variabels => [info];
 }
 
 abstract class Web3Request<RESPONSE, PARAMS extends Web3WalletRequestParams,

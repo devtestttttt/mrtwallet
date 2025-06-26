@@ -172,4 +172,6 @@ class WalletExceptionConst {
       WalletException("eth_subscribe_websocket_requirment");
   static const WalletException networkDoesNotExist =
       WalletException("network_does_not_exist");
+  static const WalletException invalidHexBytes =
+      WalletException("invalid_hex_bytes_string");
 }

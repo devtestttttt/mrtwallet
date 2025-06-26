@@ -3,6 +3,7 @@ import 'package:on_chain_wallet/future/constant/constant.dart';
 import 'package:on_chain_wallet/future/theme/theme.dart';
 
 class WidgetConstant {
+  const WidgetConstant._();
   static const Widget height8 = SizedBox(height: 8);
   static const Widget height5 = SizedBox(height: 5);
   static const Widget width8 = SizedBox(width: 8);

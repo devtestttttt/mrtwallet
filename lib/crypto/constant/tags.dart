@@ -83,6 +83,8 @@ class CryptoKeyConst {
   static const List<int> generateMoneroMnemonic = [111, 45];
   static const List<int> restoreBackModel = [112, 0];
   static const List<int> bitcoinPersonalSign = [111, 47];
+  static const List<int> generateSymKey = [111, 39];
+  static const List<int> jwt = [111, 40];
 
   /// none encrypted request
   static const List<int> moneroFakeTx = [61, 0];

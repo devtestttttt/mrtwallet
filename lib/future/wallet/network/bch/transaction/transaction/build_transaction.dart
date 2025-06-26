@@ -337,7 +337,7 @@ class BitcoinCashBuildTransactionView extends StatelessWidget {
               for (final i in TransactionOrdering.values)
                 i: Text(i.name.tr, style: context.onPrimaryTextTheme.bodyMedium)
             },
-            itemBuilder: {
+            selectedItemBuilder: {
               for (final i in TransactionOrdering.values)
                 i: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

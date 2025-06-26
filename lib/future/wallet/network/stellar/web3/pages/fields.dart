@@ -16,9 +16,10 @@ class StellarWeb3FieldsView extends StatelessWidget {
       case Web3StellarRequestMethods.requestAccounts:
         return StellarWeb3GlobalFieldsView(request: request, wallet: wallet);
       case Web3StellarRequestMethods.signMessage:
-        return StellarWeb3GlobalFieldsView<List<int>, Web3StellarSignMessage>(
-            request: request
-                as Web3StellarRequest<List<int>, Web3StellarSignMessage>,
+        return StellarWeb3GlobalFieldsView<Web3StellarSignMessageResponse,
+                Web3StellarSignMessage>(
+            request: request as Web3StellarRequest<
+                Web3StellarSignMessageResponse, Web3StellarSignMessage>,
             wallet: wallet);
       case Web3StellarRequestMethods.signTransaction:
       case Web3StellarRequestMethods.sendTransaction:

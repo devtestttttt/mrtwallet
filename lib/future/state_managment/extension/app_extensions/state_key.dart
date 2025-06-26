@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart'
-    show GlobalKey, Scrollable, Curves, Rect, RenderBox, Offset;
+    show GlobalKey, Scrollable, Curves, Rect, RenderBox, Offset, FormState;
 import 'package:on_chain_wallet/app/models/models/typedef.dart';
 
 extension QuickWidgetKeys on GlobalKey {
@@ -31,5 +31,11 @@ extension QuickWidgetKeys on GlobalKey {
     } catch (e) {
       return null;
     }
+  }
+}
+
+extension QuickFromKeyAccess on GlobalKey<FormState> {
+  bool ready() {
+    return currentState?.validate() ?? false;
   }
 }

@@ -48,15 +48,15 @@ class _SubstrateWeb3PermissionViewState
   @override
   Widget build(BuildContext context) {
     return UpdateChainPermissionWidget<BaseSubstrateAddress, SubstrateChain,
-        ISubstrateAddress, Web3SubstrateChainAccount>(
-      chain: chain,
-      chains: chains,
-      onUpdateState: updateState,
-      hasPermission: hasPermission,
-      addAccount: addAccount,
-      onChangeChain: onChangeChain,
-      onChangeDefaultAccount: onChangeDefaultPermission,
-      activities: activities,
-    );
+            ISubstrateAddress, Web3SubstrateChainAccount>(
+        chain: chain,
+        chains: chains,
+        onUpdateState: updateState,
+        hasPermission: hasPermission,
+        addAccount: addAccount,
+        onChangeChain: onChangeChain,
+        onChangeDefaultAccount: onChangeDefaultPermission,
+        activities: activities,
+        menuItems: menuItems);
   }
 }

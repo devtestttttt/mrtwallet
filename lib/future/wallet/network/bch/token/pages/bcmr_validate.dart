@@ -84,7 +84,7 @@ class __MetadataContentState extends State<BCMRUriValidateView> with SafeState {
   }
 
   void readContent() async {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     progressKey.progressText("fetching_uri_content".tr);
     final walletProvider = context.watch<WalletProvider>(StateConst.main);
     String uri = _uri;

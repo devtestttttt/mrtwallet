@@ -1,300 +1,164 @@
 import 'dart:js_interop';
-import 'package:blockchain_utils/blockchain_utils.dart';
+import 'package:blockchain_utils/utils/string/string.dart';
 import 'package:on_chain_bridge/web/web.dart';
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/crypto/models/networks.dart';
+import 'package:on_chain_wallet/app/utils/list/extension.dart';
+import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 import 'package:on_chain_wallet/wallet/web3/web3.dart';
 import '../../models/models/exception.dart';
+import '../../models/models/networks/solana.dart';
 import '../../models/models/networks/wallet_standard.dart';
 import '../../models/models/requests.dart';
-import '../../utils/utils/utils.dart';
+import '../../utils/utils.dart';
 import 'wallet.dart';
 
-typedef FINALIZEERROR = WalletMessageResponse Function(
-    {required PageMessageRequest message,
-    required Web3RequestParams? params,
-    required Web3ExceptionMessage error});
-
-typedef FINALIZEWALLLETRESPONSE = WalletMessageResponse Function(
-    {required PageMessageRequest message,
-    required Web3RequestParams? params,
-    required Web3WalletResponseMessage response});
-typedef INTERNALMESSAGE = Future<WalletMessageResponse> Function(
-    {required PageMessage message,
-    required Web3RequestParams? params,
-    required Web3WalletResponseMessage response});
-
-class JSWalletStateAccount<
-    NETWORKADDRESS,
-    CHAINACCOUNT extends Web3ChainAccount<NETWORKADDRESS>,
-    JSACCOUNT extends JSWalletStandardAccount> with Equatable {
-  final CHAINACCOUNT chainaccount;
-  final JSACCOUNT jsAccount;
-  final String identifier;
-  bool get isDefault => chainaccount.defaultAddress;
-  const JSWalletStateAccount(
-      {required this.chainaccount,
-      required this.jsAccount,
-      required this.identifier});
-  NETWORKADDRESS get address => chainaccount.address;
-
+abstract class Web3JSStateAddress<
+        NETWORKADDRESS,
+        CHAINACCOUNT extends Web3ChainAccount,
+        JSACCOUNT extends JSWalletStandardAccount,
+        CHAIN extends Web3ChainIdnetifier>
+    extends Web3StateAddress<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT, CHAIN> {
+  const Web3JSStateAddress(
+      {required super.chainaccount,
+      required super.jsAccount,
+      required super.networkIdentifier});
   @override
-  List get variabels =>
-      [chainaccount.keyIndex, chainaccount.addressStr, chainaccount.id];
+  String get addressStr => jsAccount.address;
 }
 
-abstract class WalletStandardChainWeb3State<
-    NETWORKADDRESS,
-    CHAINACCOUNT extends Web3ChainAccount<NETWORKADDRESS>,
-    JSACCOUNT extends JSWalletStandardAccount,
-    CHAIN extends Web3ChainIdnetifier> {
-  static List<JSWalletStateAccount<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT>>
-      _sortAccounts<
-              NETWORKADDRESS,
-              CHAINACCOUNT extends Web3ChainAccount<NETWORKADDRESS>,
-              JSACCOUNT extends JSWalletStandardAccount>(
-          List<JSWalletStateAccount<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT>>
-              accounts,
-          {JSWalletStateAccount<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT>?
-              defaultAccount}) {
-    final clone = accounts.clone();
-
-    if (defaultAccount == null) {
-      clone.sort((a, b) =>
-          a.chainaccount.addressStr.compareTo(b.chainaccount.addressStr));
-      return clone.immutable;
-    }
-
-    clone.sort((a, b) => JsUtils.compareAddress(a.chainaccount.addressStr,
-        b.chainaccount.addressStr, defaultAccount.chainaccount.addressStr));
-    return clone.immutable;
-  }
-
-  static List<CHAIN> _sortChains<CHAIN extends Web3ChainIdnetifier>(
-      List<CHAIN> chains) {
-    final clone = chains.clone();
-    clone.sort((a, b) => a.id.compareTo(b.id));
-    return clone.immutable;
-  }
-
-  WalletStandardChainWeb3State(
-      {required this.state,
-      required List<
-              JSWalletStateAccount<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT>>
-          accounts,
-      required List<CHAIN> chains,
-      required this.defaultAccount,
-      required this.defaultChain})
-      : networkAccounts =
-            _sortAccounts<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT>(
-                accounts
-                    .where((e) => e.chainaccount.id == defaultChain?.id)
-                    .toList(),
-                defaultAccount: defaultAccount),
-        chains = _sortChains<CHAIN>(chains),
-        accounts =
-            _sortAccounts<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT>(accounts);
-
-  final JSNetworkState state;
-  final JSWalletStateAccount<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT>?
-      defaultAccount;
-  final List<JSWalletStateAccount<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT>>
-      accounts;
-  final List<JSWalletStateAccount<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT>>
-      networkAccounts;
-  final List<CHAIN> chains;
-  final CHAIN? defaultChain;
-
-  CHAIN get defaultChainOrThrow {
-    if (defaultChain == null) throw Web3RequestExceptionConst.bannedHost;
-    return defaultChain!;
-  }
-
-  List<JSACCOUNT> get jsAccounts => accounts.map((e) => e.jsAccount).toList();
-  List<JSACCOUNT> get networkJsAccounts =>
-      networkAccounts.map((e) => e.jsAccount).toList();
-
-  bool networkChanged(
-      WalletStandardChainWeb3State<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT,
-              CHAIN>
-          other) {
-    return defaultChain != other.defaultChain;
-  }
-
-  bool networksChanged(
-      WalletStandardChainWeb3State<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT,
-              CHAIN>
-          other) {
-    return !CompareUtils.iterableIsEqual(other.chains, chains);
-  }
-
-  bool networkAccountChanged(
-      WalletStandardChainWeb3State<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT,
-              CHAIN>
-          other) {
-    return defaultAccount?.chainaccount != other.defaultAccount?.chainaccount ||
-        !CompareUtils.iterableIsEqual(
-            networkAccounts.map((e) => e.chainaccount),
-            other.networkAccounts.map((e) => e.chainaccount));
-  }
-
-  bool accountsChanged(
-      WalletStandardChainWeb3State<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT,
-              CHAIN>
-          other) {
-    return !CompareUtils.iterableIsEqual(accounts, other.accounts);
-  }
-
-  bool stateChanged(
-      WalletStandardChainWeb3State<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT,
-              CHAIN>
-          other) {
-    return state != other.state;
-  }
-
-  bool addressHasChainPermission(NETWORKADDRESS address) {
-    return networkAccounts.any((e) => e.chainaccount.address == address);
-  }
-
-  bool addressHasPermission(NETWORKADDRESS address) {
-    return accounts.any((e) => e.chainaccount.address == address);
-  }
+abstract class Web3JSStateAccount<
+        NETWORKADDRESS,
+        CHAINACCOUNT extends Web3ChainAccount,
+        JSACCOUNT extends JSWalletStandardAccount,
+        CHAIN extends Web3ChainIdnetifier,
+        STATEADDRESS extends Web3JSStateAddress>
+    extends Web3StateAccount<NETWORKADDRESS, CHAINACCOUNT, JSACCOUNT, CHAIN,
+        STATEADDRESS> {
+  Web3JSStateAccount(
+      {required super.state,
+      required super.accounts,
+      required super.chains,
+      required super.defaultAccount,
+      required super.defaultChain});
 
   bool jsAccountHasPermission(JSACCOUNT address) {
     return accounts.any((e) => e.jsAccount.address == address.address);
   }
 
-  CHAINACCOUNT getAddressChainAccountOrThrow(NETWORKADDRESS? address,
-      {String? identifier}) {
-    if (address == null) {
-      throw Web3RequestExceptionConst.missingPermission;
-    }
-    if (identifier != null) {
-      return accounts
-          .firstWhere(
-              (e) => e.address == address && e.identifier.contains(identifier),
-              orElse: () => throw Web3RequestExceptionConst.missingPermission)
-          .chainaccount;
-    }
-    return accounts
-        .firstWhere((e) => e.address == address,
-            orElse: () => throw Web3RequestExceptionConst.missingPermission)
-        .chainaccount;
-  }
-
-  CHAINACCOUNT getAddressNetworkChainAccountOrThrow(NETWORKADDRESS? address) {
-    if (address == null) {
-      throw Web3RequestExceptionConst.missingPermission;
-    }
-    return networkAccounts
-        .firstWhere((e) => e.address == address,
-            orElse: () => throw Web3RequestExceptionConst.missingPermission)
-        .chainaccount;
-  }
-
-  CHAINACCOUNT get defaultNetworkChainAccountOrThrow {
-    if (defaultAccount == null) {
-      throw Web3RequestExceptionConst.missingPermission;
-    }
-    return defaultAccount!.chainaccount;
-  }
-
-  CHAIN getAccountChain(CHAINACCOUNT account) {
-    final chain = chains.firstWhere((e) => e.id == account.id,
-        orElse: () => throw Web3RequestExceptionConst.missingPermission);
-
-    return chain;
-  }
-
-  JSACCOUNT get defaultNetworkChainJsAccountOrThrow {
-    if (defaultAccount == null) {
-      throw Web3RequestExceptionConst.missingPermission;
-    }
-    return defaultAccount!.jsAccount;
-  }
-
-  CHAINACCOUNT getJsAddressChainAccountOrThrow(JSAny? address) {
+  CHAINACCOUNT getJsAddressChainAccountOrThrow(JSAny? address,
+      {CHAIN? network}) {
     if (address != null) {
       final jsAccount =
           JSOBJ.as<JSWalletStandardAccount>(object: address, keys: ['address']);
       String? addr = jsAccount?.address;
       if (jsAccount != null) {
         final chain = jsAccount.chain;
-        if (chain != null) {
-          return accounts
-              .firstWhere(
-                  (e) =>
-                      e.chainaccount.addressStr == jsAccount.address &&
-                      chain == e.identifier,
-                  orElse: () =>
-                      throw Web3RequestExceptionConst.missingPermission)
-              .chainaccount;
+        if (chain == null) {
+          throw Web3RequestExceptionConst.invalidRequestStateAccount;
         }
+        if (network != null && chain != network) {
+          throw Web3RequestExceptionConst.missingPermission;
+        }
+        final account = accounts
+            .firstWhere(
+                (e) =>
+                    e.chainaccount.addressStr == jsAccount.address &&
+                    e.networkIdentifier.isChain(chain),
+                orElse: () => throw Web3RequestExceptionConst.missingPermission)
+            .chainaccount as CHAINACCOUNT;
+
+        return account;
       } else {
         if (address.isA<JSString>()) {
           addr = (address as JSString).toDart;
         }
       }
-      final existsAccount =
+      Iterable<STATEADDRESS> existsAccount =
           accounts.where((e) => e.chainaccount.addressStr == addr);
+      if (network != null) {
+        existsAccount =
+            existsAccount.where((e) => e.networkIdentifier.id == network.id);
+      }
       if (existsAccount.length == 1) {
-        return existsAccount.first.chainaccount;
+        return existsAccount.first.chainaccount as CHAINACCOUNT;
       }
     }
     throw Web3RequestExceptionConst.missingPermission;
   }
 
-  bool get hasAccount => accounts.isNotEmpty;
-  bool get hasChainAccount => defaultAccount != null;
-
-  List<String> get defaultNetworkAddresses =>
-      networkAccounts.map((e) => e.chainaccount.addressStr).toList();
-
-  JSACCOUNT getJSAccountOrThrow(NETWORKADDRESS address, {String? identifier}) {
-    if (identifier != null) {
-      return accounts
-          .firstWhere(
-              (e) => e.address == address && e.identifier.contains(identifier),
-              orElse: () => throw Web3RequestExceptionConst.missingPermission)
-          .jsAccount;
-    }
-    return accounts
-        .firstWhere((e) => e.address == address,
-            orElse: () => throw Web3RequestExceptionConst.missingPermission)
-        .jsAccount;
-  }
+  @override
+  Web3StateProtocol get protocol => Web3StateProtocol.web;
 }
 
-abstract class JSWalletStandardNetworkHandler<
-    NETWORKADDRESS,
-    CHAINACCOUNT extends Web3ChainAccount<NETWORKADDRESS>,
-    JSACCOUNT extends JSWalletStandardAccount,
-    CHAIN extends Web3ChainIdnetifier,
-    STATE extends WalletStandardChainWeb3State<NETWORKADDRESS, CHAINACCOUNT,
-        JSACCOUNT, CHAIN>> {
+abstract class Web3JSStateHandler<
+        NETWORKADDRESS,
+        CHAINACCOUNT extends Web3ChainAccount,
+        JSACCOUNT extends JSWalletStandardAccount,
+        CHAIN extends Web3ChainIdnetifier,
+        STATE extends Web3JSStateAccount>
+    extends Web3StateHandler<
+        NETWORKADDRESS,
+        CHAINACCOUNT,
+        JSACCOUNT,
+        CHAIN,
+        STATE,
+        WalletMessageResponse,
+        Web3JsClientRequest,
+        JSWalletNetworkEvent> {
   late STATE _state = createState(null);
-  final SynchronizedLock lock = SynchronizedLock();
   final SendMessageToClient sendMessageToClient;
-  final SENDINTERNALWALLETMESSAGE sendInternalMessage;
-  abstract final NetworkType networkType;
-  JSWalletStandardNetworkHandler(
-      {required this.sendMessageToClient, required this.sendInternalMessage});
+  Web3JSStateHandler(
+      {required this.sendMessageToClient, required super.sendInternalMessage});
 
-  Future<Web3MessageCore> connect() async {
-    await sendInternalMessage(
-        client: jsNetworkType,
-        request: Web3ConnectApplication(chain: networkType));
-    return createResponse();
+  @override
+  Future<WalletMessageResponse> onConnectResponse(
+      Web3JsClientRequest? message) async {
+    Web3ChainIdnetifier? chain;
+    final state = await getState();
+    final error = Web3RequestExceptionConst.rejectedByUser
+        .toResponseMessage()
+        .toWalletError();
+    if (message != null) {
+      final chainId = message.requestParams.elementAtOrNull(0);
+      if (chainId != null) {
+        chain =
+            state.chains.firstWhereOrNull((e) => e.isChain(chainId.toString()));
+      }
+    }
+    switch (message?.source) {
+      case null:
+      case Web3RequestSource.walletStandard:
+        List<Web3JSStateAddress> accounts = state.accounts;
+        if (chain != null) {
+          accounts =
+              accounts.where((e) => e.networkIdentifier == chain).toList();
+        }
+        if (accounts.isEmpty) {
+          return WalletMessageResponse.fail(error);
+        }
+        return WalletMessageResponse.success(JSWalletStandardConnect.setup(
+            accounts.map((e) => e.jsAccount).toList()));
+
+      case Web3RequestSource.injected:
+        List<Web3JSStateAddress> accounts = state.networkAccounts;
+        if (!state.hasChainAccount) {
+          return WalletMessageResponse.fail(error);
+        }
+        if (chain == null || chain == state.defaultChain) {
+          return WalletMessageResponse.success(
+              accounts.map((e) => e.addressStr).toList().toJS);
+        }
+        return WalletMessageResponse.fail(error);
+
+      case Web3RequestSource.walletConnect:
+        return WalletMessageResponse.fail(Web3RequestExceptionConst
+            .internalError
+            .toResponseMessage()
+            .toWalletError());
+    }
   }
 
-  Future<Web3MessageCore> switchChain(int networkId) async {
-    await sendInternalMessage(
-        client: jsNetworkType,
-        request:
-            Web3SwitchApplicationNetwork(chain: networkType, id: networkId));
-    return createResponse();
-  }
-
+  @override
   JSWalletNetworkEvent createStateEvent(
       {required STATE previousState,
       required STATE currentState,
@@ -313,12 +177,12 @@ abstract class JSWalletStandardNetworkHandler<
     return JSWalletNetworkEvent(
         events: events,
         change: JSWalletStandardChange.setup(
-            accounts: accountsChanged ? currentState.jsAccounts : null,
+            accounts: accountsChanged ? currentState.stateAccounts : null,
             chains: networksChanged
-                ? currentState.chains.map((e) => e.identifier).toList()
+                ? currentState.chains.map((e) => e.wsIdentifier).toList()
                 : null),
         networkAccounts: networkAccountsChanged
-            ? JSWalletConnectEvent.setup(currentState.networkJsAccounts)
+            ? JSWalletConnectEvent.setup(currentState.defaultStateAccounts)
             : null,
         account: networkAccountsChanged
             ? currentState.defaultAccount?.jsAccount
@@ -337,36 +201,30 @@ abstract class JSWalletStandardNetworkHandler<
         accountsChanged: stateChanged || currentState.accountsChanged(other));
   }
 
+  @override
   Future<STATE> getState() async {
     return await lock.synchronized(() {
       return _state;
     });
   }
 
-  Future<Web3MessageCore> request(PageMessageRequest message);
-
-  STATE createState(Web3APPData? authenticated);
-
-  void onRequestDone(PageMessageRequest message) {}
-
+  @override
   Future<WalletMessageResponse> finalizeError(
-      {required PageMessageRequest message,
+      {required Web3JsClientRequest message,
       required Web3RequestParams? params,
       required Web3ExceptionMessage error}) async {
     return WalletMessageResponse.fail(error.toWalletError());
   }
 
+  @override
   Future<WalletMessageResponse> finalizeWalletResponse(
-      {required PageMessageRequest message,
+      {required Web3JsClientRequest message,
       required Web3RequestParams? params,
       required Web3WalletResponseMessage response}) async {
     return WalletMessageResponse.success(response.result.jsify());
   }
 
-  Web3WalletResponseMessage createResponse([Object? result]) {
-    return Web3WalletResponseMessage(result: result, network: networkType);
-  }
-
+  @override
   Future<JSWalletNetworkEvent> initChain(Web3APPData authenticated) async {
     return await lock.synchronized(() async {
       final currentState = this._state;
@@ -377,21 +235,18 @@ abstract class JSWalletStandardNetworkHandler<
     });
   }
 
-  Web3DisconnectApplication discoonect() {
-    return Web3DisconnectApplication(chain: networkType);
-  }
-
-  Future<JSWalletNetworkEvent?> createEvent(JSEventType event) async {
+  @override
+  Future<JSWalletNetworkEvent?> createEvent(Web3NetworkEvent event) async {
     final state = await getState();
     switch (event) {
-      case JSEventType.change:
+      case Web3NetworkEvent.change:
         return JSWalletNetworkEvent(
           events: [JSNetworkEventType.change],
           change: JSWalletStandardChange.setup(
-              accounts: state.jsAccounts,
-              chains: state.chains.map((e) => e.identifier).toList()),
+              accounts: state.stateAccounts,
+              chains: state.chains.map((e) => e.wsIdentifier).toList()),
         );
-      case JSEventType.accountsChanged:
+      case Web3NetworkEvent.accountsChanged:
         return JSWalletNetworkEvent(
             events: [
               JSNetworkEventType.defaultAccountChanged,
@@ -399,28 +254,134 @@ abstract class JSWalletStandardNetworkHandler<
             ],
             account: state.defaultAccount?.jsAccount,
             networkAccounts:
-                JSWalletConnectEvent.setup(state.networkJsAccounts));
+                JSWalletConnectEvent.setup(state.defaultStateAccounts));
       default:
         break;
     }
     return null;
   }
 
-  Future<void> event(PageMessageEvent event) async {
-    final e = await createEvent(event.eventType);
+  @override
+  Future<void> event(Web3NetworkEvent event) async {
+    final e = await createEvent(event);
     if (e == null) return;
     sendMessageToClient(WalletMessageEvent.build(data: e), jsNetworkType);
   }
 
   late final JSClientType jsNetworkType =
-      JSClientType.fronNetworkName(networkType.name);
+      JSClientType.fromNetworkName(networkType.name);
 }
 
-enum JSNetworkState {
-  init,
-  disconnect,
-  block;
+class Web3JsClientRequest extends Web3ClientRequest {
+  final PageMessageRequest request;
+  const Web3JsClientRequest._(
+      {required this.request, required this.requestParams});
+  factory Web3JsClientRequest(PageMessageRequest request) {
+    final params = request.dartParams.cast<Object?>();
+    return Web3JsClientRequest._(request: request, requestParams: params);
+  }
+  @override
+  final List<Object?> requestParams;
 
-  bool get isBlock => this == block;
-  bool get isInit => this == init;
+  @override
+  String get method => request.method;
+
+  @override
+  Map<String, dynamic> paramsAsMap(
+      {Web3RequestMethods? method, List<String> keys = const []}) {
+    return Web3ValidatorUtils.parseParams2(() {
+      final param = tryObjectAsMap(request.elementAs(0));
+      if (param == null) return null;
+      for (final i in keys) {
+        if (!param.containsKey(i)) return null;
+      }
+      return param;
+    }, error: Web3RequestExceptionConst.invalidMapParameters(keys: keys));
+  }
+
+  @override
+  List<int> objectAsBytes({
+    required Object? object,
+    required String name,
+    Web3RequestException? error,
+    required List<StringEncoding> encoding,
+  }) {
+    // ignore: invalid_runtime_check_with_js_interop_types
+    if (object is JSAny) {
+      final List<int>? bytes = Web3ValidatorUtils.parseParams2(() {
+        final param =
+            JSOBJ.as<APPJSUint8Array>(object: object, keys: ["slice"]);
+        if (param != null) {
+          return param.toListInt();
+        }
+        return null;
+      },
+          errorOnNull: false,
+          error: error ??
+              Web3RequestExceptionConst.invalidBytesArgrument2(
+                  arg: name, encoding: encoding));
+      if (bytes != null) return bytes;
+      return super.objectAsBytes(
+          object: object.dartify(),
+          name: name,
+          error: error,
+          encoding: encoding);
+    }
+    return super.objectAsBytes(
+        object: object, name: name, error: error, encoding: encoding);
+  }
+
+  @override
+  Map<String, dynamic> objectAsMap(
+      {required Object? object,
+      required String name,
+      Web3RequestException? error,
+      List<String> keys = const []}) {
+    // ignore: invalid_runtime_check_with_js_interop_types
+    if (object is JSAny) {
+      final result = JsUtils.toDartMap(object);
+      if (result == null || !keys.every((e) => result.containsKey(e))) {
+        throw error ??
+            Web3RequestExceptionConst.invalidMapArguments(
+                name: name, keys: keys);
+      }
+      return result;
+    }
+
+    return super
+        .objectAsMap(object: object, name: name, error: error, keys: keys);
+  }
+
+  @override
+  List<Map<String, dynamic>> objectAsListOfMap(
+      {required Object? object,
+      required String name,
+      Web3RequestException? error}) {
+    // ignore: invalid_runtime_check_with_js_interop_types
+    if (object is JSAny) {
+      final result = JsUtils.toListOfMap(object);
+      if (result == null) {
+        throw error ?? Web3RequestExceptionConst.invalidListArgument(name);
+      }
+      return result;
+    }
+    return super.objectAsListOfMap(object: object, name: name, error: error);
+  }
+
+  @override
+  Web3RequestSource get source {
+    if (request.isWalletStandard) return Web3RequestSource.walletStandard;
+    return Web3RequestSource.injected;
+  }
+
+  @override
+  String? tryElementAsString(int index) {
+    try {
+      final elem = request.params?[index];
+      if (elem.isA<JSString>()) {
+        return (elem as JSString).toDart;
+      }
+    } catch (_) {}
+    return null;
+  }
 }

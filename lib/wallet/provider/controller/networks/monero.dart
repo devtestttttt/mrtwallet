@@ -25,11 +25,6 @@ mixin WalletMoneroImpl on WalletManager {
   }
 
   @override
-  Future<void> _onInitController() async {
-    await super._onInitController();
-  }
-
-  @override
   void _onUnlock() async {
     super._onUnlock();
     final chains = _appChains.chains().whereType<MoneroChain>();

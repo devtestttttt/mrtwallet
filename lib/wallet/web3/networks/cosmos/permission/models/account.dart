@@ -88,9 +88,12 @@ class Web3CosmosChainAccount extends Web3ChainAccount<CosmosBaseAddress> {
 
 class Web3CosmoshainIdnetifier extends Web3ChainIdnetifier {
   final String chainId;
-  @override
-  String get identifier => "cosmos:$chainId";
-  const Web3CosmoshainIdnetifier({required this.chainId, required super.id});
+
+  Web3CosmoshainIdnetifier(
+      {required this.chainId,
+      required super.wsIdentifier,
+      required super.caip2,
+      required super.id});
   factory Web3CosmoshainIdnetifier.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
     final CborListValue values = CborSerializable.cborTagValue(
@@ -99,11 +102,15 @@ class Web3CosmoshainIdnetifier extends Web3ChainIdnetifier {
         hex: hex,
         tags: CborTagsConst.web3CosmosChainIdentifier);
     return Web3CosmoshainIdnetifier(
-        chainId: values.elementAs(0), id: values.elementAs(1));
+        chainId: values.elementAs(0),
+        id: values.elementAs(1),
+        wsIdentifier: values.elementAs(2),
+        caip2: values.elementAs(3));
   }
   @override
   CborTagValue toCbor() {
-    return CborTagValue(CborListValue.fixedLength([chainId, id]),
+    return CborTagValue(
+        CborListValue.fixedLength([chainId, id, wsIdentifier, caip2]),
         CborTagsConst.web3CosmosChainIdentifier);
   }
 }

@@ -15,12 +15,16 @@ class TonPageController extends WalletStandardPageController {
         signMessage: _signMessage.toJS);
     feature.tonConnect =
         JSTonWalletStandardConnectFeature.setup(connect: _connect.toJS);
+    feature.tonDisconnect = JSWalletStandardDisconnectFeature.setup(
+        disconnect: _disconnectChain.toJS);
     feature.tonEvents = JSWalletStandardEventsFeature.setup(on: _onEvents.toJS);
   }
 
-  JSPromise<JSTonWalletStandardConnect> _connect() {
+  JSPromise<JSTonWalletStandardConnect> _connect([JSString? chainId]) {
+    final network = JsUtils.asJSString(chainId);
+    final params = network == null ? null : [network].toJS;
     return waitForSuccessResponsePromise<JSTonWalletStandardConnect>(
-        method: TonJSConst.requestAccounts);
+        method: TonJSConst.requestAccounts, params: params);
   }
 
   JSPromise<JSTonSignTransactionResponse> _signTransaction(

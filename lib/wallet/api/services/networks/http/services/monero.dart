@@ -8,12 +8,8 @@ import 'package:on_chain_wallet/wallet/api/services/impl/http/http.dart';
 class MoneroHTTPService extends HTTPService<MoneroAPIProvider>
     implements MoneroServiceProvider {
   @override
-  final Duration defaultTimeOut;
-  @override
   final APPIsolate isolate;
-  MoneroHTTPService(this.provider,
-      {this.defaultTimeOut = const Duration(minutes: 1),
-      this.isolate = APPIsolate.separate});
+  MoneroHTTPService(this.provider, {this.isolate = APPIsolate.separate});
 
   @override
   final MoneroAPIProvider provider;

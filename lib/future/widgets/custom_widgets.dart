@@ -53,3 +53,4 @@ export 'widgets/future_builder.dart';
 export 'widgets/app_circular_progress_indicator.dart';
 export 'widgets/alarm.dart';
 export 'widgets/large_text_container.dart';
+export 'widgets/custom_icons_icons.dart';

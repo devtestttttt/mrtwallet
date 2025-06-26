@@ -3,7 +3,7 @@ import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/wallet/controller/controller.dart';
 import 'package:on_chain_wallet/future/wallet/setup/controller/controller.dart';
 import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
-import 'package:on_chain_wallet/wallet/provider/wallet_provider.dart';
+import 'package:on_chain_wallet/wallet/models/wallet/hd_wallet.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 
 import 'enter_backup_new.dart';

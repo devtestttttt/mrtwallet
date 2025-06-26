@@ -226,7 +226,7 @@ class Web3BitcoinSendTransactionForm extends BitcoinWeb3Form<
       throw Web3RequestExceptionConst.missingPermission;
     }
     if (spenders.map((e) => e.network).toSet().length != 1) {
-      throw Web3BitcoinExceptionConstant.invalidTransactionAccount;
+      throw Web3BitcoinExceptionConstant.invalidRequestAccounts;
     }
     if (spenders.isEmpty) {
       throw Web3RequestExceptionConst.missingPermission;

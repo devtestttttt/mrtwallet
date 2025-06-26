@@ -85,7 +85,7 @@ class _NumberWriteViewState extends State<NumberWriteView> with SafeState {
   }
 
   void onPressed() {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     final parse = BigRational.tryParseDecimaal(text);
 
     if (context.mounted && parse != null) {

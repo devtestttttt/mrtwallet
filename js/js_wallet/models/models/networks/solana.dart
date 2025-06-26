@@ -8,6 +8,7 @@ class SolanaJSConstant {
       "solana_signAndSendAllTransactions";
   static const String signMessage = "solana_signMessage";
   static const String signTransaction = "solana_signTransaction";
+  static const String signAllTransaction = "solana_signAllTransactions";
   static const String requestAccounts = "solana_requestAccounts";
   static const String signInMessage = "solana_signIn";
   static const String version = '1.0.0';
@@ -40,27 +41,6 @@ extension type StandardWalletAdapterRegisterEvent(JSAny _) implements JSAny {
   external void register(JSAny wallet);
 }
 
-@JS()
-extension type SolanaWalletAdapterFeatures(JSAny _) implements JSAny {
-  factory SolanaWalletAdapterFeatures.setup() {
-    return SolanaWalletAdapterFeatures(JSObject());
-  }
-  @JS("standard:connect")
-  external set connect(SolanaWalletAdapterStandardConnectFeature _);
-  @JS("standard:events")
-  external set events(SolanaWalletAdapterStandardEventsFeature _);
-
-  @JS("solana:signAndSendTransaction")
-  external set signAndSendTransaction(
-      SolanaWalletAdapterSolanaSignAndSendTransactionFeature _);
-
-  @JS("solana:signTransaction")
-  external set signTransaction(
-      SolanaWalletAdapterSolanaSignTransactionFeature _);
-
-  @JS("solana:signMessage")
-  external set signMessage(SolanaWalletAdapterSolanaSignMessageFeature _);
-}
 @JS()
 extension type SolanaWalletAdapterStandardConnectFeature(JSAny _)
     implements JSAny {
@@ -149,6 +129,23 @@ extension type SolanaWalletAdapterSolanaSignTransactionFeature(JSAny _)
   external set supportedTransactionVersions(JSArray _);
   external set signTransaction(JSFunction _);
 }
+@JS()
+extension type SolanaWalletAdapterSolanaSignAllTransactionsFeature(JSAny _)
+    implements JSAny {
+  factory SolanaWalletAdapterSolanaSignAllTransactionsFeature.setup(
+      {required JSFunction signAllTransactions,
+      required JSArray supportedTransactionVersions,
+      String version = SolanaJSConstant.version}) {
+    return SolanaWalletAdapterSolanaSignAllTransactionsFeature(JSObject())
+      ..signAllTransactions = signAllTransactions
+      ..version = version
+      ..supportedTransactionVersions = supportedTransactionVersions;
+  }
+  external set version(String version);
+  external set supportedTransactionVersions(JSArray _);
+  external set signAllTransactions(JSFunction _);
+}
+
 @JS()
 extension type SolanaWalletAdapterSolanaSignMessageFeature(JSAny _)
     implements JSAny {
@@ -252,7 +249,7 @@ extension type JSSolanaTranasctionSendOptions._(JSObject _) implements JSAny {
 }
 extension type JSSolanaSignAndSendTransactionParams._(JSObject _)
     implements JSSolanaSignTransactionParams {
-  external String get chain;
+  external String? get chain;
 }
 
 extension type JSSolanaSignAndSendAllTransactionMode._(JSObject _)

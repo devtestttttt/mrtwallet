@@ -74,6 +74,7 @@ class SwapAddressesView extends StatelessWidget {
               });
             },
           ),
+          ErrorTextContainer(error: controller.txError),
           WidgetConstant.height40,
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Shimmer(

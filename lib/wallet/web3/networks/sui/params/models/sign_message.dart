@@ -1,27 +1,53 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
+import 'package:blockchain_utils/helper/helper.dart';
+import 'package:blockchain_utils/utils/string/string.dart';
 import 'package:on_chain_wallet/app/serialization/cbor/cbor.dart';
-import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
+import 'package:on_chain_wallet/wallet/wallet.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/sui/methods/methods.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/sui/params/core/request.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/sui/permission/models/account.dart';
 
-class Web3SuiSignMessageResponse {
-  final String messageBytes;
-  final String signature;
-  const Web3SuiSignMessageResponse(
-      {required this.messageBytes, required this.signature});
-  factory Web3SuiSignMessageResponse.fromJson(Map<String, dynamic> json) {
+class Web3SuiSignMessageResponse with CborSerializable {
+  final List<int> messageBytes;
+  final List<int> signature;
+  Web3SuiSignMessageResponse(
+      {required List<int> messageBytes, required List<int> signature})
+      : messageBytes = messageBytes.asImmutableBytes,
+        signature = signature.asImmutableBytes;
+
+  factory Web3SuiSignMessageResponse.deserialize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: object,
+        hex: hex,
+        tags: CborTagsConst.defaultTag);
     return Web3SuiSignMessageResponse(
-        messageBytes: json["messageBytes"], signature: json["signature"]);
+        messageBytes: values.elementAs(0), signature: values.elementAs(1));
   }
-  Map<String, dynamic> toJson() {
-    return {"messageBytes": messageBytes, "signature": signature};
+  String get messageAsBase64 =>
+      StringUtils.decode(messageBytes, type: StringEncoding.base64);
+  String get signatureAsBase64 =>
+      StringUtils.decode(signature, type: StringEncoding.base64);
+  Map<String, dynamic> toWalletConnectJson() {
+    return {"messageBytes": messageAsBase64, "signature": signatureAsBase64};
+  }
+
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([
+          CborBytesValue(messageBytes),
+          CborBytesValue(signature),
+        ]),
+        CborTagsConst.defaultTag);
   }
 }
 
-class Web3SuiSignMessage extends Web3SuiRequestParam<Map<String, dynamic>> {
+class Web3SuiSignMessage
+    extends Web3SuiRequestParam<Web3SuiSignMessageResponse> {
   final String challeng;
   final String? content;
   Web3SuiSignMessage._({
@@ -81,19 +107,24 @@ class Web3SuiSignMessage extends Web3SuiRequestParam<Map<String, dynamic>> {
 
   final Web3SuiChainAccount accessAccount;
   @override
-  Web3SuiRequest<Map<String, dynamic>, Web3SuiSignMessage> toRequest(
+  Web3SuiRequest<Web3SuiSignMessageResponse, Web3SuiSignMessage> toRequest(
       {required Web3RequestInformation request,
       required Web3RequestAuthentication authenticated,
       required List<Chain> chains}) {
     final chain = super.findRequestChain(
         request: request, authenticated: authenticated, chains: chains);
-    return Web3SuiRequest<Map<String, dynamic>, Web3SuiSignMessage>(
+    return Web3SuiRequest<Web3SuiSignMessageResponse, Web3SuiSignMessage>(
       params: this,
       authenticated: authenticated,
       chain: chain.$1,
       info: request,
       accounts: chain.$2,
     );
+  }
+
+  @override
+  Object? toJsWalletResponse(Web3SuiSignMessageResponse response) {
+    return response.toCbor().encode();
   }
 
   @override

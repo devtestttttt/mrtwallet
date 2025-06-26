@@ -55,7 +55,7 @@ class Web3CosmosGlobalRequestController<RESPONSE,
 
   Future<void> _importNewChain() async {
     final form = (this.form as Web3CosmosAddNewChainForm).form;
-    if (!(form.formKey.currentState?.validate() ?? false)) return;
+    if (!form.formKey.ready()) return;
     final rpcUrl = form.getRpcUrl();
     if (rpcUrl == null) return;
     progressKey.process(text: "processing_request".tr);

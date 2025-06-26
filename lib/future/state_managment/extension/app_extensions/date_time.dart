@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:on_chain_wallet/app/utils/datetime/datetime.dart';
 
 extension QuickDateTimeFormater on DateTime {
-  static DateTime fromSecondsSinceEpoch(int s) {
-    return DateTime.fromMillisecondsSinceEpoch(s * 1000);
-  }
-
   static String _twoDigits(int n) {
     return n.toString().padLeft(2, "0");
     // if (n >= 10) {
@@ -40,6 +37,6 @@ extension QuickDateTimeFormater on DateTime {
     return TimeOfDay(hour: hour, minute: minute);
   }
 
-  int get secondsSinceEpoch => millisecondsSinceEpoch ~/ 1000;
+  int get secondsSinceEpoch => DateTimeUtils.secondsSinceEpoch(this);
   bool get isAfterNow => toUtc().isAfter(DateTime.now().toUtc());
 }

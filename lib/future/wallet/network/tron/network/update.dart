@@ -306,7 +306,7 @@ class _UpdateTronProviderState extends State<_UpdateTronProvider>
                                                               .onPrimaryTextTheme
                                                               .bodyMedium)
                                                   },
-                                                  itemBuilder: {
+                                                  selectedItemBuilder: {
                                                     for (final i in services)
                                                       i: Text(i.name)
                                                   },
@@ -342,7 +342,7 @@ class _UpdateTronProviderState extends State<_UpdateTronProvider>
                                                           .bodyMedium(context),
                                                     )
                                                 },
-                                                itemBuilder: {
+                                                selectedItemBuilder: {
                                                   for (final i
                                                       in supportedProtocol)
                                                     i: Text(i.value)

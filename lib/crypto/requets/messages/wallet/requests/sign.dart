@@ -109,24 +109,29 @@ final class WalletRequestSign
         } else {
           sig = btcSigner.signECDSADer(digest);
         }
-        signature = [...sig, bitcoinRequest.sighash];
+        final sighash = bitcoinRequest.sighash;
+        signature = [...sig, if (sighash != null) sighash];
         return GlobalSignResponse(
             signature: signature, index: index, signerPubKey: key.publicKey);
       case SigningRequestNetwork.bitcoin:
         final BitcoinSigning bitcoinRequest = request.cast();
         final btcSigner = BitcoinKeySigner.fromKeyBytes(key.privateKeyBytes());
+        final sighash = bitcoinRequest.sighash;
         if (bitcoinRequest.useTaproot) {
           final taptweak = TaprootUtils.calculateTweek(
               btcSigner.verifierKey.publicKeyPoint().toXonly());
           List<int> schnorrSignature =
               btcSigner.signBip340(digest: digest, tapTweakHash: taptweak);
           if (bitcoinRequest.sighash != 0x00) {
-            schnorrSignature = [...schnorrSignature, bitcoinRequest.sighash];
+            schnorrSignature = [
+              ...schnorrSignature,
+              if (sighash != null) sighash
+            ];
           }
           signature = schnorrSignature;
         } else {
           final sig = btcSigner.signECDSADer(digest);
-          signature = [...sig, bitcoinRequest.sighash];
+          signature = [...sig, if (sighash != null) sighash];
         }
         return GlobalSignResponse(
             signature: signature, index: index, signerPubKey: key.publicKey);

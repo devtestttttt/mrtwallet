@@ -14,7 +14,6 @@ class SetupDerivationModeView extends StatefulWidget {
   final List<CryptoCoins> networkCoins;
   final Chain chainAccout;
   final AddressDerivationIndex? defaultDerivation;
-  final Widget? title;
   final List<EncryptedCustomKey> customKeys;
   final SeedTypes seedGenerationType;
   const SetupDerivationModeView(
@@ -24,7 +23,6 @@ class SetupDerivationModeView extends StatefulWidget {
       required this.customKeys,
       this.networkCoins = const [],
       this.defaultDerivation,
-      this.title,
       required this.seedGenerationType});
 
   @override
@@ -117,8 +115,8 @@ class _SetupDerivationModeView2State extends State<SetupDerivationModeView>
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void onInitOnce() {
+    super.onInitOnce();
     MethodUtils.after(() async {
       generateAddressKey.ensureKeyVisible();
     });
@@ -134,7 +132,6 @@ class _SetupDerivationModeView2State extends State<SetupDerivationModeView>
         WidgetConstant.height20,
         Text("derivation_path".tr, style: context.textTheme.titleMedium),
         WidgetConstant.height8,
-        // APPAnimatedSwitcher(enable: enable, widgets: widgets),
         ContainerWithBorder(
           onRemove: allowDerivation
               ? () {

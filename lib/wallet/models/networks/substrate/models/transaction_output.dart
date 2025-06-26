@@ -188,7 +188,8 @@ class SubstrateTransferMethod extends SubstrateKnownCallMethods {
           BytesUtils.fromHexString(data["dest"]));
     } else {
       receiver = SubstrateAddress.fromBytes(
-          BytesUtils.fromHexString(data["dest"]!["Id"]));
+          BytesUtils.fromHexString(data["dest"]!["Id"]),
+          ss58Format: network.coinParam.ss58Format);
     }
     return SubstrateTransferMethod(
         receiver:

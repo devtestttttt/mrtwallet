@@ -7,14 +7,9 @@ import 'package:ton_dart/ton_dart.dart'
 
 class TonHTTPService extends HTTPService<TonAPIProvider>
     implements TonServiceProvider {
-  TonHTTPService(
-      {required this.provider,
-      required this.isolate,
-      this.defaultTimeOut = const Duration(seconds: 30)});
+  TonHTTPService({required this.provider, required this.isolate});
   @override
   final APPIsolate isolate;
-  @override
-  final Duration defaultTimeOut;
 
   @override
   final TonAPIProvider provider;

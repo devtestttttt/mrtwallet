@@ -37,15 +37,15 @@ class _ChainStreamBuilderState<T extends Chain>
     }
   }
 
+  void diposeStream() {
+    _subscription?.cancel();
+    _subscription = null;
+  }
+
   @override
   void onInitOnce() {
     super.onInitOnce();
     _subscription = account.stream.listen(onChainNotify);
-  }
-
-  void diposeStream() {
-    _subscription?.cancel();
-    _subscription = null;
   }
 
   @override

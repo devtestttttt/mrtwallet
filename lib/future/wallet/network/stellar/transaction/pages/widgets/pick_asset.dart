@@ -156,7 +156,7 @@ class _StellarPickAssetViewState extends State<StellarPickAssetView>
   }
 
   void setup() {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     if (!isReady) return;
     final StellarAsset? asset = StellarUtils.tryToAssets(assetType,
         code: assetName, issuer: issueAddress?.networkAddress.toPublicKey());

@@ -31,6 +31,7 @@ class _UpdateNetworkViewState extends State<_UpdateNetworkView>
   String networkName = '';
   String explorerAddressLink = "";
   String explorerTransaction = "";
+  final GlobalKey<PageProgressState> pageProgressKey = GlobalKey();
   void onChangeSymbol(String v) {
     symbol = v;
   }
@@ -67,8 +68,6 @@ class _UpdateNetworkViewState extends State<_UpdateNetworkView>
     }
     return null;
   }
-
-  final GlobalKey<PageProgressState> pageProgressKey = GlobalKey();
 
   Future<void> updateNetwork() async {
     final network = widget.network;

@@ -135,8 +135,12 @@ class PageRouter {
   static const String moneroMnemonic = "setting/monero/mnemonic";
   static const String moneroTransfer = "/monero/transfer";
 
+  /// WalletConnectView
   /// web3
   static const String web3 = "web3/";
+  static const String walletConnect = "web3/wallet_connect";
+  static const String manageDaps = "web3/manage_dapps";
+  static const String walletConnectPairing = "web3/wallet_connect/pairing";
   static const String web3Ethereum = "web3/ethereum";
   static const String web3Tron = "web3/tron";
   static const String web3Solana = "web3/solana";
@@ -149,6 +153,7 @@ class PageRouter {
   static const String web3Bitcoin = "web3/bitcoin";
   static const String web3Permission = "web3/permission";
   static const String web3Global = "web3/connect";
+  static const String web3WalletConnect = "web3/wallet_connect";
 
   static const String webview = "web/";
   static const String webViewSearch = "webview/search";
@@ -326,6 +331,10 @@ class PageRouter {
         return const UpdateEthereumProvider();
       case updateTonProviders:
         return const UpdateTonProvider();
+      case walletConnect:
+        return WalletConnectView();
+      case manageDaps:
+        return ManageWeb3DapssView();
       case updateTronProviders:
         return const UpdateTronProvider();
 

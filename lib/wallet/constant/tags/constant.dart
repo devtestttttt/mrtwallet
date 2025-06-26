@@ -30,10 +30,19 @@ class CborTagsConst {
     5
   ];
   static const List<int> walletBackupWif = [walletBackupVersion, 170, 6];
-  static const List<int> walletBackupStorageIds = [walletBackupVersion, 170, 7];
+  static const List<int> walletBackupChainStorageIds = [
+    walletBackupVersion,
+    170,
+    7
+  ];
   static const List<int> walletBackupChains = [walletBackupVersion, 170, 8];
   static const List<int> walletBackupWalletV2 = [walletBackupVersion, 170, 9];
   static const List<int> walletBackupWalletV3 = [walletBackupVersion, 170, 10];
+  static const List<int> walletBackupStorageIds = [
+    walletBackupVersion,
+    170,
+    11
+  ];
 
   static const List<int> mnemonic = [180];
   static const List<int> walletCustomKey = [180, 0];
@@ -248,10 +257,13 @@ class CborTagsConst {
   static const List<int> web3EthereumChainIdentifier = [161, 0, 2];
   static const List<int> web3TronChainIdentifier = [161, 0, 4];
   static const List<int> web3AptosChainIdentifier = [161, 0, 5];
+  static const List<int> web3AppAuthKey = [162, 0, 0];
   static const List<int> web3SubstrateChainIdentifier = [161, 0, 3];
   static const List<int> web3CosmosChainIdentifier = [161, 0, 6];
+  static const List<int> web3BitcoinChainIdentifier = [161, 0, 7];
   static const List<int> web3EthereumAccount = [161, 1, 1];
   static const List<int> web3EthereumTransactionAccessList = [161, 1, 1, 0];
+
   // static const List<int> web3EthereumExistsChains = [161, 1, 1, 1];
   static const List<int> web3TronAccount = [161, 2, 1];
   static const List<int> web3SolanaAccount = [161, 2, 2];
@@ -314,4 +326,16 @@ class CborTagsConst {
   static const List<int> transactionDecimalsAmount = [4, 0];
 
   static const List<int> swapSetting = [10, 0];
+
+  static const List<int> defaultTag = [21, 31, 41];
+
+  /// wc
+  static const List<int> wcSessionData = [77, 0];
+  static const List<int> wcRedirect = [77, 1];
+  static const List<int> wcMetadata = [77, 2];
+  static const List<int> wcRelay = [77, 3];
+  static const List<int> wcNamespace = [77, 4];
+  static const List<int> wcChainNamespace = [77, 5];
+  static const List<int> wcSessionNamespace = [77, 6];
+  static const List<int> wcPendigMessage = [77, 7];
 }

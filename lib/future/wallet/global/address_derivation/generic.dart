@@ -78,12 +78,11 @@ class _GenericNetworkAddressGenerationView extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         FixedElevatedButton(
-          padding: WidgetConstant.paddingVertical20,
-          onPressed: () {
-            generateAddress(context, controller);
-          },
-          child: Text("generate_address".tr),
-        ),
+            padding: WidgetConstant.paddingVertical20,
+            onPressed: () {
+              generateAddress(context, controller);
+            },
+            child: Text("generate_address".tr)),
       ],
     );
   }

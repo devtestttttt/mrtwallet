@@ -133,7 +133,7 @@ class _CosmosPickChannelIdViewState
   }
 
   Future<void> checkChannelConnection() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     final channelId = this.channelId;
     if (checkConnection) {
       final source = await _checkChannelConnection(

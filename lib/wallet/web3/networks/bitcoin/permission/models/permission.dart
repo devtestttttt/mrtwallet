@@ -55,13 +55,18 @@ class Web3BitcoinChain extends Web3Chain<BitcoinBaseAddress, BitcoinChain,
     final currentNetwork =
         getCurrentPermissionNetwork(networks.map((e) => e.network).toList());
     final web3Networks = networks
-        .map((e) => Web3ChainDefaultIdnetifier(
+        .map((e) => Web3BitcoinChainIdnetifier(
             id: e.network.value,
-            identifier: e.network.coinParam.transacationNetwork.identifier))
+            wsIdentifier: e.network.wsIdentifier,
+            caip2: e.network.caip,
+            network: e.network.coinParam.transacationNetwork))
         .toList();
-    final currentWeb3Network = Web3ChainDefaultIdnetifier(
+
+    final currentWeb3Network = Web3BitcoinChainIdnetifier(
         id: currentNetwork.value,
-        identifier: currentNetwork.coinParam.transacationNetwork.identifier);
+        wsIdentifier: currentNetwork.wsIdentifier,
+        caip2: currentNetwork.caip,
+        network: currentNetwork.coinParam.transacationNetwork);
     return Web3BitcoinChainAuthenticated(
         accounts: activeAccounts,
         networks: web3Networks,

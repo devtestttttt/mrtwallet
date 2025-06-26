@@ -103,7 +103,7 @@ class _SetupNetworkAmountState extends State<SetupNetworkAmount>
   }
 
   void onSetup() {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     final BigInt? toBigit =
         PriceUtils.tryDecodePrice(controller.getText(), widget.token.decimal);
     if (toBigit == null) return;
@@ -293,7 +293,7 @@ class _SetupDecimalTokenAmountViewState
   }
 
   void onSetup() {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     final rational = BigRational.tryParseDecimaal(price);
     if (rational == null) return;
     if (mounted) {
@@ -480,7 +480,7 @@ class _SetupDecimalExchangeRateInputState
   }
 
   void onSetup() {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     final rational = BigRational.tryParseDecimaal(price);
     if (rational == null) return;
     context.pop(rational);

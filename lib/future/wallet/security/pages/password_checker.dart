@@ -118,7 +118,7 @@ class _PasswordCheckerViewState extends State<PasswordCheckerView>
   }
 
   void onSubmit() async {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     if (error != null) {
       error = null;
       updateState();

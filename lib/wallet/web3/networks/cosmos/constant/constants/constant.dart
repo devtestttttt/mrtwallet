@@ -6,7 +6,7 @@ class Web3CosmosConst {
   static const String sendTransaction = "cosmos_sendTransaction";
 
   static const String requestAccounts = "cosmos_requestAccounts";
-  static const String addNewChain = "cosmos_addNewChain";
+  static const String addNewChain = "wallet_addCosmosChain";
   static const String switchNetwork = "wallet_switchCosmosChain";
   static const int requestAccountTag = 100;
   static const int signMessagTag = 101;

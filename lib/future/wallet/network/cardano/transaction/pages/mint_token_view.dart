@@ -102,7 +102,7 @@ class _CardanoMintTokenViewState extends State<CardanoMintTokenView>
   }
 
   void onSubmit() {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     checkFildsReady();
     if (!fieldsIsReady) return;
     context.pop(buildAsset());

@@ -2,7 +2,8 @@ part of 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
 
 enum _WalletChainStatus {
   init,
-  ready;
+  ready,
+  dispose;
 
   bool get isInit => this == init;
 }
@@ -118,10 +119,11 @@ abstract final class BaseChain<
   abstract CONFIG _config;
   CONFIG get config => _config;
   abstract final SynchronizedLock _lock;
+
   abstract final ChainStorageManager _storage;
 
   abstract NodeClientStatus _clientStatus;
-  BaseServiceProtocol? get service => _client?.service;
+  NetworkServiceProtocol? get service => _client?.service;
 
   NodeClientStatus get serviceStatus => _clientStatus;
 
@@ -171,4 +173,36 @@ class ChainEvent {
   factory ChainEvent.complete(ChainNotify type) {
     return ChainEvent(type: type, status: ChainNotifyStatus.complete);
   }
+}
+
+enum ChainWalletEventType {
+  ping,
+  connection,
+  chainChanged;
+}
+
+abstract final class ChainWalletEvent {
+  final ChainWalletEventType type;
+  const ChainWalletEvent({required this.type});
+  T cast<T extends ChainWalletEvent>() {
+    if (this is T) return this as T;
+    throw WalletExceptionConst.invalidArgruments('$T', runtimeType.toString());
+  }
+}
+
+final class ChainWalletPingEvent extends ChainWalletEvent {
+  const ChainWalletPingEvent() : super(type: ChainWalletEventType.ping);
+}
+
+final class ChainWalletConnectionEvent extends ChainWalletEvent {
+  final bool isOnline;
+  const ChainWalletConnectionEvent(this.isOnline)
+      : super(type: ChainWalletEventType.connection);
+}
+
+final class ChainWalletChainChangeEvent extends ChainWalletEvent {
+  final Chain? prv;
+  final Chain current;
+  const ChainWalletChainChangeEvent({required this.prv, required this.current})
+      : super(type: ChainWalletEventType.chainChanged);
 }

@@ -12,7 +12,7 @@ import 'package:on_chain_wallet/future/wallet/webview/controller/controller/tab_
 import 'package:on_chain_wallet/future/wallet/webview/view/native_view.dart';
 import 'package:on_chain_wallet/repository/models/models/webview_repository.dart';
 import 'package:on_chain_wallet/crypto/impl/worker_impl.dart';
-import 'package:on_chain_wallet/wallet/web3/models/models/client_info.dart';
+import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 
 import 'controller.dart';
 
@@ -240,8 +240,8 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
         title: null,
         image: APPImage.faviIcon(_website));
     final auth = WebViewTabController(
-        controller: controller, viewType: viewId, key: key, tab: tab);
-    tabsAuthenticated[auth.viewType] = auth;
+        controller: controller, viewId: viewId, key: key, tab: tab);
+    tabsAuthenticated[auth.viewId] = auth;
     return auth;
   }
 
@@ -249,7 +249,7 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
     if (_currentViewId != null) {
       webViewController.removeListener(this);
     }
-    _currentViewId = tab.viewType;
+    _currentViewId = tab.viewId;
     webViewController.addListener(this);
   }
 
@@ -265,7 +265,7 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
       // await Future.delayed(const Duration(seconds: 3));
       final controller = await _initContiller(tabId, url: i.url);
       final auth = WebViewTabController(
-          controller: controller, viewType: tabId, key: key, tab: i);
+          controller: controller, viewId: tabId, key: key, tab: i);
       tabsAuthenticated[tabId] = auth;
     }
     WebViewTabController controller;
@@ -285,7 +285,7 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
 
   Future<void> removeTab(WebViewTabController auth) async {
     await _storage.removeTab(auth.tab.value);
-    final remove = tabsAuthenticated.remove(auth.viewType);
+    final remove = tabsAuthenticated.remove(auth.viewId);
     final last = _storage.lastTab;
     final WebViewTabController? authenticated =
         tabsAuthenticated.values.firstWhereOrNull((e) => e.tabId == last?.id);
@@ -321,11 +321,11 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
 
   Future<void> switchTab(WebViewTabController controller) async {
     await _tabLocker.synchronized(() async {
-      if (controller.viewType == viewType) {
+      if (controller.viewId == viewType) {
         backToBorwser();
         return;
       }
-      if (!tabsAuthenticated.containsKey(controller.viewType)) return;
+      if (!tabsAuthenticated.containsKey(controller.viewId)) return;
       await _initializeController(controller);
       backToBorwser();
     });

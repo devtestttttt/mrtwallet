@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:on_chain/tron/src/models/contract/transaction/transaction.dart';
 import 'package:on_chain_wallet/app/constant/global/app.dart';
 import 'package:on_chain_wallet/future/state_managment/extension/extension.dart';
 import 'package:on_chain_wallet/future/wallet/controller/controller.dart';
@@ -19,7 +20,7 @@ import 'package:on_chain/tron/src/models/contract/base_contract/transaction_type
 class TronWeb3TransactionFieldsView extends StatelessWidget {
   const TronWeb3TransactionFieldsView(
       {required this.wallet, super.key, required this.request});
-  final Web3TronRequest<String, Web3TronSendTransaction> request;
+  final Web3TronRequest<Transaction, Web3TronSendTransaction> request;
   final WalletProvider wallet;
 
   @override

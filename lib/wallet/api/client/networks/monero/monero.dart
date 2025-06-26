@@ -376,4 +376,9 @@ class MoneroWalletClient
 
   @override
   NetworkType get networkType => NetworkType.monero;
+
+  @override
+  Future<WalletTransactionStatus> transactionStatus({required String txId}) {
+    throw UnimplementedError();
+  }
 }

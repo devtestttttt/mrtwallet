@@ -87,7 +87,7 @@ class EthereumWeb3TypedDataSignRequestView extends StatelessWidget {
                   padding: WidgetConstant.paddingVertical40,
                   child: Text("sign_message".tr),
                   onPressed: () {
-                    request.confirmRequest();
+                    request.signMessage();
                   })
             ],
           )

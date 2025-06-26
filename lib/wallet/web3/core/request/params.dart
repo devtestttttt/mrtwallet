@@ -27,6 +27,10 @@ abstract class Web3WalletRequestParams<RESPONSE> extends Web3MessageCore {
     return response;
   }
 
+  Object? toWalletConnectResponse(RESPONSE response) {
+    return response;
+  }
+
   Object? toPageResponse(RESPONSE response) {
     return response;
   }

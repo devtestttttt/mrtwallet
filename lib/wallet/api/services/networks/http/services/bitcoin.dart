@@ -6,18 +6,13 @@ import 'package:on_chain_wallet/wallet/api/services/impl/http/http.dart';
 
 class BitcoinHTTPService extends HTTPService<BitcoinExplorerAPIProvider>
     implements ApiService {
-  BitcoinHTTPService({
-    required this.provider,
-    required this.isolate,
-    this.defaultTimeOut = const Duration(seconds: 30),
-  });
+  BitcoinHTTPService({required this.provider, required this.isolate});
   @override
   final APPIsolate isolate;
 
   @override
   final BitcoinExplorerAPIProvider provider;
-  @override
-  final Duration defaultTimeOut;
+
   @override
   Future<T> get<T>(String url) async {
     final result = await providerGET<T>(url);

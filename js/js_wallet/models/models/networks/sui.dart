@@ -1,4 +1,5 @@
 import 'dart:js_interop';
+import 'package:blockchain_utils/utils/string/string.dart';
 import 'package:on_chain_bridge/web/web.dart';
 import '../../models.dart';
 import 'wallet_standard.dart';
@@ -287,8 +288,9 @@ extension type JSSuiTransactionBlockResponseParams(JSAny _) implements JSAny {
   }
 }
 extension type JSSuiSignOrExcuteTransactionParams(JSAny _) implements JSAny {
-  external String get chain;
-  external JSSuiWalletAccount get account;
+  external String? get chain;
+  external JSAny? get account;
+  external JSAny? get address;
   external JSSuiSignTransactionV2? get transaction;
   external JSSuiSignTransactionV1? get transactionBlock;
   external String? get requestType;
@@ -297,20 +299,40 @@ extension type JSSuiSignOrExcuteTransactionParams(JSAny _) implements JSAny {
   Future<JSSuiSignTransactionWalletRequest> toRequest() async {
     try {
       if (transaction != null) {
-        final transactionJson = await transaction!.toJSON().toDart;
+        JSString transactionJson;
+        if (transaction.isA<JSString>()) {
+          transactionJson = transaction as JSString;
+        } else {
+          final json = (await transaction!.toJSON().toDart).toDart;
+          transactionJson = StringUtils.decode(StringUtils.encode(json),
+                  type: StringEncoding.base64)
+              .toJS;
+        }
         return JSSuiSignTransactionWalletRequest(JSObject())
           ..chain = chain
-          ..account = account.address
+          ..account = account ?? address
           ..transaction = transactionJson
           ..requestType = requestType
           ..options = options?.clone();
       }
       if (transactionBlock != null) {
-        final transactionJson = transactionBlock!.blockData;
+        JSString? transactionJson;
+        if (transactionBlock.isA<JSString>()) {
+          transactionJson = transactionBlock as JSString;
+        } else if (transactionBlock?.blockData.isA<JSString>() ?? false) {
+          transactionJson = transactionBlock!.blockData as JSString;
+        } else {
+          transactionJson = StringUtils.decode(
+                  StringUtils.encode(
+                      jsJson.stringify(transactionBlock!.blockData)),
+                  type: StringEncoding.base64)
+              .toJS;
+        }
+
         return JSSuiSignTransactionWalletRequest(JSObject())
           ..chain = chain
-          ..account = account.address
-          ..transaction = jsJson.stringify(transactionJson).toJS
+          ..account = account ?? address
+          ..transaction = transactionJson
           ..requestType = requestType
           ..options = options?.clone();
       }
@@ -319,16 +341,17 @@ extension type JSSuiSignOrExcuteTransactionParams(JSAny _) implements JSAny {
   }
 }
 extension type JSSuiSignTransactionWalletRequest(JSAny _) implements JSAny {
-  external String get chain;
-  external set chain(String _);
-  external String get account;
-  external set account(String _);
+  external String? get chain;
+  external set chain(String? _);
+  external JSAny? get account;
+  external set account(JSAny? _);
   external JSString get transaction;
   external set transaction(JSString _);
   external String? get requestType;
   external set requestType(String? _);
   external JSSuiTransactionBlockResponseParams? get options;
   external set options(JSSuiTransactionBlockResponseParams? _);
+  static const List<String> properties = ["chain", "account", "transaction"];
 }
 
 extension type JSSuiSignTransactionResponse(JSAny _) implements JSAny {

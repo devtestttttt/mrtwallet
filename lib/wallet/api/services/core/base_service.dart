@@ -4,9 +4,13 @@ import 'package:on_chain_wallet/wallet/api/services/core/tracker.dart';
 import 'package:on_chain_wallet/wallet/api/services/models/models/protocols.dart';
 
 abstract class BaseServiceProtocol<T extends APIProvider> {
-  T get provider;
-  abstract final APIServiceTracker tracker;
   void disposeService();
   ServiceProtocol get protocol;
   APPIsolate get isolate;
+}
+
+abstract class NetworkServiceProtocol<T extends APIProvider>
+    extends BaseServiceProtocol {
+  T get provider;
+  abstract final APIServiceTracker tracker;
 }

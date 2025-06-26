@@ -9,6 +9,7 @@ class StorageConst {
   static const String chainSorageKey = "CS_";
   static const String chainSharedSorageKey = "CSS_";
   static const String web3StorageKey = "WEB3_";
+  static const String walletConnectStorageKey = "WEB3WC_";
 
   /// webview ..
   static const String webview = "WV";

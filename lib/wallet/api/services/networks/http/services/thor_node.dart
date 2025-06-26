@@ -6,10 +6,7 @@ import 'package:on_chain_wallet/wallet/api/provider/networks/cosmos.dart';
 
 class ThorNodeHTTPService extends HTTPService<CosmosAPIProvider>
     implements ThorNodeServiceProvider {
-  ThorNodeHTTPService(
-      {required this.provider,
-      required this.isolate,
-      this.defaultTimeOut = const Duration(seconds: 30)});
+  ThorNodeHTTPService({required this.provider, required this.isolate});
   @override
   final APPIsolate isolate;
 
@@ -19,9 +16,6 @@ class ThorNodeHTTPService extends HTTPService<CosmosAPIProvider>
     return await serviceRequest<T>(params,
         uri: params.toUri(provider.callUrl), allowStatus: [200]);
   }
-
-  @override
-  final Duration defaultTimeOut;
 
   @override
   final CosmosAPIProvider provider;

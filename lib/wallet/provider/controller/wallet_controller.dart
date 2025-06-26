@@ -1,7 +1,7 @@
 part of 'package:on_chain_wallet/wallet/provider/wallet_provider.dart';
 
 abstract class _WalletController with CryptoWokerImpl {
-  _WalletController(this._walletCore, this._wallet, this._appChains);
+  _WalletController(this._walletCore, this._appChains);
 
   /// base wallet
   WalletCore? _walletCore;
@@ -19,7 +19,7 @@ abstract class _WalletController with CryptoWokerImpl {
   EncryptedMasterKey? _massterKey;
 
   /// wallet information like name, settings and etc.
-  HDWallet _wallet;
+  HDWallet get _wallet => _appChains.wallet;
 
   /// wallet networks controller.
   final ChainsHandler _appChains;
@@ -31,17 +31,14 @@ abstract class _WalletController with CryptoWokerImpl {
   WalletNetwork get network => _chain.network;
 
   /// update wallet storage.
-  Future<void> _updateWallet(HDWallet wallet, {bool? asDefaultWallet}) async {
-    assert(wallet._checksum == _wallet._checksum, "invalid wallet checksum");
-    if (wallet._checksum != _wallet._checksum) return;
-    _wallet = wallet;
+  Future<void> _updateWallet({bool? asDefaultWallet}) async {
     await _core._updateWallet(_wallet, asDefaultWallet: asDefaultWallet);
   }
 }
 
 class WalletController extends _WalletController
     with WalletManager, Web3Impl, WalletMoneroImpl {
-  WalletController._(WalletCore super.core, super.wallet, super.chains);
+  WalletController._(WalletCore super.core, super.chains);
 
   /// setup wallet.
   /// retrive wallet storage and init wallet controller.
@@ -59,8 +56,7 @@ class WalletController extends _WalletController
         junkKeys.add(i);
       }
     }
-    final chain = ChainsHandler(
-        chains: chains, currentNetwork: wallet.network, id: wallet._checksum);
+    final chain = ChainsHandler(chains: chains, wallet: wallet);
 
     return (chain, junkKeys);
   }
@@ -78,7 +74,7 @@ class WalletController extends _WalletController
         await i.save();
       }
     }
-    final controller = WalletController._(core, wallet, handler.$1);
+    final controller = WalletController._(core, handler.$1);
     await controller._onInitController();
     return controller;
   }

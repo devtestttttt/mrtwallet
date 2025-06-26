@@ -11,7 +11,7 @@ import 'package:stellar_dart/stellar_dart.dart';
 
 enum StellarChainType {
   testnet(1),
-  mainnet(2);
+  pubnet(2);
 
   const StellarChainType(this.value);
   final int value;
@@ -27,14 +27,14 @@ enum StellarChainType {
   List<int> get passphraseHash {
     return switch (this) {
       testnet => StellarNetwork.testnet.passphraseHash,
-      mainnet => StellarNetwork.mainnet.passphraseHash
+      pubnet => StellarNetwork.mainnet.passphraseHash
     };
   }
 
   String get passphrase {
     return switch (this) {
       testnet => StellarNetwork.testnet.passphrase,
-      mainnet => StellarNetwork.mainnet.passphrase
+      pubnet => StellarNetwork.mainnet.passphrase
     };
   }
 }

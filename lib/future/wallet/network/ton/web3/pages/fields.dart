@@ -16,8 +16,10 @@ class TonWeb3FieldsView extends StatelessWidget {
       case Web3TonRequestMethods.requestAccounts:
         return TonWeb3GlobalFieldsView(request: request, wallet: wallet);
       case Web3TonRequestMethods.signMessage:
-        return TonWeb3GlobalFieldsView<List<int>, Web3TonSignMessage>(
-            request: request as Web3TonRequest<List<int>, Web3TonSignMessage>,
+        return TonWeb3GlobalFieldsView<Web3TonSignMessageResponse,
+                Web3TonSignMessage>(
+            request: request as Web3TonRequest<Web3TonSignMessageResponse,
+                Web3TonSignMessage>,
             wallet: wallet);
       case Web3TonRequestMethods.sendTransaction:
       case Web3TonRequestMethods.signTransaction:

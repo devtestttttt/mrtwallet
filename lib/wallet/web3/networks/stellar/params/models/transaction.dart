@@ -1,26 +1,47 @@
 import 'package:blockchain_utils/blockchain_utils.dart';
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
+import 'package:on_chain_wallet/wallet/wallet.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/stellar/methods/methods.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/stellar/params/core/request.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/stellar/permission/models/account.dart';
 
-class Web3StellarSendTransactionResponse {
+class Web3StellarSendTransactionResponse with CborSerializable {
   final String envlope;
   final String? txHash;
+
   const Web3StellarSendTransactionResponse(
       {required this.envlope, this.txHash});
-  Map<String, dynamic> toJson() {
-    return {"envlope": envlope, "tx_hash": txHash};
+  factory Web3StellarSendTransactionResponse.deserialize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: object,
+        hex: hex,
+        tags: CborTagsConst.defaultTag);
+    return Web3StellarSendTransactionResponse(
+        envlope: values.elementAs(0), txHash: values.elementAs(1));
   }
 
-  factory Web3StellarSendTransactionResponse.fromJson(
-      Map<String, dynamic> json) {
-    return Web3StellarSendTransactionResponse(
-        envlope: json["envlope"], txHash: json["tx_hash"]);
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([envlope, txHash]), CborTagsConst.defaultTag);
   }
+
+  Map<String, dynamic> toWalletConnectJson() {
+    return {if (txHash != null) "txId": txHash, "envlope": envlope};
+  }
+  // Map<String, dynamic> toJson() {
+  //   return {"envlope": envlope, "tx_hash": txHash};
+  // }
+
+  // factory Web3StellarSendTransactionResponse.fromJson(
+  //     Map<String, dynamic> json) {
+  //   return Web3StellarSendTransactionResponse(
+  //       envlope: json["envlope"], txHash: json["tx_hash"]);
+  // }
 }
 
 class Web3StellarSendTransaction
@@ -94,7 +115,7 @@ class Web3StellarSendTransaction
 
   @override
   Object? toJsWalletResponse(Web3StellarSendTransactionResponse response) {
-    return response.toJson();
+    return response.toCbor().encode();
   }
 
   final Web3StellarChainAccount accessAccount;

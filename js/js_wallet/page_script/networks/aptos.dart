@@ -40,10 +40,14 @@ class AptosPageController extends WalletStandardPageController {
     }).toPromise;
   }
 
-  JSPromise<JSAptosWalletStandardUserResponse> _requestAccount() {
+  JSPromise<JSAptosWalletStandardUserResponse> _requestAccount(
+      [JSString? chainId]) {
+    final network =
+        chainId.isDefinedAndNotNull ? JsUtils.asJSString(chainId) : null;
     return waitForSuccessResponse<JSAptosWalletStandardUserResponse>(
-            method: AptosJSConstant.requestAccountRequestName)
-        .then((e) {
+      method: AptosJSConstant.requestAccountRequestName,
+      params: [if (network != null) network].toJS,
+    ).then((e) {
       if (e.type.isRejected) return e;
       final response = e.args as JSAptosWalletAccount;
       response.publicKey.buildSerializable();

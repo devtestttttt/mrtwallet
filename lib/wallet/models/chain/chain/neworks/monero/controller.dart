@@ -30,6 +30,14 @@ base mixin MoneroChainController
   bool get syncIsActive => _syncChain.chain == network.coinParam.chainType;
   StreamSubscription? _blockSubscribe;
 
+  @override
+  Future<void> _onConnectionStatusChange(bool isOnline) async {
+    await super._onConnectionStatusChange(isOnline);
+    if (!isOnline) {
+      _stopSyncBlock();
+    }
+  }
+
   Future<T?> _onWalletClient<T>({
     required Future<T> Function(MoneroWalletClient client) onConnect,
     Future<T?> Function(Object err)? onError,
@@ -201,10 +209,9 @@ base mixin MoneroChainController
             final tx = txes[i];
             final utxo = updateRequired[i];
             _accountUtxos.updateUtxoInfromation(
-              utxo: utxo,
-              outoutIndices: tx.outoutIndices,
-              confirmations: tx.confirmations,
-            );
+                utxo: utxo,
+                outoutIndices: tx.outoutIndices,
+                confirmations: tx.confirmations);
           }
         }
         await _saveUtxos();
@@ -216,23 +223,26 @@ base mixin MoneroChainController
     for (final i in _addresses) {
       final balance = _accountUtxos.getAddressBalance(i.addrDetails);
       _internalupdateAddressBalance(
-        address: i,
-        balance: balance,
-        saveAccount: false,
-      );
+          address: i, balance: balance, saveAccount: false);
     }
     save();
+  }
+
+  @override
+  Future<void> updateAccountBalance(
+      {List<IMoneroAddress>? addresses, bool tokens = true}) async {
+    final address = _addresses.elementAtOrNull(_addressIndex);
+    if (address == null) return;
+    await updateAddressBalance(address);
   }
 
   /// update address balance
   /// -[address]: address for retrive and update balance
   @override
-  Future<void> updateAddressBalance(
-    IMoneroAddress address, {
-    bool tokens = true,
-    bool saveAccount = true,
-  }) async {
+  Future<void> updateAddressBalance(IMoneroAddress address,
+      {bool tokens = true, bool saveAccount = true}) async {
     _isAccountAddress(address);
+    await initAddress(address);
     await _updateAaccountsBalances();
     _updateAddressBalance();
     _syncBlock();
@@ -244,30 +254,27 @@ base mixin MoneroChainController
     MoneroNewAddressParams accountParams,
   ) async {
     return _callSynchronized(
-      t: () async {
-        if (!network.coins.contains(accountParams.coin)) {
-          throw WalletExceptionConst.invalidCoin;
-        }
-        final IMoneroAddress newAddress = accountParams.toAccount(
-          network,
-          publicKey,
-        );
+        t: () async {
+          if (!network.coins.contains(accountParams.coin)) {
+            throw WalletExceptionConst.invalidCoin;
+          }
+          final IMoneroAddress newAddress =
+              accountParams.toAccount(network, publicKey);
 
-        final any = addresses.any((element) => element.isEqual(newAddress));
-        if (any) {
-          throw WalletExceptionConst.addressAlreadyExist;
-        }
-        _addresses = List.unmodifiable([..._addresses, newAddress]);
-        defaultTracker.addAccount(newAddress.addrDetails);
-        _accountUtxos.addNewAccount(newAddress.addrDetails);
-        await _saveDefaultTracker();
-        await _saveUtxos();
-        return newAddress;
-      },
-      type: ChainNotify.address,
-      saveAccount: true,
-      notifyProgress: _addresses.isEmpty,
-    );
+          final any = addresses.any((element) => element.isEqual(newAddress));
+          if (any) {
+            throw WalletExceptionConst.addressAlreadyExist;
+          }
+          _addresses = List.unmodifiable([..._addresses, newAddress]);
+          defaultTracker.addAccount(newAddress.addrDetails);
+          _accountUtxos.addNewAccount(newAddress.addrDetails);
+          await _saveDefaultTracker();
+          await _saveUtxos();
+          return newAddress;
+        },
+        type: ChainNotify.address,
+        saveAccount: true,
+        notifyProgress: _addresses.isEmpty);
   }
 
   @override
@@ -435,18 +442,14 @@ base mixin MoneroChainController
     if (_blockSubscribe != null) {
       _blockSubscribe?.cancel();
       _blockSubscribe = null;
-      return;
     }
   }
 
   Future<void> _syncBlock() async {
     if (_blockSubscribe != null) return;
     await onClient(
-      onError: (err) async {
-        return null;
-      },
       onConnect: (client) async {
-        if (!syncIsActive || _blockSubscribe != null) return;
+        if (!syncIsActive || _blockSubscribe != null || !haveAddress) return;
         final height = await client.getHeight();
 
         await defaultTracker.updateDefaultTrackerHeight(height.block);
@@ -505,11 +508,18 @@ base mixin MoneroChainController
   }
 
   @override
-  Future<void> _initInternal() async {
-    await super._initInternal();
+  Future<void> _initInternal({bool client = true}) async {
+    await super._initInternal(client: client);
     _defaultTracker = await _loadDefaultTracker();
     _syncChain = await _getSyncChain();
     _walletClient = await _getWalletClient();
     _accountUtxos = await _loadAccountsUtxos();
+  }
+
+  @override
+  void _disposeInternal() {
+    super._disposeInternal();
+    _blockSubscribe?.cancel();
+    _blockSubscribe = null;
   }
 }

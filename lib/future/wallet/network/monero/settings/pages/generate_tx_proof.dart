@@ -83,7 +83,7 @@ class _MoneroGenerateTxProofViewState
   String? proof;
 
   Future<void> generateProof() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     progressKey.progressText("generating_proof_please_wait".tr);
     final wallet = context.watch<WalletProvider>(StateConst.main);
     final result = await MethodUtils.call(() => wallet.wallet

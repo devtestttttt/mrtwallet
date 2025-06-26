@@ -54,6 +54,7 @@ class _CosmosWeb3PermissionViewState extends State<CosmosWeb3PermissionView>
         addAccount: addAccount,
         onChangeChain: onChangeChain,
         onChangeDefaultAccount: onChangeDefaultPermission,
-        activities: activities);
+        activities: activities,
+        menuItems: menuItems);
   }
 }

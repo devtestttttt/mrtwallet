@@ -119,7 +119,7 @@ mixin AddSubstrateChainState<T extends StatefulWidget> on SafeState<T> {
   void removeChain(bool? remove) async {}
 
   Future<void> checkNetwork() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     uri = rpcKey.currentState?.getEndpoint();
     if (uri == null) return;
     pageProgressKey.progressText("checking_rpc_network_info".tr);

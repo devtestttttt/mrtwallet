@@ -1,6 +1,7 @@
 import 'dart:js_interop';
 import 'package:on_chain_bridge/web/web.dart';
 
+import '../base.dart';
 import 'ethereum.dart';
 import 'solana.dart';
 import 'wallet_standard.dart';
@@ -95,7 +96,7 @@ extension type TIP1193(JSObject _) implements EIP1193 {
   @JS("ready")
   external set ready(bool ready);
   external set config(TronLinkParams _);
-
+  external set disconnect(JSFunction _);
   static TIP1193 setup(
       {required JSFunction request,
       required JSFunction on,
@@ -113,6 +114,7 @@ extension type TIP1193(JSObject _) implements EIP1193 {
     tip.enable = enable;
     tip.connect = enable;
     tip.ready = true;
+    tip.disconnect = disconnect;
     final eth = JSOBJ.freeze(tip);
     return eth;
   }

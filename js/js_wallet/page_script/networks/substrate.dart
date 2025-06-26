@@ -1,13 +1,11 @@
 part of '../scripts.dart';
 
 class _SubstratePageControllerConst {
-  static const String signMesssage = 'substrate_signMessage';
-  static const String addSubstrateChain = 'wallet_addSubstrateChain';
-  static const String signTransaction = 'substrate_signTransaction';
-  static const String knownMetadata = 'substrate_knownMetadata';
-  // static final Web3JSRequestParams knownMetadata =
-  //     Web3JSRequestParams(method: "substrate_knownMetadata");
-  static final requestAccount = 'substrate_requestAccounts';
+  static const String signMesssage = 'polkadot_signMessage';
+  static const String addSubstrateChain = 'wallet_addPolkadotChain';
+  static const String signTransaction = 'polkadot_signTransaction';
+  static const String knownMetadata = 'polkadot_knownMetadata';
+  static final requestAccount = 'polkadot_requestAccounts';
 }
 
 class SubstratePageController extends WalletStandardPageController {
@@ -28,10 +26,15 @@ class SubstratePageController extends WalletStandardPageController {
     feature.substrateSignMessage =
         SubstrateWalletAdapterSubstrateSignMessageFeature.setup(
             signMessage: signMessage.toJS);
+    feature.substrateAddNewChain =
+        SubstrateWalletAdapterSubstrateAddNewChainFeature.setup(
+            addNewChain: _metadataProvide.toJS);
     feature.substrateConnect =
         JSSubstrateWalletStandardConnectFeature.setup(connect: _connect.toJS);
     feature.substrateEvents =
         JSWalletStandardEventsFeature.setup(on: _onEvents.toJS);
+    feature.polkadotDisconnect = JSWalletStandardDisconnectFeature.setup(
+        disconnect: _disconnectChain.toJS);
   }
 
   void _initJsPolkadotAdapter() {
@@ -68,7 +71,7 @@ class SubstratePageController extends WalletStandardPageController {
     return ProxyMethodHandler<JSPolkadotJSWalletAdapter>(adapter);
   }
 
-  JSPromise<JSSubstrateKownMetadata> _knownMetadata([bool? _]) {
+  JSPromise<JSSubstrateKnownMetadata> _knownMetadata([bool? _]) {
     return waitForSuccessResponsePromise(
       method: _SubstratePageControllerConst.knownMetadata,
     );
@@ -96,10 +99,11 @@ class SubstratePageController extends WalletStandardPageController {
     );
   }
 
-  JSPromise<JSSubstrateWalletStandardConnect> _connect([JSAny? _]) {
+  JSPromise<JSSubstrateWalletStandardConnect> _connect([JSString? chainId]) {
+    final network = JsUtils.asJSString(chainId);
+    final params = network == null ? null : [network].toJS;
     return waitForSuccessResponsePromise(
-      method: _SubstratePageControllerConst.requestAccount,
-    );
+        method: _SubstratePageControllerConst.requestAccount, params: params);
   }
 
   JSPromise<JSArray<JSSubstrateWalletAccount>> _connectProvider([JSAny? _]) {

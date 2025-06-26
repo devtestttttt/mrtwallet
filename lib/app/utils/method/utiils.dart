@@ -41,7 +41,7 @@ class MethodUtils {
       final result = await r;
       return MethodResult.success(result);
     } catch (e, stackTrace) {
-      if (waitAtError != null) {
+      if (waitAtError != null && e is! CancelableExption) {
         await wait(duration: waitAtError);
       }
       return MethodResult.error(e, stackTrace);

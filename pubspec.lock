@@ -45,18 +45,18 @@ packages:
     dependency: "direct main"
     description:
       name: bitcoin_base
-      sha256: "350190857d5225b38115e5e6aa900ade4c982b207d8ba289389b38e4fd983793"
+      sha256: d12f8c4f25640616332c6bd067d18cd492f0046c10ec3bbfacc8f3113f534268
       url: "https://pub.dev"
     source: hosted
-    version: "6.5.0"
+    version: "6.6.0"
   blockchain_utils:
     dependency: "direct main"
     description:
       name: blockchain_utils
-      sha256: fbddd2a7f1849d2244a35bf996b6fb00bf6bd557f0e13aed65ba0c16ad133cb7
+      sha256: "2681bc950d31fd12eff8b9ea803d686a845a69f94fa88fdefc8c12ad63f55837"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.0"
+    version: "5.1.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -133,10 +133,10 @@ packages:
     dependency: "direct main"
     description:
       name: cosmos_sdk
-      sha256: "78504e49ab7ccb0f82cef9818692975dfdfc8ecc3a4144003bdd66d5c3c0baf8"
+      sha256: "91d14b590391f112da78440c3d586eb287ed75777f863bf3a4386ffdb5af3bef"
       url: "https://pub.dev"
     source: hosted
-    version: "2.7.0"
+    version: "2.8.0"
   coverage:
     dependency: transitive
     description:
@@ -372,10 +372,10 @@ packages:
     dependency: "direct main"
     description:
       name: monero_dart
-      sha256: "7047e0f2aeea098465973655e648b0da20a64ce6564194f666d18627abfbf584"
+      sha256: "6a044a43bdd76e942f46a6d4ec030b629caf9f9a1f9b6d113d60412896278d92"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.2.0"
   msix:
     dependency: "direct dev"
     description:
@@ -396,16 +396,16 @@ packages:
     dependency: "direct main"
     description:
       name: on_chain
-      sha256: "932edb8b24fbeb3594f4458ac232db725151713cdfb65b2e2adede9f428e1ce0"
+      sha256: "342ee08a06d2cbc297c9fe363c9921961294e3f4397065b0a9c8d7d5eca2f937"
       url: "https://pub.dev"
     source: hosted
-    version: "6.7.0"
+    version: "6.8.0"
   on_chain_bridge:
     dependency: "direct main"
     description:
       path: "."
       ref: main
-      resolved-ref: "9ad669229c7c69a6891298c94e4da8eb062659c7"
+      resolved-ref: "872f8ab70f6c997656e101cd48466e55be30a262"
       url: "https://github.com/mrtnetwork/onchain_bridge.git"
     source: git
     version: "0.0.1"
@@ -414,7 +414,7 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: f75ccfda1c1c5419999a59dd75ea0d4af8c9ef01
+      resolved-ref: "163a7eda9ed730e5955e5850cd74c4a11a32ca03"
       url: "https://github.com/mrtnetwork/onchain_swap.git"
     source: git
     version: "0.1.0"
@@ -454,10 +454,10 @@ packages:
     dependency: "direct main"
     description:
       name: polkadot_dart
-      sha256: "024d2332f2eb8f075c8aa6511b62eef81696ea370b6c22ed5ed337384886214d"
+      sha256: "144669ca28b4023f98dd6db60144181cb5055810f952acf32f9a5ec4c6ceef66"
       url: "https://pub.dev"
     source: hosted
-    version: "3.8.0"
+    version: "3.9.0"
   pool:
     dependency: transitive
     description:
@@ -563,10 +563,10 @@ packages:
     dependency: "direct main"
     description:
       name: stellar_dart
-      sha256: "7be6cd03dad21f86e7a50e021cb39be51d7868f05b19e7c4fe60c8355798cc9a"
+      sha256: "86e268759622f0f2c4098126f234cfedf57538ab0db6adf5f27fe019624b149a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.7.0"
+    version: "1.8.0"
   stream_channel:
     dependency: transitive
     description:
@@ -619,10 +619,10 @@ packages:
     dependency: "direct main"
     description:
       name: ton_dart
-      sha256: "532ae55728bbd6dc909d333b624056ce3155c892b7335d03774209c02cd6ffde"
+      sha256: "44d3517515cc8f517d7b7f8f41245a838d40db080c0e3bf204c9c1ab89baf8cb"
       url: "https://pub.dev"
     source: hosted
-    version: "1.7.0"
+    version: "1.8.0"
   typed_data:
     dependency: transitive
     description:
@@ -699,10 +699,10 @@ packages:
     dependency: "direct main"
     description:
       name: xrpl_dart
-      sha256: b42c3cba666d2670fce7b1ef869e917d831bd00297502ccb39112d015b21097d
+      sha256: "3e3e7b1d4775f41531ddf60e6a61130619979abc93e1008363ed23883890f46f"
       url: "https://pub.dev"
     source: hosted
-    version: "5.8.0"
+    version: "6.0.0"
   yaml:
     dependency: transitive
     description:

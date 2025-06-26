@@ -41,17 +41,29 @@ abstract class Web3ChainAccount<NETWORKADDRESS>
 
 abstract class Web3ChainIdnetifier with CborSerializable, Equatable {
   final int id;
-  abstract final String identifier;
-  const Web3ChainIdnetifier({required this.id});
+  final String wsIdentifier;
+  final String caip2;
+  final String caipChainId;
+  final String wsChainId;
+
+  bool isChain(String chainId) {
+    if (chainId.indexOf(":") > 0) {
+      return wsIdentifier == chainId || caip2 == chainId;
+    }
+    return caipChainId == chainId || wsChainId == chainId;
+  }
+
+  Web3ChainIdnetifier(
+      {required this.id, required this.wsIdentifier, required this.caip2})
+      : caipChainId = caip2.split(":").last,
+        wsChainId = wsIdentifier.split(":").last;
   @override
   List get variabels => [id];
 }
 
 class Web3ChainDefaultIdnetifier extends Web3ChainIdnetifier {
-  @override
-  final String identifier;
-  const Web3ChainDefaultIdnetifier(
-      {required super.id, required this.identifier});
+  Web3ChainDefaultIdnetifier(
+      {required super.id, required super.wsIdentifier, required super.caip2});
   factory Web3ChainDefaultIdnetifier.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
     final CborListValue values = CborSerializable.cborTagValue(
@@ -60,12 +72,14 @@ class Web3ChainDefaultIdnetifier extends Web3ChainIdnetifier {
         hex: hex,
         tags: CborTagsConst.web3ChainIdentifier);
     return Web3ChainDefaultIdnetifier(
-        id: values.elementAs(0), identifier: values.elementAs(1));
+        id: values.elementAs(0),
+        wsIdentifier: values.elementAs(1),
+        caip2: values.elementAs(2));
   }
 
   @override
   CborTagValue toCbor() {
-    return CborTagValue(CborListValue.fixedLength([id, identifier]),
+    return CborTagValue(CborListValue.fixedLength([id, wsIdentifier, caip2]),
         CborTagsConst.web3ChainIdentifier);
   }
 }

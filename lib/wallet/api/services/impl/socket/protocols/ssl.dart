@@ -80,7 +80,7 @@ class SSLService<T extends APIProvider> extends BaseSocketService<T> {
   }
 
   @override
-  Future<void> connect() async {
+  Future<void> connect(Duration timeout) async {
     await _lock.synchronized(() async {
       if (_status != SocketStatus.disconnect) return;
       final result = await MethodUtils.call(() async {
@@ -88,7 +88,8 @@ class SSLService<T extends APIProvider> extends BaseSocketService<T> {
         final socket = await SecureSocket.connect(
             result.first, int.parse(result[1]),
             onBadCertificate: (certificate) => true,
-            context: SecurityContext.defaultContext);
+            context: SecurityContext.defaultContext,
+            timeout: timeout);
         return socket;
       });
       if (result.hasResult) {
@@ -104,12 +105,15 @@ class SSLService<T extends APIProvider> extends BaseSocketService<T> {
   Future<Map<String, dynamic>> post(
       SocketRequestCompleter message, Duration timeout) async {
     try {
-      return providerCaller(() async {
-        _requests[message.id] = message;
-        _add(_toRequest(message.params));
-        final result = await message.completer.future.timeout(timeout);
-        return result;
-      }, message);
+      return providerCaller(
+          t: () async {
+            _requests[message.id] = message;
+            _add(_toRequest(message.params));
+            final result = await message.completer.future.timeout(timeout);
+            return result;
+          },
+          param: message,
+          timeout: timeout);
     } finally {
       _requests.remove(message.id);
     }

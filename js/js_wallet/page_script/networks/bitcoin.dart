@@ -6,14 +6,16 @@ class BitcoinPageController extends WalletStandardPageController {
   void _initNetworkFeatures(JSWalletStandardFeature feature) {
     feature.bitcoinConnect =
         JSWalletStandardConnectFeature.setup(connect: _connect.toJS);
-    // feature.bitcoinAccount =
-    //     JSWalletStandardAccountFeature.setup(account: _account.toJS);
     feature.bitcoinSignPersonalMessage =
         JSWalletStandardSignPersonalMessageFeature.setup(
             signPersonalMessage: _bitcoinSignPersonalMessage.toJS);
     feature.bitcoinSignTransaction =
         JSWalletStandardSignTransactionFeature.setup(
             signTransaction: _bitcoinSignTransaction);
+
+    feature.bitcoingetAccountAddresses =
+        JSWalletStandardGetAccountAddressesFeature.setup(
+            getAccountAddresses: _getAccountAddress.toJS);
     feature.bitcoinSendTransaction =
         JSWalletStandardSendTransactionFeature.setup(
             sendTransaction: _bitcoinSendTransaction.toJS);
@@ -23,9 +25,11 @@ class BitcoinPageController extends WalletStandardPageController {
         JSWalletStandardEventsFeature.setup(on: _onEvents.toJS);
   }
 
-  JSPromise<JSWalletStandardConnect> _connect() {
+  JSPromise<JSWalletStandardConnect> _connect([JSString? chainId]) {
+    final network = JsUtils.asJSString(chainId);
+    final params = network == null ? null : [network].toJS;
     return waitForSuccessResponsePromise<JSWalletStandardConnect>(
-        method: BitcoinJSConstant.requestAccountRequestName);
+        method: BitcoinJSConstant.requestAccountRequestName, params: params);
   }
 
   JSPromise<JSBitcoinSignMessageResponse> _bitcoinSignPersonalMessage(
@@ -42,11 +46,18 @@ class BitcoinPageController extends WalletStandardPageController {
         params: [params].toJS);
   }
 
+  JSPromise<JSArray<JSBitcoinGetAccountAddressResponse>> _getAccountAddress(
+      JSBitcoinGetAccountAddressParams params) {
+    return waitForSuccessResponsePromise<
+            JSArray<JSBitcoinGetAccountAddressResponse>>(
+        method: BitcoinJSConstant.getAccountAddresses, params: [params].toJS);
+  }
+
   JSPromise<JSBitcoinSendTransactionResponse> _bitcoinSendTransaction(
-      JSBitcoinSendTransactionParams params) {
+      JSArray<JSBitcoinSendTransactionParams> params) {
     return waitForSuccessResponsePromise<JSBitcoinSendTransactionResponse>(
         method: BitcoinJSConstant.sendTransactionRequestName,
-        params: [params].toJS);
+        params: JsUtils.asJSArray(params));
   }
 
   @override

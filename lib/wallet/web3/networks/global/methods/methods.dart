@@ -4,6 +4,8 @@ import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/global/constant/constant.dart';
 
 class Web3GlobalRequestMethods extends Web3RequestMethods {
+  @override
+  bool get isGlobalMethod => true;
   const Web3GlobalRequestMethods._(
       {required super.id,
       required super.name,

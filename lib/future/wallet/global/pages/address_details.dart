@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:on_chain_wallet/app/constant/constant.dart';
 import 'package:on_chain_wallet/crypto/keys/access/crypto_keys/crypto_keys.dart';
 import 'package:on_chain_wallet/future/state_managment/extension/extension.dart';
-import 'package:on_chain_wallet/future/wallet/controller/controller.dart';
 import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
 import 'package:on_chain_wallet/wallet/wallet.dart'
     show ContactCore, ChainAccount;
@@ -10,15 +8,12 @@ import 'package:on_chain_wallet/wallet/wallet.dart'
 class AddressDetailsView extends StatelessWidget {
   const AddressDetailsView(
       {required this.address, super.key, this.showBalance = true, this.color});
-
   final ChainAccount address;
   final bool showBalance;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final wallet = context.watch<WalletProvider>(StateConst.main);
-    final network = wallet.wallet.networkById(address.network);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -44,8 +39,7 @@ class AddressDetailsView extends StatelessWidget {
                           context.textTheme.labelLarge?.copyWith(color: color)),
         OneLineTextWidget(address.address.toAddress,
             style: context.textTheme.bodyMedium?.copyWith(color: color)),
-        // AddressDrivationInfo(address.keyIndex, color: color),
-        if (showBalance && network != null)
+        if (showBalance)
           CoinAndMarketLivePriceView(
               liveBalance: address.address.balance,
               style: context.textTheme.titleMedium?.copyWith(color: color),

@@ -21,10 +21,13 @@ class Web3BitcoinSignMessageForm extends BitcoinWeb3Form<BitcoinClient?,
 
   String get message => request.params.message;
   String? get content => request.params.content;
-  late final String messagePrefix =
+  late final String _messagePrefix =
       request.params.messagePrefix ?? BitcoinSignerUtils.signMessagePrefix;
+  String get messagePrefix => _messagePrefix;
   BIP137Mode _mode = BIP137Mode.p2pkhCompressed;
   BIP137Mode get mode => _mode;
+  // bool _isPersonalMessage = true;
+  bool get isPersonalMessage => true;
 
   Future<void> signMessage(FuncFutureNullableBoold confirm) async {
     final accept = await confirm();
@@ -40,6 +43,13 @@ class Web3BitcoinSignMessageForm extends BitcoinWeb3Form<BitcoinClient?,
       required BitcoinClient<IBitcoinAddress>? client}) async {
     await super.initForm(
         account: account, address: address, network: network, client: client);
+    // if (request.params.method ==
+    //     Web3BitcoinRequestMethods.signPersonalMessage) {
+    //   _messagePrefix =
+
+    //   _isPersonalMessage = true;
+    // }
+
     switch (this.address.networkAddress.type) {
       case P2pkhAddressType.p2pkh:
       case P2pkhAddressType.p2pkhwt:
@@ -50,11 +60,13 @@ class Web3BitcoinSignMessageForm extends BitcoinWeb3Form<BitcoinClient?,
       case P2shAddressType.p2wpkhInP2sh:
         _mode = BIP137Mode.p2shP2wpkh;
         break;
+      case SegwitAddressType.p2tr:
+        break;
       case SegwitAddressType.p2wpkh:
         _mode = BIP137Mode.p2wpkh;
         break;
       default:
-        throw Web3BitcoinExceptionConstant.invalidSignMessageAccount(
+        throw Web3BitcoinExceptionConstant.unsuportedSigningMessageAccount(
             this.address.orginalAddress);
     }
   }

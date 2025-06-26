@@ -72,7 +72,7 @@ class _UpdateCosmosTokenViewState extends State<UpdateCosmosTokenView>
   }
 
   void onSetup() {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
 
     final t = CosmosFeeToken(
         token: Token(

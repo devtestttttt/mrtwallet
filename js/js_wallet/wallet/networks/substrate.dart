@@ -1,217 +1,155 @@
 import 'dart:js_interop';
-import 'package:blockchain_utils/blockchain_utils.dart';
 import 'package:on_chain_wallet/app/utils/list/extension.dart';
-import 'package:on_chain_wallet/app/utils/method/utiils.dart';
-import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/substrate/substrate.dart';
+import 'package:on_chain_wallet/wallet/web3/state/state.dart';
 import 'package:polkadot_dart/polkadot_dart.dart';
 import '../../js_wallet.dart';
 import '../../models/models/networks/substrate.dart';
+import '../../models/models/networks/wallet_standard.dart';
 import '../core/network_handler.dart';
 
-class SubstrateWeb3State extends WalletStandardChainWeb3State<
+class SubstrateWeb3JSStateAddress extends Web3JSStateAddress<
     BaseSubstrateAddress,
     Web3SubstrateChainAccount,
     JSSubstrateWalletAccount,
     Web3SubstrateChainIdnetifier> {
-  List<JSSubstrateKownMetadata> get knownMetadatas => chains
-      .map((e) => JSSubstrateKownMetadata(
+  const SubstrateWeb3JSStateAddress(
+      {required super.chainaccount,
+      required super.jsAccount,
+      required super.networkIdentifier});
+}
+
+class SubstrateWeb3JSStateAccount extends Web3JSStateAccount<
+    BaseSubstrateAddress,
+    Web3SubstrateChainAccount,
+    JSSubstrateWalletAccount,
+    Web3SubstrateChainIdnetifier,
+    SubstrateWeb3JSStateAddress> {
+  List<JSSubstrateKnownMetadata> get knownMetadatas => chains
+      .map((e) => JSSubstrateKnownMetadata(
           genesisHash: e.genesisHash,
-          identifier: e.identifier,
+          identifier: e.wsIdentifier,
           specVersion: e.specVersion))
       .toList();
-  SubstrateWeb3State._({
+  SubstrateWeb3JSStateAccount._({
     required super.state,
     required super.chains,
     required super.accounts,
     super.defaultAccount,
     super.defaultChain,
   });
-  factory SubstrateWeb3State.init(
-      {JSNetworkState state = JSNetworkState.disconnect}) {
-    return SubstrateWeb3State._(accounts: const [], state: state, chains: []);
+  factory SubstrateWeb3JSStateAccount.init(
+      {Web3NetworkState state = Web3NetworkState.disconnect}) {
+    return SubstrateWeb3JSStateAccount._(
+        accounts: const [], state: state, chains: []);
   }
-  factory SubstrateWeb3State(Web3SubstrateChainAuthenticated? authenticated) {
+  factory SubstrateWeb3JSStateAccount(
+      Web3SubstrateChainAuthenticated? authenticated) {
     if (authenticated == null) {
-      return SubstrateWeb3State.init(state: JSNetworkState.block);
+      return SubstrateWeb3JSStateAccount.init(state: Web3NetworkState.block);
     }
     Map<int, Web3SubstrateChainIdnetifier> networks = {
       for (final i in authenticated.networks) i.id: i
     };
-    final accounts = authenticated.accounts
-        .map((e) => JSWalletStateAccount<BaseSubstrateAddress,
-                Web3SubstrateChainAccount, JSSubstrateWalletAccount>(
-            chainaccount: e,
-            jsAccount: JSSubstrateWalletAccount.setup(
-                address: e.addressStr,
-                publicKey: e.publicKey,
-                genesisHash: networks[e.id]!.genesisHash,
-                chain: networks[e.id]!.identifier),
-            identifier: networks[e.id]!.identifier))
-        .toList();
-    final defaultAddress = authenticated.accounts.firstWhereOrNull(
-        (e) => e.id == authenticated.currentNetwork.id && e.defaultAddress);
-    return SubstrateWeb3State._(
-        accounts: accounts,
-        state: JSNetworkState.init,
+    final accounts = authenticated.accounts.map((e) {
+      final network = networks[e.id];
+      if (network == null) return null;
+      return SubstrateWeb3JSStateAddress(
+          chainaccount: e,
+          jsAccount: JSSubstrateWalletAccount.setup(
+              address: e.addressStr,
+              publicKey: e.publicKey,
+              genesisHash: network.genesisHash,
+              chain: network.wsIdentifier),
+          networkIdentifier: network);
+    }).toList();
+    final defaultAddress = authenticated.accounts.firstWhereOrNull((e) =>
+        e.defaultAddress &&
+        networks.containsKey(e.id) &&
+        e.id == authenticated.currentNetwork.id);
+    return SubstrateWeb3JSStateAccount._(
+        accounts: accounts.whereType<SubstrateWeb3JSStateAddress>().toList(),
+        state: Web3NetworkState.init,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null
             ? null
-            : JSWalletStateAccount<BaseSubstrateAddress,
-                Web3SubstrateChainAccount, JSSubstrateWalletAccount>(
+            : SubstrateWeb3JSStateAddress(
                 chainaccount: defaultAddress,
-                identifier: authenticated.currentNetwork.identifier,
+                networkIdentifier: networks[defaultAddress.id]!,
                 jsAccount: JSSubstrateWalletAccount.setup(
                     address: defaultAddress.addressStr,
                     publicKey: defaultAddress.publicKey,
                     genesisHash: networks[defaultAddress.id]!.genesisHash,
-                    chain: networks[defaultAddress.id]!.identifier),
+                    chain: networks[defaultAddress.id]!.wsIdentifier),
               ));
   }
 }
 
-class JSSubstrateHandler extends JSWalletStandardNetworkHandler<
-    BaseSubstrateAddress,
-    Web3SubstrateChainAccount,
-    JSSubstrateWalletAccount,
-    Web3SubstrateChainIdnetifier,
-    SubstrateWeb3State> {
-  JSSubstrateHandler(
+class SubstrateWeb3JSStateHandler extends Web3JSStateHandler<
+        BaseSubstrateAddress,
+        Web3SubstrateChainAccount,
+        JSSubstrateWalletAccount,
+        Web3SubstrateChainIdnetifier,
+        SubstrateWeb3JSStateAccount>
+    with
+        SubstrateWeb3StateHandler<
+            JSSubstrateWalletAccount,
+            SubstrateWeb3JSStateAccount,
+            WalletMessageResponse,
+            Web3JsClientRequest,
+            JSWalletNetworkEvent> {
+  SubstrateWeb3JSStateHandler(
       {required super.sendMessageToClient, required super.sendInternalMessage});
 
   @override
-  Future<Web3MessageCore> request(PageMessageRequest params) async {
+  Future<Web3MessageCore> request(Web3JsClientRequest params,
+      {Web3SubstrateChainIdnetifier? network}) async {
     final state = await getState();
-    final method = Web3SubstrateRequestMethods.fromName(params.method);
+    final method = Web3SubstrateRequestMethods.fromName(params.request.method);
     switch (method) {
       case Web3SubstrateRequestMethods.requestAccounts:
-        if (state.hasAccount) {
-          return createResponse();
-        }
-        return connect();
+        return onConnect_(params);
       case Web3SubstrateRequestMethods.knownMetadata:
         return createResponse();
       case Web3SubstrateRequestMethods.signMessage:
-        return _signMessage(params: params, state: state);
+        return toSignMessageRequest(
+            params: params, state: state, method: method!);
       case Web3SubstrateRequestMethods.signTransaction:
-        return _parseTransaction(params: params, state: state, method: method!);
+        return toSignTransactionRequest(
+            params: params, state: state, method: method!);
       case Web3SubstrateRequestMethods.addSubstrateChain:
-        return _addNewChain(params: params, state: state);
+        return toAddNewChainRequest(
+            params: params, state: state, method: method!);
       default:
-        throw Web3RequestExceptionConst.methodDoesNotExist;
+        throw Web3RequestExceptionConst.methodDoesNotSupport;
     }
   }
-
-  int? _parsingMetadata(String rawMetadata) {
-    final toBytes = BytesUtils.fromHexString(rawMetadata);
-    final decode = LayoutConst.bytes().deserialize(toBytes).value;
-    try {
-      final metadata = VersionedMetadata.fromBytes(decode);
-      if (metadata.supportedByApi) return metadata.version;
-    } catch (_) {}
-    return null;
-  }
-
-  Web3SubstrateAddNewChain _addNewChain(
-      {required PageMessageRequest params, required SubstrateWeb3State state}) {
-    try {
-      final param = params.getElementAt<JSSubstrateMetadataProvide>(0)!;
-      if (param.rawMetadata != null) {
-        try {
-          final metadata = _parsingMetadata(param.rawMetadata!);
-          if (metadata == null) {
-            throw Web3SubstrateExceptionConstant.unsuportedMetadataVersion;
-          }
-        } catch (e) {
-          throw Web3SubstrateExceptionConstant.metadataParsingFailed;
-        }
-      }
-      return Web3SubstrateAddNewChain.fromJson(param.toJson());
-    } on Web3RequestException {
-      rethrow;
-    } catch (e) {
-      throw Web3SubstrateExceptionConstant.metadataParsingFailed;
-    }
-  }
-
-  Web3SubstrateSignMessage _signMessage(
-      {required PageMessageRequest params, required SubstrateWeb3State state}) {
-    try {
-      final param = params.getElementAt<JSSubstrateSign>(0)!;
-      final address = MethodUtils.nullOnException(
-          () => BaseSubstrateAddress(param.address));
-      if (address == null) {
-        throw Web3RequestExceptionConst.missingPermission;
-      }
-      final account = state.getAddressNetworkChainAccountOrThrow(address);
-      if (param.type != Web3SubstrateConst.signMessageType) {
-        throw Web3SubstrateExceptionConstant.invalidSignMessageType;
-      }
-      final challeng = BytesUtils.fromHexString(param.data);
-      return Web3SubstrateSignMessage(
-          accessAccount: account,
-          challeng: BytesUtils.toHexString(challeng),
-          content: StringUtils.tryDecode(challeng));
-    } on Web3RequestException {
-      rethrow;
-    } catch (_) {}
-    throw Web3SubstrateExceptionConstant.invalidSignMessage;
-  }
-
-  Web3SubstrateSendTransaction _parseTransaction(
-      {required PageMessageRequest params,
-      required SubstrateWeb3State state,
-      required Web3SubstrateRequestMethods method}) {
-    try {
-      final param = params.getElementAt<JSSubstrateTransaction>(0)!;
-      final address = MethodUtils.nullOnException(
-          () => BaseSubstrateAddress(param.address));
-      final account = state.getAddressChainAccountOrThrow(address,
-          identifier: param.genesisHash);
-      return Web3SubstrateSendTransaction(
-          json: param.toJson(), address: account);
-    } on Web3RequestException {
-      rethrow;
-    } catch (e) {
-      throw Web3RequestExceptionConst.invalidTransaction;
-    }
-  }
-
-  @override
-  NetworkType get networkType => NetworkType.substrate;
 
   @override
   Future<WalletMessageResponse> finalizeWalletResponse(
-      {required PageMessageRequest message,
+      {required Web3JsClientRequest message,
       required Web3RequestParams? params,
       required Web3WalletResponseMessage response}) async {
     final state = await getState();
-    final method = Web3SubstrateRequestMethods.fromName(message.method);
+    final method = Web3SubstrateRequestMethods.fromName(message.request.method);
     switch (method) {
       case Web3SubstrateRequestMethods.knownMetadata:
         return WalletMessageResponse.success(state.knownMetadatas.toJS);
       case Web3SubstrateRequestMethods.requestAccounts:
-        if (state.hasAccount) {
-          return WalletMessageResponse.success(
-              JSSubstrateWalletStandardConnect.setup(state.jsAccounts));
-        }
-        return WalletMessageResponse.fail(Web3RequestExceptionConst
-            .rejectedByUser
-            .toResponseMessage()
-            .toWalletError());
+        return onConnectResponse(message);
       case Web3SubstrateRequestMethods.addSubstrateChain:
         return WalletMessageResponse.success(true.toJS);
       case Web3SubstrateRequestMethods.signTransaction:
       case Web3SubstrateRequestMethods.signMessage:
-        final signedTx = Web3SubstrateSendTransactionResponse.fromJson(
-            response.resultAsMap());
+        final signedTx = Web3SubstrateSendTransactionResponse.deserialize(
+            bytes: response.resultAsList<int>());
         return WalletMessageResponse.success(JSSubstrateTxResponse(
-            signature: signedTx.signature,
+            signature: signedTx.signatureHex,
             id: signedTx.id,
-            signedTransaction: signedTx.signedTransaction));
+            signedTransaction: signedTx.signedTransactionHex));
       default:
         break;
     }
@@ -220,8 +158,8 @@ class JSSubstrateHandler extends JSWalletStandardNetworkHandler<
   }
 
   @override
-  SubstrateWeb3State createState(Web3APPData? authenticated) {
-    if (authenticated == null) return SubstrateWeb3State.init();
-    return SubstrateWeb3State(authenticated.getAuth(networkType));
+  SubstrateWeb3JSStateAccount createState(Web3APPData? authenticated) {
+    if (authenticated == null) return SubstrateWeb3JSStateAccount.init();
+    return SubstrateWeb3JSStateAccount(authenticated.getAuth(networkType));
   }
 }

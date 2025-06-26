@@ -29,8 +29,6 @@ class Web3AptosSendTransaction extends Web3AptosRequestParam<List<int>> {
       AptosAddress? feePayer,
       List<AptosAddress>? socondarySignerAddresses}) {
     switch (method) {
-      case Web3AptosRequestMethods.signAllTransactions:
-      case Web3AptosRequestMethods.sendTransaction:
       case Web3AptosRequestMethods.signTransaction:
         break;
       default:
@@ -69,9 +67,9 @@ class Web3AptosSendTransaction extends Web3AptosRequestParam<List<int>> {
   @override
   final Web3AptosRequestMethods method;
 
-  late final bool isSend = method == Web3AptosRequestMethods.sendTransaction;
-  late final bool isBatchRequest =
-      method == Web3AptosRequestMethods.signAllTransactions;
+  // late final bool isSend = method == Web3AptosRequestMethods.sendTransaction;
+  // late final bool isBatchRequest =
+  //     method == Web3AptosRequestMethods.signAllTransactions;
 
   @override
   CborTagValue toCbor() {

@@ -14,7 +14,7 @@ class Web3SuiChainAccount extends Web3ChainAccount<SuiAddress> {
   final int id;
   final List<int> publicKey;
   final int signingScheme;
-  final SuiChainType network;
+  // final SuiChainType network;
   @override
   Web3SuiChainAccount clone(
       {AddressDerivationIndex? keyIndex,
@@ -22,7 +22,6 @@ class Web3SuiChainAccount extends Web3ChainAccount<SuiAddress> {
       bool? defaultAddress,
       int? id,
       List<int>? publicKey,
-      SuiChainType? network,
       int? signingScheme}) {
     return Web3SuiChainAccount(
         keyIndex: keyIndex ?? this.keyIndex,
@@ -30,7 +29,6 @@ class Web3SuiChainAccount extends Web3ChainAccount<SuiAddress> {
         defaultAddress: defaultAddress ?? this.defaultAddress,
         id: id ?? this.id,
         publicKey: publicKey ?? this.publicKey,
-        network: network ?? this.network,
         signingScheme: signingScheme ?? this.signingScheme);
   }
 
@@ -40,8 +38,7 @@ class Web3SuiChainAccount extends Web3ChainAccount<SuiAddress> {
       required super.defaultAddress,
       required this.id,
       required this.signingScheme,
-      required List<int> publicKey,
-      required this.network})
+      required List<int> publicKey})
       : publicKey = publicKey.asImmutableBytes;
   factory Web3SuiChainAccount.fromChainAccount(
       {required ISuiAddress address,
@@ -54,8 +51,7 @@ class Web3SuiChainAccount extends Web3ChainAccount<SuiAddress> {
         id: id,
         defaultAddress: isDefault,
         publicKey: address.toSuiPublicKey().toVariantBcs(),
-        signingScheme: address.keyScheme.value,
-        network: network);
+        signingScheme: address.keyScheme.value);
   }
 
   factory Web3SuiChainAccount.deserialize(
@@ -71,8 +67,7 @@ class Web3SuiChainAccount extends Web3ChainAccount<SuiAddress> {
         id: values.elementAt(2),
         defaultAddress: values.elementAt(3),
         publicKey: values.elementAs(4),
-        signingScheme: values.elementAs(5),
-        network: SuiChainType.fromValue(values.elementAs(6)));
+        signingScheme: values.elementAs(5));
   }
 
   @override
@@ -84,8 +79,7 @@ class Web3SuiChainAccount extends Web3ChainAccount<SuiAddress> {
           id,
           defaultAddress,
           CborBytesValue(publicKey),
-          signingScheme,
-          network.value
+          signingScheme
         ]),
         CborTagsConst.web3SuiAccount);
   }

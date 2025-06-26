@@ -106,7 +106,7 @@ class _StringWriterViewState extends State<AddressDecoderView>
   }
 
   void onPressed() {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     if (context.mounted) {
       context.pop(inHex);
     }

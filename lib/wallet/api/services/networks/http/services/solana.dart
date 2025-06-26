@@ -6,14 +6,9 @@ import 'package:on_chain/solana/solana.dart';
 
 class SolanaHTTPService extends HTTPService<SolanaAPIProvider>
     implements SolanaServiceProvider {
-  SolanaHTTPService(
-      {required this.provider,
-      required this.isolate,
-      this.defaultTimeOut = const Duration(seconds: 30)});
+  SolanaHTTPService({required this.provider, required this.isolate});
   @override
   final APPIsolate isolate;
-  @override
-  final Duration defaultTimeOut;
 
   @override
   Future<BaseServiceResponse<T>> doRequest<T>(SolanaRequestDetails params,

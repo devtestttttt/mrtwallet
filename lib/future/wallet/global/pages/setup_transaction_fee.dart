@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/wallet/global/global.dart';
 import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
 import 'package:on_chain_wallet/wallet/wallet.dart';
@@ -34,14 +33,12 @@ class _SetupTransactionFeeState extends State<SetupTransactionFee>
     if (newType != null && customPrice != null) return;
     type = newType;
     feeRate.updateBalance(customPrice ?? BigInt.zero);
-    setState(() {});
+    updateState();
     onSetup();
   }
 
-  void onSetup() async {
-    await MethodUtils.wait(duration: Duration(milliseconds: 200));
+  void onSetup() {
     if (mounted) {
-      // ignore: use_build_context_synchronously
       context.pop((type, feeRate.balance));
     }
   }

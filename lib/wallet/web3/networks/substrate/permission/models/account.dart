@@ -83,12 +83,12 @@ class Web3SubstrateChainAccount extends Web3ChainAccount<BaseSubstrateAddress> {
 class Web3SubstrateChainIdnetifier extends Web3ChainIdnetifier {
   final String genesisHash;
   final int specVersion;
-  @override
-  String get identifier => "substrate:$genesisHash";
   Web3SubstrateChainIdnetifier(
       {required String genesisHash,
       required this.specVersion,
-      required super.id})
+      required super.id,
+      required super.wsIdentifier,
+      required super.caip2})
       : genesisHash = StringUtils.add0x(genesisHash);
   factory Web3SubstrateChainIdnetifier.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
@@ -100,13 +100,16 @@ class Web3SubstrateChainIdnetifier extends Web3ChainIdnetifier {
     return Web3SubstrateChainIdnetifier(
         genesisHash: values.elementAs(0),
         specVersion: values.elementAs(1),
-        id: values.elementAs(2));
+        id: values.elementAs(2),
+        wsIdentifier: values.elementAs(3),
+        caip2: values.elementAs(4));
   }
 
   @override
   CborTagValue toCbor() {
     return CborTagValue(
-        CborListValue.fixedLength([genesisHash, specVersion, id]),
+        CborListValue.fixedLength(
+            [genesisHash, specVersion, id, wsIdentifier, caip2]),
         CborTagsConst.web3SubstrateChainIdentifier);
   }
 }

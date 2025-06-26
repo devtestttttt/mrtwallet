@@ -92,5 +92,6 @@ class Web3SolanaSendTransactionForm extends SolanaWeb3Form<SolanaClient,
   }
 
   @override
-  Web3SolanaRequest<List<List<int>>, Web3SolanaSendTransaction> request;
+  Web3SolanaRequest<List<Web3SolanaTransactionResponse>,
+      Web3SolanaSendTransaction> request;
 }

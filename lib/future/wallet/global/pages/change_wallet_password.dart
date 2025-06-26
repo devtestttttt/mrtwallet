@@ -35,7 +35,7 @@ class _ChangePasswordView extends StatefulWidget {
 }
 
 class _ChangePasswordViewState extends State<_ChangePasswordView>
-    with SafeState {
+    with SafeState<_ChangePasswordView> {
   final GlobalKey<FormState> form =
       GlobalKey<FormState>(debugLabel: "_ChangePasswordView");
   final GlobalKey<PageProgressState> progressKey = GlobalKey();
@@ -44,13 +44,6 @@ class _ChangePasswordViewState extends State<_ChangePasswordView>
   String password = "";
   void onChangePassword(String v) {
     password = v;
-  }
-
-  bool _obscureText = true;
-
-  void toggleObscure() {
-    _obscureText = !_obscureText;
-    setState(() {});
   }
 
   String? validator(String? value) {
@@ -70,8 +63,8 @@ class _ChangePasswordViewState extends State<_ChangePasswordView>
     return null;
   }
 
-  void setupPassword() async {
-    if (form.currentState?.validate() ?? false) {
+  Future<void> setupPassword() async {
+    if (form.ready()) {
       progressKey.progressText("changing_password".tr);
       final model = context.watch<WalletProvider>(StateConst.main);
       final result =
@@ -116,7 +109,7 @@ class _ChangePasswordViewState extends State<_ChangePasswordView>
                               ],
                             )),
                         AppTextField(
-                          obscureText: _obscureText,
+                          obscureText: true,
                           onChanged: onChangePassword,
                           keyboardType: TextInputType.visiblePassword,
                           textInputAction: TextInputAction.go,
@@ -127,7 +120,7 @@ class _ChangePasswordViewState extends State<_ChangePasswordView>
                           helperText: "password_desc".tr,
                         ),
                         AppTextField(
-                          obscureText: _obscureText,
+                          obscureText: true,
                           keyboardType: TextInputType.visiblePassword,
                           textInputAction: TextInputAction.done,
                           focusNode: nextFocus,

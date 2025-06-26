@@ -1,8 +1,8 @@
-import 'package:blockchain_utils/cbor/cbor.dart';
-import 'package:blockchain_utils/helper/helper.dart';
+import 'package:blockchain_utils/blockchain_utils.dart';
+import 'package:on_chain/solana/src/rpc/models/models/commitment.dart';
 import 'package:on_chain_wallet/app/core.dart';
+import 'package:on_chain_wallet/wallet/constant/tags/constant.dart';
 import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
-import 'package:on_chain_wallet/wallet/models/networks/solana/models/transaction.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/solana/constant/constants/constant.dart';
@@ -10,6 +10,7 @@ import 'package:on_chain_wallet/wallet/web3/networks/solana/constant/constants/e
 import 'package:on_chain_wallet/wallet/web3/networks/solana/methods/methods.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/solana/params/core/request.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/solana/permission/models/account.dart';
+import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 
 class Web3SolanaSendTransactionOptions with CborSerializable {
   final String? preflightCommitment;
@@ -23,6 +24,39 @@ class Web3SolanaSendTransactionOptions with CborSerializable {
       this.commitment,
       this.minContextSlot,
       this.preflightCommitment});
+  factory Web3SolanaSendTransactionOptions.fromJson(
+      {required Map<String, dynamic> json,
+      required Web3SolanaRequestMethods method}) {
+    final bool isSignTx = method == Web3SolanaRequestMethods.signTransaction ||
+        method == Web3SolanaRequestMethods.signAllTransactions;
+    return Web3SolanaSendTransactionOptions(
+        skipPreflight: isSignTx
+            ? null
+            : Web3ValidatorUtils.parseBool(
+                key: "skipPreflight", method: method, json: json),
+        maxRetries: isSignTx
+            ? null
+            : Web3ValidatorUtils.parseInt(
+                key: "maxRetries", method: method, json: json),
+        minContextSlot: Web3ValidatorUtils.parseInt(
+            key: "minContextSlot", method: method, json: json),
+        preflightCommitment: Web3ValidatorUtils.parseParams2(() {
+          if (json["preflightCommitment"] == null) return null;
+          return Commitment.values
+              .firstWhere((e) => e.value == json["preflightCommitment"])
+              .value;
+        },
+            errorOnNull: false,
+            error: Web3SolanaExceptionConstant.invalidCommitmentOptions),
+        commitment: Web3ValidatorUtils.parseParams2(() {
+          if (isSignTx || json["commitment"] == null) return null;
+          return Commitment.values
+              .firstWhere((e) => e.value == json["commitment"])
+              .value;
+        },
+            errorOnNull: false,
+            error: Web3SolanaExceptionConstant.invalidCommitmentOptions));
+  }
   factory Web3SolanaSendTransactionOptions.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
     final values = CborSerializable.cborTagValue<CborListValue>(
@@ -38,14 +72,14 @@ class Web3SolanaSendTransactionOptions with CborSerializable {
       minContextSlot: values.elementAt(4),
     );
   }
-  factory Web3SolanaSendTransactionOptions.fromJson(Map<String, dynamic> json) {
-    return Web3SolanaSendTransactionOptions(
-        commitment: json["preflightCommitment"],
-        skipPreflight: json["skipPreflight"] ?? false,
-        maxRetries: json["maxRetries"],
-        minContextSlot: json["minContextSlot"],
-        preflightCommitment: json["preflightCommitment"]);
-  }
+  // factory Web3SolanaSendTransactionOptions.fromJson(Map<String, dynamic> json) {
+  //   return Web3SolanaSendTransactionOptions(
+  //       commitment: json["preflightCommitment"],
+  //       skipPreflight: json["skipPreflight"] ?? false,
+  //       maxRetries: json["maxRetries"],
+  //       minContextSlot: json["minContextSlot"],
+  //       preflightCommitment: json["preflightCommitment"]);
+  // }
 
   @override
   CborTagValue toCbor() {
@@ -111,8 +145,46 @@ enum SolanaSignAndSendAllTransactionMode {
   }
 }
 
+class Web3SolanaTransactionResponse with CborSerializable {
+  final List<int> signature;
+  final List<int> signedTx;
+  Web3SolanaTransactionResponse({
+    required List<int> signature,
+    required List<int> signedTx,
+  })  : signature = signature.asImmutableBytes,
+        signedTx = signedTx.asImmutableBytes;
+  factory Web3SolanaTransactionResponse.deserialize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: object,
+        hex: hex,
+        tags: CborTagsConst.defaultTag);
+    return Web3SolanaTransactionResponse(
+        signature: values.elementAs(0), signedTx: values.elementAs(1));
+  }
+
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([
+          CborBytesValue(signature),
+          CborBytesValue(signedTx),
+        ]),
+        CborTagsConst.defaultTag);
+  }
+
+  Map<String, dynamic> toWalletConnectJson() {
+    return {
+      "signature": Base58Encoder.encode(signature),
+      "signedTransaction":
+          StringUtils.decode(signedTx, type: StringEncoding.base64),
+    };
+  }
+}
+
 class Web3SolanaSendTransaction
-    extends Web3SolanaRequestParam<List<List<int>>> {
+    extends Web3SolanaRequestParam<List<Web3SolanaTransactionResponse>> {
   final List<Web3SolanaSendTransactionData> messages;
   final SolanaSignAndSendAllTransactionMode? mode;
 
@@ -125,6 +197,7 @@ class Web3SolanaSendTransaction
       SolanaSignAndSendAllTransactionMode? mode}) {
     switch (method) {
       case Web3SolanaRequestMethods.signAndSendAllTransactions:
+      case Web3SolanaRequestMethods.signAllTransactions:
       case Web3SolanaRequestMethods.sendTransaction:
       case Web3SolanaRequestMethods.signTransaction:
         break;
@@ -132,7 +205,10 @@ class Web3SolanaSendTransaction
         throw Web3RequestExceptionConst.internalError;
     }
     if (messages.isEmpty) {
-      throw Web3RequestExceptionConst.invalidAccountOrTransaction;
+      throw Web3RequestExceptionConst.invalidTransaction;
+    }
+    if (messages.map((e) => e.account.id).toSet().length != 1) {
+      throw Web3RequestExceptionConst.multipleBatchRequestNetwork;
     }
     return Web3SolanaSendTransaction._(
         messages: messages,
@@ -180,13 +256,16 @@ class Web3SolanaSendTransaction
   }
 
   @override
-  Web3SolanaRequest<List<List<int>>, Web3SolanaSendTransaction> toRequest(
-      {required Web3RequestInformation request,
-      required Web3RequestAuthentication authenticated,
-      required List<Chain> chains}) {
+  Web3SolanaRequest<List<Web3SolanaTransactionResponse>,
+          Web3SolanaSendTransaction>
+      toRequest(
+          {required Web3RequestInformation request,
+          required Web3RequestAuthentication authenticated,
+          required List<Chain> chains}) {
     final chain = super.findRequestChain(
         request: request, authenticated: authenticated, chains: chains);
-    return Web3SolanaRequest<List<List<int>>, Web3SolanaSendTransaction>(
+    return Web3SolanaRequest<List<Web3SolanaTransactionResponse>,
+        Web3SolanaSendTransaction>(
       params: this,
       authenticated: authenticated,
       chain: chain.$1,
@@ -200,21 +279,7 @@ class Web3SolanaSendTransaction
       messages.map((e) => e.account).toList();
 
   @override
-  Object? toJsWalletResponse(List<List<int>> response) {
-    switch (method) {
-      case Web3SolanaRequestMethods.signTransaction:
-        return response
-            .map((e) => SolanaWeb3TransactionSignResponse(signedTransaction: e)
-                .toJson())
-            .toList();
-      case Web3SolanaRequestMethods.sendTransaction:
-      case Web3SolanaRequestMethods.signAndSendAllTransactions:
-        return response
-            .map(
-                (e) => SolanaWeb3TransactionSendResponse(signature: e).toJson())
-            .toList();
-      default:
-    }
-    return super.toJsWalletResponse(response);
+  Object? toJsWalletResponse(List<Web3SolanaTransactionResponse> response) {
+    return response.map((e) => e.toCbor().encode()).toList();
   }
 }

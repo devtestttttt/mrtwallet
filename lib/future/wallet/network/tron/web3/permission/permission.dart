@@ -48,6 +48,7 @@ class _TronWeb3PermissionViewState extends State<TronWeb3PermissionView>
         addAccount: addAccount,
         onChangeChain: onChangeChain,
         onChangeDefaultAccount: onChangeDefaultPermission,
-        activities: activities);
+        activities: activities,
+        menuItems: menuItems);
   }
 }

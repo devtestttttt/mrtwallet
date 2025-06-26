@@ -5,12 +5,13 @@ import 'wallet_standard.dart';
 class JSCosmosConst {
   static final JSArray<JSString> defaultAccountFeatures = [
     "cosmos:signMessage".toJS,
-    "cosmos:signTransaction".toJS,
+    "cosmos:signTransactionAmino".toJS,
+    "cosmos:signTransactionDirect".toJS,
   ].toJS;
   static const String signTransactionAmino = "cosmos_signTransactionAmino";
   static const String signTransactionDirect = "cosmos_signTransactionDirect";
   static const String requestAccount = "cosmos_requestAccounts";
-  static const String addNewChain = "cosmos_addNewChain";
+  static const String addNewChain = "wallet_addCosmosChain";
   static const String signMessage = "cosmos_signMessage";
   static const String signTransaction = "cosmos_signTransaction";
 }
@@ -21,9 +22,9 @@ external set getOfflineSigner(JSFunction _);
 external set getOfflineSignerOnlyAmino(JSFunction _);
 @JS("getOfflineSignerAuto")
 external set getOfflineSignerAuto(JSFunction _);
-@JS("keplr")
+@JS("cosmos")
 external set cosmos(Proxy<CosmosWalletAdapter>? sui);
-@JS("Keplr")
+@JS()
 extension type CosmosWalletAdapter(JSObject _) implements JSAny {
   external static set getKeplr(JSFunction? _);
   external set getOfflineSigner(JSFunction _);
@@ -34,6 +35,7 @@ extension type CosmosWalletAdapter(JSObject _) implements JSAny {
     return CosmosWalletAdapter(JSObject());
   }
 }
+
 extension type JSCosmosWalletAccount(JSObject _)
     implements JSWalletStandardAccount {
   factory JSCosmosWalletAccount.setup(
@@ -231,8 +233,8 @@ extension type JSCosmosSignDirectRequest(JSAny _) implements JSAny {
   external String get signerAddress;
   external set signDoc(JSCosmosSignDoc _);
   external JSCosmosSignDoc get signDoc;
-  external set chainId(String _);
-  external String get chainId;
+  external set chainId(String? _);
+  external String? get chainId;
   external JSCosmosSignOption? get signOption;
   external set signOption(JSCosmosSignOption? _);
   static const List<String> properties = [
@@ -246,7 +248,7 @@ extension type JSCosmosSignAminoRequest(JSAny _) implements JSAny {
   factory JSCosmosSignAminoRequest.setup(
       {required String signDoc,
       required String signerAddress,
-      required String chainId,
+      required String? chainId,
       required JSCosmosSignOption? signOption}) {
     return JSCosmosSignAminoRequest(JSObject())
       ..signDoc = signDoc
@@ -263,8 +265,8 @@ extension type JSCosmosSignAminoRequest(JSAny _) implements JSAny {
   external String get signerAddress;
   external set signDoc(String _);
   external String get signDoc;
-  external set chainId(String _);
-  external String get chainId;
+  external set chainId(String? _);
+  external String? get chainId;
   external JSCosmosSignOption? get signOption;
   external set signOption(JSCosmosSignOption? _);
 }
@@ -399,6 +401,34 @@ extension type CosmosWalletAdapterStandardSignMessageFeature(JSAny _)
   external set version(String version);
   external set signMessage(JSFunction _);
 }
+
+@JS()
+extension type CosmosWalletAdapterStandardSignTransactionDirectFeature(JSAny _)
+    implements JSAny {
+  factory CosmosWalletAdapterStandardSignTransactionDirectFeature.setup(
+      {required JSFunction signTransactionDirect,
+      String version = JSWalletStandardConst.defaultVersion}) {
+    return CosmosWalletAdapterStandardSignTransactionDirectFeature(JSObject())
+      ..signTransactionDirect = signTransactionDirect
+      ..version = version;
+  }
+  external set version(String version);
+  external set signTransactionDirect(JSFunction _);
+}
+@JS()
+extension type CosmosWalletAdapterStandardSignTransactionAminoFeature(JSAny _)
+    implements JSAny {
+  factory CosmosWalletAdapterStandardSignTransactionAminoFeature.setup(
+      {required JSFunction signTransactionAmino,
+      String version = JSWalletStandardConst.defaultVersion}) {
+    return CosmosWalletAdapterStandardSignTransactionAminoFeature(JSObject())
+      ..signTransactionAmino = signTransactionAmino
+      ..version = version;
+  }
+  external set version(String version);
+  external set signTransactionAmino(JSFunction _);
+}
+
 @JS()
 extension type CosmosWalletAdapterStandardSignTransactionFeature(JSAny _)
     implements JSAny {

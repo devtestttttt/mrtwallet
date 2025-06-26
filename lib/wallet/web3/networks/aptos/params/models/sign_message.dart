@@ -1,6 +1,8 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
 import 'package:blockchain_utils/helper/helper.dart';
+import 'package:blockchain_utils/utils/binary/utils.dart';
 import 'package:on_chain_wallet/app/serialization/cbor/cbor.dart';
+import 'package:on_chain_wallet/wallet/constant/tags/constant.dart';
 import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/aptos/methods/methods.dart';
@@ -8,7 +10,7 @@ import 'package:on_chain_wallet/wallet/web3/networks/aptos/params/core/request.d
 import 'package:on_chain_wallet/wallet/web3/networks/aptos/permission/models/account.dart'
     show Web3AptosChainAccount;
 
-class Web3AptosSignMessageResponse {
+class Web3AptosSignMessageResponse with CborSerializable {
   final String? message;
   final String? nonce;
   final int? chainId;
@@ -17,6 +19,24 @@ class Web3AptosSignMessageResponse {
   final String? prefix;
   final String? fullMessage;
   final List<int> signature;
+
+  factory Web3AptosSignMessageResponse.deserialize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: object,
+        hex: hex,
+        tags: CborTagsConst.defaultTag);
+    return Web3AptosSignMessageResponse._(
+        message: values.elementAs(0),
+        nonce: values.elementAs(1),
+        chainId: values.elementAs(2),
+        address: values.elementAs(3),
+        application: values.elementAs(4),
+        prefix: values.elementAs(5),
+        fullMessage: values.elementAs(6),
+        signature: values.elementAs(7));
+  }
 
   Web3AptosSignMessageResponse._(
       {this.address,
@@ -51,18 +71,24 @@ class Web3AptosSignMessageResponse {
   factory Web3AptosSignMessageResponse.wallet({required List<int> signature}) {
     return Web3AptosSignMessageResponse._(signature: signature);
   }
-  factory Web3AptosSignMessageResponse.fromJson(Map<String, dynamic> json) {
-    return Web3AptosSignMessageResponse._(
-        signature: (json["signature"] as List).cast(),
-        nonce: json["nonce"],
-        chainId: json["chainId"],
-        address: json["address"],
-        application: json["application"],
-        prefix: json["prefix"],
-        fullMessage: json["fullMessage"],
-        message: json["message"]);
+
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([
+          message,
+          nonce,
+          chainId,
+          address,
+          application,
+          prefix,
+          fullMessage,
+          CborBytesValue(signature)
+        ]),
+        CborTagsConst.defaultTag);
   }
-  Map<String, dynamic> toJson() {
+
+  Map<String, dynamic> toWalletConnectJson() {
     return {
       "message": message,
       "nonce": nonce,
@@ -71,7 +97,7 @@ class Web3AptosSignMessageResponse {
       "application": application,
       "prefix": prefix,
       "fullMessage": fullMessage,
-      "signature": signature
+      "signature": BytesUtils.toHexString(signature, prefix: "0x")
     };
   }
 }
@@ -137,7 +163,7 @@ class Web3AptosSignMessage
 
   @override
   Object? toJsWalletResponse(Web3AptosSignMessageResponse response) {
-    return response.toJson();
+    return response.toCbor().encode();
   }
 
   @override

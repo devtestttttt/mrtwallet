@@ -14,8 +14,8 @@ class BitcoinExplorerApiProvider extends BitcoinClient<IBitcoinAddress> {
   final WalletBitcoinNetwork network;
 
   @override
-  BaseServiceProtocol<BaseBitcoinAPIProvider> get service =>
-      provider.service as BaseServiceProtocol<BaseBitcoinAPIProvider>;
+  NetworkServiceProtocol<BaseBitcoinAPIProvider> get service =>
+      provider.service as NetworkServiceProtocol<BaseBitcoinAPIProvider>;
 
   final ApiProvider provider;
 
@@ -44,11 +44,6 @@ class BitcoinExplorerApiProvider extends BitcoinClient<IBitcoinAddress> {
   }
 
   @override
-  Future<String> genesis() async {
-    return await provider.genesis();
-  }
-
-  @override
   Future<BtcTransaction> getTx(String txId) async {
     return await provider.getRawTransaction(txId);
   }
@@ -60,8 +55,8 @@ class BitcoinExplorerApiProvider extends BitcoinClient<IBitcoinAddress> {
   }
 
   @override
-  Future<String> genesisHash() {
-    return genesis();
+  Future<String> genesisHash() async {
+    return await provider.genesis();
   }
 
   @override

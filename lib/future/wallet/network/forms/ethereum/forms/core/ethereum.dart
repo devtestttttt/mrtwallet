@@ -33,14 +33,20 @@ abstract class EthereumWeb3Form<CLIENT extends EthereumClient?,
         Web3EthereumChain,
         PARAMS> {
   abstract final Web3EthereumRequest<dynamic, PARAMS> request;
+  late final bool isEthSign =
+      request.params.method == Web3EthereumRequestMethods.ethSign;
 
   DynamicVoid? onStimateChanged;
 
   @override
   String get name => request.params.method.name;
 
-  void confirmRequest({Object? response}) {
-    onCompleteForm?.call(response);
+  Future<void> signMessage({FuncFutureNullableBoold? confirm}) async {
+    if (isEthSign) {
+      final accept = await confirm?.call();
+      if (accept != true) return;
+    }
+    onCompleteForm?.call(null);
   }
 
   ETHFORM cast<ETHFORM extends EthereumWeb3Form>() {

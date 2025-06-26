@@ -10,10 +10,11 @@ final class CryptoPersonalSignResponse {
 }
 
 final class CryptoBitcoinPersonalSignResponse {
-  final String signatureBase64;
+  final List<int> signature;
   final List<int> digest;
   CryptoBitcoinPersonalSignResponse({
-    required this.signatureBase64,
+    required List<int> signature,
     required List<int> digest,
-  }) : digest = digest.asImmutableBytes;
+  })  : digest = digest.asImmutableBytes,
+        signature = signature.asImmutableBytes;
 }

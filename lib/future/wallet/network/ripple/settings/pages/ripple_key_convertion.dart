@@ -78,7 +78,7 @@ class __RippleKeyConversionViewState extends State<_RippleKeyConversionView>
   ImportCustomKeys? generatedKey;
 
   void onSubmit() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     progressKey.progressText("generating_private_key".tr);
     final result = await MethodUtils.call(() async {
       final value = keyController.currentState?.getValue();

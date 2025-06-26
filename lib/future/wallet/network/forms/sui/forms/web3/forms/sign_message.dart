@@ -10,7 +10,7 @@ class Web3SuiSignMessageForm
   Web3SuiSignMessageForm({required this.request});
 
   @override
-  Web3SuiRequest<Map<String, dynamic>, Web3SuiSignMessage> request;
+  Web3SuiRequest<Web3SuiSignMessageResponse, Web3SuiSignMessage> request;
   List<int> challengeBytes() {
     return BytesUtils.fromHexString(request.params.challeng);
   }

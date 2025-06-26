@@ -197,7 +197,7 @@ class _ImportAccountState extends State<_ImportAccount> with SafeState {
 
   void onSetup({bool custumKey = false}) async {
     if (!custumKey) {
-      if (!(form.currentState?.validate() ?? false)) return;
+      if (!form.ready()) return;
     }
 
     progressKey.progressText("importing_key_pls_wait".tr);

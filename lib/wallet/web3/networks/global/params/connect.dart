@@ -7,8 +7,19 @@ import 'package:on_chain_wallet/wallet/web3/networks/global/methods/methods.dart
 class Web3ConnectApplication
     extends Web3GlobalRequestParams<List<NetworkType>> {
   final NetworkType? chain;
+  final List<int>? networks;
+  factory Web3ConnectApplication.global() {
+    return Web3ConnectApplication._();
+  }
+  factory Web3ConnectApplication.network(NetworkType network) {
+    return Web3ConnectApplication._(chain: network);
+  }
+  factory Web3ConnectApplication.networks(List<int> networks) {
+    return Web3ConnectApplication._(
+        networks: networks.isEmpty ? null : networks);
+  }
 
-  Web3ConnectApplication({this.chain});
+  Web3ConnectApplication._({this.chain, this.networks});
 
   factory Web3ConnectApplication.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
@@ -17,9 +28,11 @@ class Web3ConnectApplication
         object: object,
         hex: hex,
         tags: Web3MessageTypes.walletGlobalRequest.tag);
-    return Web3ConnectApplication(
+    return Web3ConnectApplication._(
         chain: values.elemetMybeAs<NetworkType, CborStringValue>(
-            1, (e) => NetworkType.fromName(e.value)));
+            1, (e) => NetworkType.fromName(e.value)),
+        networks: values.elemetMybeAs<List<int>, CborListValue>(
+            2, (e) => e.castValue<int>()));
   }
 
   @override
@@ -28,7 +41,12 @@ class Web3ConnectApplication
   @override
   CborTagValue toCbor() {
     return CborTagValue(
-        CborListValue.fixedLength([method.id, chain?.name]), type.tag);
+        CborListValue.fixedLength([
+          method.id,
+          chain?.name,
+          networks == null ? null : CborListValue.fixedLength(networks!)
+        ]),
+        type.tag);
   }
 
   @override

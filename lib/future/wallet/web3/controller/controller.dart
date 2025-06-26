@@ -21,13 +21,13 @@ abstract class Web3StateContoller<WEB3REQUEST extends Web3Request>
   Future<void> initWeb3();
   bool get web3Closed => request.info.isClosed;
 
-  void _onChangeStatus(Web3RequestCompleterErrorType status) {
-    switch (status) {
-      case Web3RequestCompleterErrorType.success:
+  void _onChangeStatus(Web3RequestCompleterEvent event) {
+    switch (event.type) {
+      case Web3RequestCompleterEventType.success:
         progressKey.successRequest();
         break;
-      case Web3RequestCompleterErrorType.closed:
-        progressKey.closedRequest();
+      case Web3RequestCompleterEventType.closed:
+        progressKey.closedRequest(error: event.message);
         break;
       default:
     }
@@ -62,8 +62,7 @@ mixin Web3GlobalRequestControllerState<WEB3REQUEST extends Web3GlobalRequest>
     if (web3Closed) {
       progressKey.closedRequest();
     } else {
-      onRequestError =
-          request.info.stream.asBroadcastStream().listen(_onChangeStatus);
+      onRequestError = request.info.stream.listen(_onChangeStatus);
       return true;
     }
 
@@ -122,8 +121,7 @@ abstract class Web3NetworkRequestControllerState<
     if (web3Closed) {
       progressKey.closedRequest();
     } else {
-      onRequestError =
-          request.info.stream.asBroadcastStream().listen(_onChangeStatus);
+      onRequestError = request.info.stream.listen(_onChangeStatus);
       if (clientRequired) {
         progressKey.process(text: 'node_connectiong_please_wait'.tr);
         final client = await request.chain.clientOrNull();

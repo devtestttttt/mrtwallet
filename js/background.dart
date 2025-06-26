@@ -97,26 +97,38 @@ class _JSBackgroundHandler {
     if (wallet == null) {
       return null;
     }
-    return HDWallets.fromCborBytesOrObject(hex: wallet).getInitializeWallet();
+    return HDWallets.deserialize(hex: wallet).getInitializeWallet();
+  }
+
+  Web3APPAuthenticationKey generateKey() {
+    final kp = X25519Keypair.generate(seed: QuickCrypto.generateRandom());
+
+    final sharedKey1 = X25519.scalarMult(kp.privateKey, []);
+    final hdkf = HKDF(
+        ikm: sharedKey1,
+        hash: () => SHA256(),
+        length: X25519KeyConst.privateKeyLength);
+    final symKey = hdkf.derive().asImmutableBytes;
+    return Web3APPAuthenticationKey(
+        topic: QuickCrypto.sha256Hash(symKey),
+        publicKey: kp.publicKey,
+        symkey: symKey);
   }
 
   Future<Web3APPAuthentication> getPermission(
       {required Web3ClientInfo info, required HDWallet wallet}) async {
     final applicationKey =
-        BytesUtils.toHexString(MD4.hash(info.applicationId.codeUnits));
+        BytesUtils.toHexString(MD4.hash(info.identifier.codeUnits));
     final permission =
         await _read(key: wallet.web3ClientStorageKey(applicationKey));
     Web3APPAuthentication? toPermission = MethodUtils.nullOnException(() {
+      if (permission == null) return null;
       return Web3APPAuthentication.deserialize(hex: permission);
     });
     if (toPermission == null) {
-      final token = QuickCrypto.generateRandom();
-      final permission = Web3APPAuthentication.create(
-          name: info.name,
-          applicationKey: applicationKey,
-          applicationId: info.applicationId,
-          icon: info.image,
-          token: token);
+      final token = generateKey();
+      final permission =
+          info.toAuhenticated(token: token, applicationKey: applicationKey);
       await _write(
           key: wallet.web3ClientStorageKey(permission.applicationKey),
           data: permission.toCbor().toCborHex());
@@ -134,14 +146,15 @@ class _JSBackgroundHandler {
   }
 
   Future<Web3EncryptedMessage> _getOrCreateAppAuthenticated(
-      {required Web3ClientInfo info, required HDWallet wallet}) async {
+      {required Web3ClientInfo info,
+      required HDWallet wallet,
+      required String encryptionKey}) async {
     Web3APPAuthentication? toPermission =
         await getPermission(info: info, wallet: wallet);
-    final sha256 = SHA256.hash(StringUtils.encode(info.clientId));
+    final sha256 = SHA256.hash(StringUtils.encode(encryptionKey));
     final networks = await _readNetworks(wallet);
     final auth = toPermission.createAuth(networks);
-    final message =
-        Web3ChainMessage(authenticated: auth, type: Web3MessageTypes.chains);
+    final message = Web3ChainMessage(authenticated: auth);
     return toEncryptedMessage(message: message.toCbor().encode(), key: sha256);
   }
 
@@ -218,11 +231,10 @@ class _JSBackgroundHandler {
   Web3ClientInfo buildClient(ChromeTab tab) {
     APPImage? image = APPImage.network(tab.favIconUrl);
     image ??= APPImage.faviIcon(tab.url!);
-    final Web3ClientInfo? client = Web3ClientInfo.info(
-        clientId: tab.id?.toString(),
-        url: tab.url,
-        faviIcon: image,
-        name: tab.title);
+
+    final Web3ClientInfo? client = tab.id == null
+        ? null
+        : Web3ClientInfo.info(url: tab.url, faviIcon: image, name: tab.title);
     if (client == null) {
       throw Web3RequestExceptionConst.invalidHost;
     }
@@ -272,11 +284,11 @@ class _JSBackgroundHandler {
           key: wallet.web3ClientStorageKey(appAuthenticated.applicationKey),
           data: appAuthenticated.toCbor().toCborHex());
       final networks = await _readNetworks(wallet);
-      final auth = appAuthenticated.createAuth(networks);
-      final response = Web3WalletResponseMessage(
-          result: true, network: type, authenticated: auth);
+      final auth = appAuthenticated.createAuth(networks, web3Networks: [type]);
+      final response = Web3GlobalResponseMessage(authenticated: auth);
       final message = await toEncryptedMessage(
-          key: appAuthenticated.token, message: response.toCbor().encode());
+          key: appAuthenticated.token.symkey,
+          message: response.toCbor().encode());
       return WalletEvent(
           clientId: "${tab.id!}",
           data: message.toCbor().encode(),
@@ -307,8 +319,8 @@ class _JSBackgroundHandler {
     try {
       final wallet = await getWallet();
       final Web3ClientInfo client = buildClient(tab);
-      final authenticated =
-          await _getOrCreateAppAuthenticated(info: client, wallet: wallet);
+      final authenticated = await _getOrCreateAppAuthenticated(
+          info: client, wallet: wallet, encryptionKey: tab.id!.toString());
       return WalletEvent(
           clientId: "${tab.id!}",
           data: authenticated.toCbor().encode(),

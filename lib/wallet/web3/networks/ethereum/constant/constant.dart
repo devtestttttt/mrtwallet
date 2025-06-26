@@ -9,11 +9,12 @@ class Web3EthereumConst {
   static const int disconnectTag = 6;
   static const int ethAccountsTag = 7;
   static const int ethChainIdTag = 8;
+  static const int ethSigTag = 9;
 
   /// method name
   static const String sendTransaction = "eth_sendTransaction";
   static const String personalSign = "personal_sign";
-  static const String ethSign = "eth_sign";
+  static const String ethSign_ = "eth_sign";
 
   static const String requestAccounts = "eth_requestAccounts";
   static const String ethAccounts = "eth_accounts";

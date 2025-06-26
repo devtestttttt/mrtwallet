@@ -9,7 +9,6 @@ extension WalletPromise<T extends JSAny?> on Future<T> {
         resolve.callAsFunction(resolve, value);
         return value;
       }, onError: (JSWalletError error, StackTrace stackTrace) {
-        error.stack = stackTrace.toString();
         reject.callAsFunction(reject, error);
         return error;
       }).catchError((e) {

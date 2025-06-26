@@ -285,7 +285,7 @@ extension QuickContextAccsess on BuildContext {
   BuildContext? get scaffoldContext =>
       StateRepository.scaffoldKey(this).currentContext;
 
-  GlobalKey<ScaffoldState> get scaffoldKey => StateRepository.scaffoldKey(this);
+  // GlobalKey<ScaffoldState> get scaffoldKey => StateRepository.scaffoldKey(this);
 
   GlobalKey<NavigatorState> get navigatorKey =>
       StateRepository.navigatorKey(this);

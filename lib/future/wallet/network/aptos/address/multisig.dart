@@ -158,7 +158,7 @@ class __SetupAptosMultisigAddressState
   }
 
   void submitThreshold() {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     page = _Pages.pickAddresses;
     checkError();
     updateState();

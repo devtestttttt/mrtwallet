@@ -6,18 +6,19 @@ import 'package:on_chain_wallet/wallet/web3/core/permission/models/authenticated
 
 class Web3ChainMessage extends Web3MessageCore {
   @override
-  final Web3MessageTypes type;
+  Web3MessageTypes get type => Web3MessageTypes.chains;
   final Web3APPData authenticated;
 
-  Web3ChainMessage({required this.type, required this.authenticated});
+  Web3ChainMessage({required this.authenticated});
   factory Web3ChainMessage.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
-    final CborTagValue tag =
-        CborSerializable.decode(cborBytes: bytes, object: object, hex: hex);
-    final type = Web3MessageTypes.fromTag(tag.tags);
-    final values = tag.getList;
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: object,
+        hex: hex,
+        tags: Web3MessageTypes.chains.tag);
+
     return Web3ChainMessage(
-        type: type,
         authenticated: Web3APPData.deserialize(object: values.getCborTag(0)));
   }
 

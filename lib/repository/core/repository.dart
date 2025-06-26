@@ -16,4 +16,24 @@ mixin BaseRepository {
     return await AppNativeMethods.platform
         .readSecure(_toKey(repositoryStorageId, key));
   }
+
+  Future<void> deleteAll({String? identifier}) async {
+    await AppNativeMethods.platform
+        .removeAllSecure(prefix: _toKey(repositoryStorageId, identifier ?? ''));
+  }
+
+  Future<Map<String, String>> readAll({String? identifier}) async {
+    return await AppNativeMethods.platform
+        .readAllSecure(prefix: _toKey(repositoryStorageId, identifier ?? ''));
+  }
+
+  Future<void> remove(String key) async {
+    await AppNativeMethods.platform
+        .removeSecure(_toKey(repositoryStorageId, key));
+  }
+
+  Future<void> deleteMultiple(List<String> keys) async {
+    await AppNativeMethods.platform.removeMultipleSecure(
+        keys.map((e) => _toKey(repositoryStorageId, e)).toList());
+  }
 }

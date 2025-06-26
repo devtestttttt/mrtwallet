@@ -1,5 +1,6 @@
+import 'package:bitcoin_base/bitcoin_base.dart';
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/crypto/requets/messages/wallet/requests/bitcoin_personal_sign.dart';
+import 'package:on_chain_wallet/crypto/worker.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 import 'package:on_chain_wallet/future/wallet/network/bitcoin/web3/controller/impl/impl.dart';
 import 'package:on_chain_wallet/future/wallet/network/forms/forms.dart';
@@ -20,6 +21,7 @@ class Web3BitcoinGlobalRequestController<RESPONSE,
   BitcoinWeb3Form _init() {
     switch (request.params.method) {
       case Web3BitcoinRequestMethods.signPersonalMessage:
+      case Web3BitcoinRequestMethods.signMessage:
         return Web3BitcoinSignMessageForm(
             request: request as Web3BitcoinRequest<
                 Web3BitcoinSignMessageResponse, Web3BitcoinSignMessage>);
@@ -36,20 +38,25 @@ class Web3BitcoinGlobalRequestController<RESPONSE,
     Object? result = obj;
     switch (request.params.method) {
       case Web3BitcoinRequestMethods.signPersonalMessage:
+      case Web3BitcoinRequestMethods.signMessage:
         final param = form as Web3BitcoinSignMessageForm;
-        final sign = await walletProvider.wallet.walletRequest(
-            WalletRequestBitcoinSignMessage(
-                message: param.challengeBytes(),
-                index: address.keyIndex.cast(),
-                messagePrefix: param.messagePrefix,
-                mode: param.mode));
+        MethodResult<CryptoBitcoinPersonalSignResponse> sign =
+            await walletProvider.wallet.walletRequest(
+                WalletRequestBitcoinSignMessage(
+                    message: param.challengeBytes(),
+                    index: address.keyIndex.cast(),
+                    useTaproot: address.addressType.isP2tr,
+                    mode: obj as BIP137Mode,
+                    messagePrefix: param.messagePrefix));
+
         if (sign.hasError) {
           progressKey.error(error: sign.exception, showBackButton: true);
           return;
         }
         result = Web3BitcoinSignMessageResponse(
-            signature: sign.result.signatureBase64, digest: sign.result.digest);
+            signature: sign.result.signature, digest: sign.result.digest);
         break;
+
       default:
         break;
     }

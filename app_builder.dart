@@ -761,3 +761,12 @@ void main(List<String> args) async {
     await _buildMacos(args, releaseLocation: outDir);
   }
 }
+
+// void main() async {
+//   bool minify = true;
+//   // await _ExtensionAndWebScriptsBuilder.buildBackground(minify: minify);
+//   // await _ExtensionAndWebScriptsBuilder.buildPage(minify: minify);
+//   await _ExtensionAndWebScriptsBuilder.buildContent(minify: minify);
+//   await _ExtensionAndWebScriptsBuilder.buildContent(
+//       minify: minify, isMozila: true);
+// }

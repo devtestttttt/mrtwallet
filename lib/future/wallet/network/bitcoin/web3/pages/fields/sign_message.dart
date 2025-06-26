@@ -40,17 +40,25 @@ class BitcoinWeb3SignMessageRequestView extends StatelessWidget {
                     minLines: 1,
                     maxLines: 5)),
           ],
-          WidgetConstant.height20,
-          Text("prefix".tr, style: context.textTheme.titleMedium),
-          ContainerWithBorder(
-              onRemove: () {},
-              onRemoveWidget: CopyTextIcon(
-                  dataToCopy: request.messagePrefix, isSensitive: false),
-              enableTap: false,
-              child: SelectableText(request.messagePrefix,
-                  style: context.onPrimaryTextTheme.bodyMedium,
-                  minLines: 1,
-                  maxLines: 5)),
+          ConditionalWidget(
+              enable: request.isPersonalMessage,
+              onActive: (context) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      WidgetConstant.height20,
+                      Text("prefix".tr, style: context.textTheme.titleMedium),
+                      ContainerWithBorder(
+                          onRemove: () {},
+                          onRemoveWidget: CopyTextIcon(
+                              dataToCopy: request.messagePrefix,
+                              isSensitive: false),
+                          enableTap: false,
+                          child: SelectableText(request.messagePrefix,
+                              style: context.onPrimaryTextTheme.bodyMedium,
+                              minLines: 1,
+                              maxLines: 5)),
+                    ],
+                  )),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

@@ -178,7 +178,7 @@ class _StringWriterViewState extends State<BytesToolsView>
   }
 
   void onPressed() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     final r = await MethodUtils.call(() async => encode(text));
     if (r.hasError) {
       error = r.error!.tr;

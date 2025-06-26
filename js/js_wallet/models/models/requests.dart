@@ -83,7 +83,7 @@ enum JSClientType {
   final String networkName;
   const JSClientType({required this.networkName});
 
-  static JSClientType fronNetworkName(String? name) {
+  static JSClientType fromNetworkName(String? name) {
     return values.firstWhere((e) => e.networkName == name,
         orElse: () => throw Web3RequestExceptionConst.internalError);
   }
@@ -142,10 +142,11 @@ extension type WalletMessageData._(JSObject object) implements JSAny {
   external String get type;
   external JSAny? get data;
   JSWalletMessageType get messageType => JSWalletMessageType.fromName(type);
-  String asString<T>() {
+  String asString() {
     return data?.dartify() as String;
   }
 }
+
 @JS()
 extension type WalletMessageResponse._(JSObject object)
     implements WalletMessageData {
@@ -359,19 +360,5 @@ extension type JSWorkerWalletData._(JSObject o) implements JSAny {
 
   Map<String, dynamic> toJson() {
     return {"id": clientId, "requestId": requestId, "data": data, "type": type};
-  }
-}
-
-extension JSArrayFuture<T extends JSAny> on JSArray<T?> {
-  external T? operator [](int index);
-  external int get length;
-
-  E elemetAt<E extends JSAny?>(int index) {
-    try {
-      // ignore: invalid_runtime_check_with_js_interop_types
-      return this[index] as E;
-    } catch (_) {
-      return null as E;
-    }
   }
 }

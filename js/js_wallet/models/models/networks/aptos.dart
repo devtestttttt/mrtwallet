@@ -1,5 +1,5 @@
 import 'dart:js_interop';
-import 'package:on_chain_bridge/web/web.dart';
+import 'package:blockchain_utils/blockchain_utils.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/aptos/aptos.dart';
 import 'wallet_standard.dart';
@@ -237,25 +237,40 @@ extension type JSAptosAccountChanged(JSAny _) implements JSAny {
 extension type JSAptosSignTransactionParams(JSAny _) implements JSAny {
   external APPJSUint8Array bcsToBytes();
   external JSAptosSignTransactionParams? get rawTransaction;
+  external JSAny? feePayerAddress;
+  external JSArray<JSAny>? secondarySignerAddresses;
   JSAptosSignTransactionRequest toRequest() {
     try {
-      final isMultiAgnet = JSOBJ.keys_(this)?.contains(
-              AptosJSConstant.secondarySignerAddressesRequiredKeys) ??
-          false;
-      return JSAptosSignTransactionRequest(JSObject())
-        ..data = bcsToBytes()
-        ..isMultiAgent = isMultiAgnet;
-    } catch (e) {
-      throw Web3AptosExceptionConstant.invalidTransaction;
-    }
+      APPJSUint8Array rawTx;
+      final rawStr = rawTransaction?.toString();
+      if (rawStr != null) {
+        if (StringUtils.isHexBytes(rawStr)) {
+          rawTx = APPJSUint8Array.fromList(BytesUtils.fromHexString(rawStr));
+        } else {
+          rawTx = rawTransaction!.bcsToBytes();
+        }
+        return JSAptosSignTransactionRequest(
+          rawTransaction: rawTx,
+          feePayerAddress: feePayerAddress?.toString().toJS,
+          secondarySignerAddresses: secondarySignerAddresses?.toDart
+              .map((e) => e.toString().toJS)
+              .toList()
+              .toJS,
+        );
+      }
+    } catch (_) {}
+    throw Web3AptosExceptionConstant.invalidTransaction;
   }
 }
 
-extension type JSAptosSignTransactionRequest(JSAny _) implements JSAny {
-  external APPJSUint8Array get data;
-  external set isMultiAgent(bool _);
-  external bool get isMultiAgent;
-  external set data(APPJSUint8Array _);
+extension type JSAptosSignTransactionRequest._(JSAny _) implements JSAny {
+  external factory JSAptosSignTransactionRequest(
+      {APPJSUint8Array rawTransaction,
+      JSString? feePayerAddress,
+      JSArray<JSString>? secondarySignerAddresses});
+  external APPJSUint8Array? get rawTransaction;
+  external JSString? get feePayerAddress;
+  external JSArray<JSString>? get secondarySignerAddresses;
 }
 
 extension type JSAptosSignMessageParams(JSAny _) implements JSAny {
@@ -287,7 +302,8 @@ extension type JSAptosSignMessageResponse(JSAny _)
       ..application = application
       ..chainId = chainId
       ..data = APPJSUint8Array.fromList(signatureBytes)
-      ..dataHex = signatureHex;
+      ..dataHex = signatureHex
+      ..signature = signatureHex;
   }
   external String? get address;
   external set address(String? _);
@@ -304,6 +320,7 @@ extension type JSAptosSignMessageResponse(JSAny _)
   external set fullMessage(String _);
   external String get prefix;
   external set prefix(String _);
+  external set signature(String _);
 }
 
 @JS()

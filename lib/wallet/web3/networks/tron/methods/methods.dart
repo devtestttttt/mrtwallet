@@ -16,10 +16,11 @@ class Web3TronRequestMethods extends Web3NetworkRequestMethods {
   static const Web3TronRequestMethods requestAccounts =
       Web3TronRequestMethods._(
           id: Web3TronConst.requestAccountTag,
-          name: Web3TronConst.requestAccounts,
-          methodsName: [Web3EthereumConst.requestAccounts]);
+          name: Web3TronConst.requestAccounts);
   static const Web3TronRequestMethods signMessageV2 = Web3TronRequestMethods._(
-      id: Web3TronConst.signMessageV2Tag, name: Web3TronConst.signMessageV2);
+      id: Web3TronConst.signMessageV2Tag,
+      name: Web3TronConst.signMessageV2,
+      methodsName: [Web3TronConst.signMessage]);
 
   static const Web3TronRequestMethods switchTronChain =
       Web3TronRequestMethods._(

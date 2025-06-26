@@ -13,6 +13,7 @@ import 'package:on_chain_wallet/wallet/models/networks/substrate/models/metadata
 import 'package:on_chain_wallet/wallet/models/networks/substrate/models/metadata_fields.dart';
 import 'package:on_chain_wallet/wallet/models/networks/substrate/models/transaction_output.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
+import 'package:on_chain_wallet/wallet/web3/core/exception/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/substrate/substrate.dart';
 import 'package:polkadot_dart/polkadot_dart.dart';
 
@@ -82,9 +83,9 @@ class Web3SubstrateTransactionRequestController extends Web3SubstrateImpl<
           payloadInfo: decode.data,
           extrinsic: extrinsic);
       return (info, methods);
-    } on Web3RequestExceptionConst {
+    } on Web3RequestException {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       throw Web3RequestExceptionConst.invalidTransaction;
     }
   }

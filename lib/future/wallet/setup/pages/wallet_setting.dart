@@ -5,7 +5,7 @@ import 'package:on_chain_wallet/future/wallet/global/pages/update_wallet_infos.d
 import 'package:on_chain_wallet/future/wallet/setup/controller/controller.dart';
 import 'package:on_chain_wallet/future/widgets/custom_widgets.dart';
 import 'package:on_chain_wallet/wallet/models/setting/setting.dart';
-import 'package:on_chain_wallet/wallet/provider/wallet_provider.dart';
+import 'package:on_chain_wallet/wallet/models/wallet/hd_wallet.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 
 class CreateWalletSettingsView extends StatefulWidget {

@@ -26,6 +26,9 @@ class _RestoreBackupViewState extends State<RestoreBackupView> with SafeState {
   String password = "";
 
   _Pages page = _Pages.restore;
+  final GlobalKey<AppTextFieldState> backupTextField =
+      GlobalKey<AppTextFieldState>(debugLabel: "_RestoreBackupViewState");
+  String? restored;
   void onChange(String v) {
     backup = v;
   }
@@ -42,9 +45,6 @@ class _RestoreBackupViewState extends State<RestoreBackupView> with SafeState {
     showContet = true;
     updateState();
   }
-
-  final GlobalKey<AppTextFieldState> backupTextField =
-      GlobalKey<AppTextFieldState>(debugLabel: "_RestoreBackupViewState");
 
   bool isValid(String? v) {
     if (v == null) return false;
@@ -63,10 +63,8 @@ class _RestoreBackupViewState extends State<RestoreBackupView> with SafeState {
     return null;
   }
 
-  String? restored;
-
   void onRestore() async {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     progressKey.progressText("restoring_backup_please_wait".tr);
     final wallet = context.watch<WalletProvider>(StateConst.main);
     final result = await MethodUtils.call(() async => await wallet.wallet

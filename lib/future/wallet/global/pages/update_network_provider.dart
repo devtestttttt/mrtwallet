@@ -23,6 +23,23 @@ mixin UpdateNetworkProviderState<
   late APIProviderServiceInfo service;
   String? get serviceDescription => null;
 
+  bool inAddProvider = false;
+  CHAIN get chain;
+  WalletNetwork get network => chain.network;
+  late final List<PROVIDER> providers;
+  late final List<PROVIDER> defaultProviders;
+  List<ServiceProtocol> get supportedProtocol;
+  late ServiceProtocol protocol;
+  bool hasAnyChange = false;
+  String rpcUrl = "";
+  bool enableAuthMode = false;
+  bool get enableUpdateButton =>
+      !hasAnyChange || (providers.isEmpty && defaultProviders.isEmpty);
+  final GlobalKey<FormState> formKey = GlobalKey();
+  final GlobalKey<AppTextFieldState> uriFieldKey = GlobalKey();
+  String authKey = "";
+  String authValue = "";
+
   void onChangeAuthMode(ProviderAuthType? auth) {
     this.auth = auth ?? this.auth;
     updateState();
@@ -34,27 +51,7 @@ mixin UpdateNetworkProviderState<
     updateState();
   }
 
-  bool inAddProvider = false;
-  CHAIN get chain;
-  WalletNetwork get network => chain.network;
-  late final List<PROVIDER> providers;
-  late final List<PROVIDER> defaultProviders;
-  List<ServiceProtocol> get supportedProtocol;
-  late ServiceProtocol protocol;
   Future<PROVIDER> validate(PROVIDER provider);
-  @override
-  void onInitOnce() {
-    super.onInitOnce();
-    MethodUtils.after(() async {
-      providers = List.from(chain.network.coinParam.providers);
-      defaultProviders =
-          ProvidersConst.getDefaultProvider<PROVIDER>(chain.network);
-      services = ProvidersConst.networkSupportServices(chain.network);
-      service = services.first;
-      setProtocol(supportedProtocol.first);
-      progressKey.backToIdle();
-    });
-  }
 
   PROVIDER createProvider(
       {required String url,
@@ -69,11 +66,6 @@ mixin UpdateNetworkProviderState<
     return null;
   }
 
-  bool hasAnyChange = false;
-  String rpcUrl = "";
-  bool enableAuthMode = false;
-  bool get enableUpdateButton =>
-      !hasAnyChange || (providers.isEmpty && defaultProviders.isEmpty);
   void onPasteUri(String v) {
     uriFieldKey.currentState?.updateText(v);
   }
@@ -86,9 +78,6 @@ mixin UpdateNetworkProviderState<
     useAuthenticated = !useAuthenticated;
     updateState();
   }
-
-  String authKey = "";
-  String authValue = "";
 
   void onChangeKey(String v) {
     authKey = v;
@@ -118,8 +107,6 @@ mixin UpdateNetworkProviderState<
     return null;
   }
 
-  final GlobalKey<FormState> formKey = GlobalKey();
-  final GlobalKey<AppTextFieldState> uriFieldKey = GlobalKey();
   void addProvider(PROVIDER provider) {
     providers.add(provider);
     inAddProvider = false;
@@ -228,7 +215,7 @@ mixin UpdateNetworkProviderState<
   }
 
   void importProvider() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     progressKey.progressText("network_waiting_for_response".tr);
     final result = await MethodUtils.call(() async {
       final auth = createAuth();
@@ -270,6 +257,20 @@ mixin UpdateNetworkProviderState<
   void onBackButton() {
     inAddProvider = false;
     updateState();
+  }
+
+  @override
+  void onInitOnce() {
+    super.onInitOnce();
+    MethodUtils.after(() async {
+      providers = List.from(chain.network.coinParam.providers);
+      defaultProviders =
+          ProvidersConst.getDefaultProvider<PROVIDER>(chain.network);
+      services = ProvidersConst.networkSupportServices(chain.network);
+      service = services.first;
+      setProtocol(supportedProtocol.first);
+      progressKey.backToIdle();
+    });
   }
 
   @override
@@ -452,7 +453,7 @@ mixin UpdateNetworkProviderState<
                                                                 .onPrimaryTextTheme
                                                                 .bodyMedium)
                                                     },
-                                                    itemBuilder: {
+                                                    selectedItemBuilder: {
                                                       for (final i in services)
                                                         i: Text(i.name)
                                                     },
@@ -490,7 +491,7 @@ mixin UpdateNetworkProviderState<
                                                                 context),
                                                       )
                                                   },
-                                                  itemBuilder: {
+                                                  selectedItemBuilder: {
                                                     for (final i
                                                         in supportedProtocol)
                                                       i: Text(i.value)

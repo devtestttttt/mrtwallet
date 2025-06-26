@@ -19,8 +19,8 @@ class TonClient extends NetworkClient<TonWalletTransaction, TonAPIProvider>
   TonApiType get apiType => provider.rpc.api;
 
   @override
-  BaseServiceProtocol<TonAPIProvider> get service =>
-      provider.rpc as BaseServiceProtocol<TonAPIProvider>;
+  NetworkServiceProtocol<TonAPIProvider> get service =>
+      provider.rpc as NetworkServiceProtocol<TonAPIProvider>;
 
   Future<BigInt> getAccountBalance(TonAddress address) async {
     return await provider
@@ -255,14 +255,11 @@ class TonClient extends NetworkClient<TonWalletTransaction, TonAPIProvider>
       {required String method,
       required TonAddress address,
       List<dynamic> stack = const [],
-      bool throwOnFail = true,
-      Duration timeout = const Duration(seconds: 10)}) async {
+      bool throwOnFail = true}) async {
     final RunMethodResponse response;
     if (provider.isTonCenter) {
-      final request = await provider.request(
-          TonCenterRunGetMethod(
-              address: address.toString(), methodName: method, stack: stack),
-          timeout: timeout);
+      final request = await provider.request(TonCenterRunGetMethod(
+          address: address.toString(), methodName: method, stack: stack));
       response =
           RunMethodResponse(items: request.items, exitCode: request.exitCode);
     } else {
@@ -270,8 +267,7 @@ class TonClient extends NetworkClient<TonWalletTransaction, TonAPIProvider>
           TonApiExecGetMethodForBlockchainAccount(
               accountId: address.toString(),
               methodName: method,
-              args: stack.cast()),
-          timeout: timeout);
+              args: stack.cast()));
       response = RunMethodResponse(
           items: request.toTuples(), exitCode: request.exitCode);
     }
@@ -295,10 +291,9 @@ class TonClient extends NetworkClient<TonWalletTransaction, TonAPIProvider>
     }).toList();
   }
 
-  Future<MinterWalletState> getJettonData(TonAddress jettonAddress,
-      {Duration timeout = const Duration(seconds: 10)}) async {
-    final data = await getStateStack(
-        method: "get_jetton_data", address: jettonAddress, timeout: timeout);
+  Future<MinterWalletState> getJettonData(TonAddress jettonAddress) async {
+    final data =
+        await getStateStack(method: "get_jetton_data", address: jettonAddress);
     return MinterWalletState.fromTupple(data.reader());
   }
 
@@ -312,9 +307,8 @@ class TonClient extends NetworkClient<TonWalletTransaction, TonAPIProvider>
     return state.code!;
   }
 
-  Future<TonJettonToken> getJettonInfo(TonAccountJettonResponse jetton,
-      {Duration timeout = const Duration(seconds: 10)}) async {
-    final result = await getJettonData(jetton.tokenAddress, timeout: timeout);
+  Future<TonJettonToken> getJettonInfo(TonAccountJettonResponse jetton) async {
+    final result = await getJettonData(jetton.tokenAddress);
     final metdata = TokneMetadataUtils.loadContent(result.content);
     final noneVerifiedToken = TonJettonToken.create(
         balance: jetton.balance,
@@ -362,7 +356,7 @@ class TonClient extends NetworkClient<TonWalletTransaction, TonAPIProvider>
     final json = await MethodUtils.nullOnException(
       () async {
         final result = await httpGet<Map<String, dynamic>>(url!,
-            timeout: timeout, responseType: HTTPResponseType.map);
+            responseType: HTTPResponseType.map);
         return result.result;
       },
     );

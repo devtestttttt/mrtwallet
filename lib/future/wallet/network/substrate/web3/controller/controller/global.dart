@@ -21,7 +21,8 @@ class Web3SubstrateGlobalRequestController<RESPONSE,
         T extends Web3SubstrateRequestParam<RESPONSE>>
     extends Web3SubstrateImpl<RESPONSE, T> {
   @override
-  bool get clientRequired => false;
+  bool get clientRequired =>
+      request.params.method == Web3SubstrateRequestMethods.addSubstrateChain;
   Web3SubstrateGlobalRequestController({
     required super.walletProvider,
     required super.request,
@@ -163,8 +164,7 @@ class Web3SubstrateGlobalRequestController<RESPONSE,
                   index: address.keyIndex.cast());
               final response = await generateSignature(signRequest);
               return Web3SubstrateSendTransactionResponse(
-                      signature: response.signature)
-                  .toJson();
+                  signature: response.signature);
             },
           ));
           return signature.result;

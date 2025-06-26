@@ -633,6 +633,16 @@ class ProvidersConst {
         uri: "https://optimism-rpc.publicnode.com",
       )
     ],
+    110: <APIProvider>[
+      EthereumAPIProvider(
+        identifier: "${defaultidentifierName}1",
+        uri: "wss://arbitrum-sepolia-rpc.publicnode.com",
+      ),
+      EthereumAPIProvider(
+        identifier: "${defaultidentifierName}2",
+        uri: "https://arbitrum-sepolia-rpc.publicnode.com",
+      ),
+    ],
     800: <APIProvider>[
       SuiAPIProvider(
           identifier: "${defaultidentifierName}800_1",

@@ -75,7 +75,7 @@ class _UpdateWalletInfosWidgetState extends State<UpdateWalletInfosWidget>
   }
 
   void setup() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     widget.onUpdate(WalletUpdateInfosData(
         name: name,
         lockTime: locktime,

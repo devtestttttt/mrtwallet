@@ -14,7 +14,7 @@ class Web3BitcoinChainAccount extends Web3ChainAccount<BitcoinBaseAddress> {
   final int id;
   final BitcoinAddressType type;
   final String addressProgram;
-  final BasedUtxoNetwork network;
+  final BasedUtxoNetwork baseNetwork;
   final List<int> publicKey;
   final String? witnessScript;
   final String? redeemScript;
@@ -26,7 +26,7 @@ class Web3BitcoinChainAccount extends Web3ChainAccount<BitcoinBaseAddress> {
       required this.id,
       required this.addressProgram,
       required this.type,
-      required this.network,
+      required this.baseNetwork,
       required this.witnessScript,
       required this.redeemScript,
       required List<int> publicKey})
@@ -41,7 +41,7 @@ class Web3BitcoinChainAccount extends Web3ChainAccount<BitcoinBaseAddress> {
       int? signingScheme,
       String? witnessScript,
       String? redeemScript,
-      BasedUtxoNetwork? network,
+      BasedUtxoNetwork? baseNetwork,
       String? addressProgram,
       List<int>? publicKey,
       BitcoinAddressType? type}) {
@@ -50,7 +50,7 @@ class Web3BitcoinChainAccount extends Web3ChainAccount<BitcoinBaseAddress> {
         address: address ?? this.address,
         defaultAddress: defaultAddress ?? this.defaultAddress,
         id: id ?? this.id,
-        network: network ?? this.network,
+        baseNetwork: baseNetwork ?? this.baseNetwork,
         publicKey: publicKey ?? this.publicKey,
         witnessScript: witnessScript ?? this.witnessScript,
         redeemScript: redeemScript ?? this.redeemScript,
@@ -69,7 +69,7 @@ class Web3BitcoinChainAccount extends Web3ChainAccount<BitcoinBaseAddress> {
         defaultAddress: isDefault,
         type: address.networkAddress.type,
         addressProgram: address.networkAddress.addressProgram,
-        network: network.coinParam.transacationNetwork,
+        baseNetwork: network.coinParam.transacationNetwork,
         publicKey: address.multiSigAccount ? [] : address.publicKey,
         witnessScript: address.witnessScript()?.toHex(),
         redeemScript: address.redeemScript()?.toHex());
@@ -92,7 +92,7 @@ class Web3BitcoinChainAccount extends Web3ChainAccount<BitcoinBaseAddress> {
             BitcoinBaseAddress.fromProgram(addressProgram: program, type: type),
         id: values.elementAt(2),
         defaultAddress: values.elementAt(3),
-        network: BasedUtxoNetwork.fromName(values.elementAs(5)),
+        baseNetwork: BasedUtxoNetwork.fromName(values.elementAs(5)),
         publicKey: values.elementAs(6),
         witnessScript: values.elementAs(7),
         redeemScript: values.elementAs(8));
@@ -107,7 +107,7 @@ class Web3BitcoinChainAccount extends Web3ChainAccount<BitcoinBaseAddress> {
           id,
           defaultAddress,
           type.value,
-          network.value,
+          baseNetwork.value,
           CborBytesValue(publicKey),
           witnessScript,
           redeemScript
@@ -116,19 +116,60 @@ class Web3BitcoinChainAccount extends Web3ChainAccount<BitcoinBaseAddress> {
   }
 
   @override
-  String get addressStr => address.toAddress(network);
+  late final String addressStr = address.toAddress(baseNetwork);
+
+  String get wcStyle {
+    return switch (baseNetwork) {
+      BitcoinCashNetwork.mainnet ||
+      BitcoinCashNetwork.testnet =>
+        addressStr.split(":").last,
+      _ => addressStr
+    };
+  }
+}
+
+class Web3BitcoinChainIdnetifier extends Web3ChainIdnetifier {
+  final BasedUtxoNetwork network;
+  late final bool isBch = network == BitcoinCashNetwork.testnet ||
+      network == BitcoinCashNetwork.mainnet;
+
+  Web3BitcoinChainIdnetifier(
+      {required this.network,
+      required super.wsIdentifier,
+      required super.caip2,
+      required super.id});
+  factory Web3BitcoinChainIdnetifier.deserialize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        object: object,
+        cborBytes: bytes,
+        hex: hex,
+        tags: CborTagsConst.web3BitcoinChainIdentifier);
+    return Web3BitcoinChainIdnetifier(
+        network: BasedUtxoNetwork.fromName(values.elementAs(0)),
+        id: values.elementAs(1),
+        wsIdentifier: values.elementAs(2),
+        caip2: values.elementAs(3));
+  }
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+      CborListValue.fixedLength([network.value, id, wsIdentifier, caip2]),
+      CborTagsConst.web3BitcoinChainIdentifier,
+    );
+  }
 }
 
 class Web3BitcoinChainAuthenticated
     extends Web3ChainAuthenticated<Web3BitcoinChainAccount> {
   @override
-  final List<Web3ChainDefaultIdnetifier> networks;
+  final List<Web3BitcoinChainIdnetifier> networks;
   @override
-  final Web3ChainDefaultIdnetifier currentNetwork;
+  final Web3BitcoinChainIdnetifier currentNetwork;
   Web3BitcoinChainAuthenticated({
     required super.accounts,
     required this.currentNetwork,
-    required List<Web3ChainDefaultIdnetifier> networks,
+    required List<Web3BitcoinChainIdnetifier> networks,
   })  : networks = networks.immutable,
         super(networkType: NetworkType.bitcoinAndForked);
 
@@ -146,9 +187,9 @@ class Web3BitcoinChainAuthenticated
             .toList(),
         networks: values
             .elementAsListOf<CborTagValue>(1)
-            .map((e) => Web3ChainDefaultIdnetifier.deserialize(object: e))
+            .map((e) => Web3BitcoinChainIdnetifier.deserialize(object: e))
             .toList(),
-        currentNetwork: Web3ChainDefaultIdnetifier.deserialize(
+        currentNetwork: Web3BitcoinChainIdnetifier.deserialize(
             object: values.elementAs<CborTagValue>(2)));
   }
 

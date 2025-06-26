@@ -35,8 +35,6 @@ abstract class Web3AptosRequestParam<RESPONSE> extends Web3RequestParams<
     final Web3AptosRequestParam param;
     switch (method) {
       case Web3AptosRequestMethods.signTransaction:
-      case Web3AptosRequestMethods.signAllTransactions:
-      case Web3AptosRequestMethods.sendTransaction:
         param = Web3AptosSendTransaction.deserialize(
             bytes: bytes, object: object, hex: hex);
         break;

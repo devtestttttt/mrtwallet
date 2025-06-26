@@ -10,7 +10,7 @@ abstract class WalletStandardPageController {
   JSPromise<T> waitForSuccessResponsePromise<T extends JSAny?>(
       {required String method,
       PageRequestType provider = PageRequestType.walletStandard,
-      JSArray<JSAny>? params}) {
+      JSArray<JSAny?>? params}) {
     return _requestController.waitForSuccessResponsePromise<T>(
         method: method, client: _client, params: params, provider: provider);
   }
@@ -18,7 +18,7 @@ abstract class WalletStandardPageController {
   Future<T> waitForSuccessResponse<T extends JSAny?>(
       {required String method,
       PageRequestType provider = PageRequestType.walletStandard,
-      JSArray<JSAny>? params}) async {
+      JSArray<JSAny?>? params}) async {
     return _requestController.waitForSuccessResponse<T>(
         method: method, client: _client, params: params, provider: provider);
   }
@@ -36,13 +36,16 @@ abstract class WalletStandardPageController {
 
   void _initNetworkFeatures(JSWalletStandardFeature feature);
   final Map<JSEventType, List<JSFunction>> _listeners = {
-    JSEventType.accountsChanged: [],
-    JSEventType.chainChanged: [],
-    JSEventType.change: []
+    JSEventType.change: [],
+    JSEventType.message: []
   };
 
   void _onEvents(JSString type, JSFunction listener) {
     final eventType = JSEventType.fromName(type.toDart);
+    final listeners = _listeners[eventType];
+    if (listeners == null) {
+      throw JSWalletError(message: "Unsuported ${type.toDart} event.");
+    }
     if (eventType != null) {
       _listeners[eventType]!.add(listener);
       _emitEvent(PageMessageEvent.build(event: eventType));
@@ -102,7 +105,7 @@ class PageRequestController {
   JSPromise<T> waitForSuccessResponsePromise<T extends JSAny?>(
       {required String method,
       PageRequestType provider = PageRequestType.walletStandard,
-      JSArray<JSAny>? params,
+      JSArray<JSAny?>? params,
       JSClientType? client}) {
     return waitForSuccessResponse<T>(
             method: method, client: client, params: params, provider: provider)
@@ -112,7 +115,7 @@ class PageRequestController {
   Future<T> waitForSuccessResponse<T extends JSAny?>({
     required String method,
     PageRequestType provider = PageRequestType.walletStandard,
-    JSArray<JSAny>? params,
+    JSArray<JSAny?>? params,
     JSClientType? client,
   }) async {
     final message = PageMessageRequest.create(

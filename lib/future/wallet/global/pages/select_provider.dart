@@ -11,8 +11,7 @@ import 'chain_stream.dart';
 
 class AccountManageProviderIcon extends StatelessWidget {
   const AccountManageProviderIcon({super.key, required this.service});
-  // final Icon? icon;
-  final BaseServiceProtocol? service;
+  final NetworkServiceProtocol? service;
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
@@ -59,10 +58,9 @@ class ProviderTrackerStatusView extends StatelessWidget {
     return ToolTipView(
         message: provider.message().tr,
         waitDuration: null,
-        child: Icon(
-          Icons.circle,
-          color: provider.hasActive ? ColorConst.green : context.colors.error,
-        ));
+        child: Icon(Icons.circle,
+            color:
+                provider.hasActive ? ColorConst.green : context.colors.error));
   }
 }
 
@@ -93,7 +91,7 @@ class _SelectProviderView extends StatefulWidget {
 class _SelectProviderViewState extends State<_SelectProviderView>
     with SafeState {
   WalletNetwork get network => widget.chain.network;
-  BaseServiceProtocol? service;
+  NetworkServiceProtocol? service;
 
   bool get isTron => network.type == NetworkType.tron;
   List<APIProvider> providers = [];
@@ -408,12 +406,12 @@ class _ProviderRequestView extends StatefulWidget {
 }
 
 class _ProviderRequestViewState extends State<_ProviderRequestView>
-    with SafeState {
+    with SafeState<_ProviderRequestView> {
   ApiRequest? full;
 
   void onSetFullView(ApiRequest? request) {
     full = request;
-    setState(() {});
+    updateState(() {});
   }
 
   @override

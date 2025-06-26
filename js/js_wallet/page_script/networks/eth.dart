@@ -24,7 +24,7 @@ class EthereumPageController extends WalletStandardPageController {
   JSPromise<JSAny?> _onRequest(EthereumRequestParams params) {
     return waitForSuccessResponsePromise<JSAny?>(
         method: params.method,
-        params: params.params,
+        params: JsUtils.asJSArray(params.params),
         provider: PageRequestType.eip1993);
   }
 
@@ -45,52 +45,57 @@ class EthereumPageController extends WalletStandardPageController {
         provider: PageRequestType.eip1993);
   }
 
-  JSPromise<JSEthereumWalletStandardConnect> _connect() {
+  JSPromise<JSEthereumWalletStandardConnect> _connect([JSString? chainId]) {
+    final network = JsUtils.asJSString(chainId);
+    final params = network == null ? null : [network].toJS;
     return waitForSuccessResponsePromise<JSEthereumWalletStandardConnect>(
-        method: JSEthereumConst.requestAccounts);
+        method: JSEthereumConst.requestAccounts, params: params);
   }
 
   JSPromise<JSString> _addNewChain(JSEthereumAddNewChainParams params) {
     return waitForSuccessResponsePromise<JSString>(
       method: JSEthereumConst.addChain,
-      params: [params].toJS,
+      params: JsUtils.asJSArray(params),
     );
   }
 
-  JSPromise<JSEthereumSignatureResponse> _signTypesData(
-      JSEthereumSignTypedDataParams params) {
-    return waitForSuccessResponsePromise<JSEthereumSignatureResponse>(
+  JSPromise<JSString> _signTypesData(JSEthereumSignTypedDataParams params) {
+    return waitForSuccessResponsePromise<JSString>(
       method: JSEthereumConst.typedData,
-      params: [params].toJS,
+      params: JsUtils.asJSArray(params),
     );
   }
 
-  JSPromise<JSEthereumSignatureResponse> _signTypesDataV3(
-      JSEthereumSignTypedDataParams params) {
-    return waitForSuccessResponsePromise<JSEthereumSignatureResponse>(
+  JSPromise<JSString> _signTypesDataV3(JSEthereumSignTypedDataParams params) {
+    return waitForSuccessResponsePromise<JSString>(
       method: JSEthereumConst.typedDataV3,
-      params: [params].toJS,
+      params: JsUtils.asJSArray(params),
     );
   }
 
-  JSPromise<JSEthereumSignatureResponse> _signTypesDataV4(
-      JSEthereumSignTypedDataParams params) {
-    return waitForSuccessResponsePromise<JSEthereumSignatureResponse>(
+  JSPromise<JSString> _signTypesDataV4(JSEthereumSignTypedDataParams params) {
+    return waitForSuccessResponsePromise<JSString>(
       method: JSEthereumConst.typedDataV4,
-      params: [params].toJS,
+      params: JsUtils.asJSArray(params),
     );
   }
 
-  JSPromise<JSEthereumSignatureResponse> _personalSign(
-      JSEthereumSignMessageParams params) {
-    return waitForSuccessResponsePromise<JSEthereumSignatureResponse>(
-        method: JSEthereumConst.personalSign, params: [params].toJS);
+  JSPromise<JSString> _personalSign(JSEthereumSignMessageParams params) {
+    return waitForSuccessResponsePromise<JSString>(
+        method: JSEthereumConst.personalSign,
+        params: JsUtils.asJSArray(params));
   }
 
-  JSPromise<JSEthereumSendTransactionResponse> _sendTransaction(
+  JSPromise<JSString> _ethSign(JSEthereumSignMessageParams params) {
+    return waitForSuccessResponsePromise<JSString>(
+        method: JSEthereumConst.ethSign, params: JsUtils.asJSArray(params));
+  }
+
+  JSPromise<JSString> _sendTransaction(
       JSEthereumWalletStandardTransactionParams params) {
-    return waitForSuccessResponsePromise<JSEthereumSendTransactionResponse>(
-        method: JSEthereumConst.sendTransaction, params: [params].toJS);
+    return waitForSuccessResponsePromise<JSString>(
+        method: JSEthereumConst.sendTransaction,
+        params: JsUtils.asJSArray(params));
   }
 
   @override
@@ -112,6 +117,8 @@ class EthereumPageController extends WalletStandardPageController {
     feature.ethereumPersonalSign =
         EthereumWalletAdapterPersonalSignFeature.setup(
             personalSign: _personalSign.toJS);
+    feature.ethereumEthSign =
+        EthereumWalletAdapterEthSignFeature.setup(ethSign: _ethSign.toJS);
     feature.ethereumSendTransaction =
         EthereumWalletAdapterSendTransactionFeature.setup(
             sendTransaction: _sendTransaction.toJS);
@@ -119,6 +126,9 @@ class EthereumPageController extends WalletStandardPageController {
         EthereumWalletAdapteRequestFeature.setup(request: _onRequest.toJS);
     feature.ethereumEvents =
         JSWalletStandardEventsFeature.setup(on: _onEvents.toJS);
+
+    feature.ethereumDisconnect = JSWalletStandardDisconnectFeature.setup(
+        disconnect: _disconnectChain.toJS);
   }
 
   @override
@@ -133,6 +143,7 @@ class EthereumPageController extends WalletStandardPageController {
           break;
         case JSNetworkEventType.message:
           _eventEIPListeners(JSEventType.message, jsObject: data.message);
+          _eventListeners(JSEventType.message, data.message);
           break;
         case JSNetworkEventType.networkAccountsChanged:
           _eventEIPListeners(JSEventType.accountsChanged,

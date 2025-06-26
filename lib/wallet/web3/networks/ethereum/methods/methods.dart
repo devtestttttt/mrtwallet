@@ -10,15 +10,21 @@ class Web3EthereumRequestMethods extends Web3NetworkRequestMethods {
       required super.name,
       super.methodsName,
       super.reloadAuthenticated});
+
   static const Web3EthereumRequestMethods sendTransaction =
       Web3EthereumRequestMethods._(
           id: Web3EthereumConst.sendTransactionTag,
           name: Web3EthereumConst.sendTransaction);
   static const Web3EthereumRequestMethods persoalSign =
       Web3EthereumRequestMethods._(
-          id: Web3EthereumConst.personalSignTag,
-          name: Web3EthereumConst.personalSign,
-          methodsName: [Web3EthereumConst.ethSign]);
+    id: Web3EthereumConst.personalSignTag,
+    name: Web3EthereumConst.personalSign,
+  );
+  static const Web3EthereumRequestMethods ethSign =
+      Web3EthereumRequestMethods._(
+    id: Web3EthereumConst.ethSigTag,
+    name: Web3EthereumConst.ethSign_,
+  );
   static const Web3EthereumRequestMethods typedData =
       Web3EthereumRequestMethods._(
           id: Web3EthereumConst.typedDataTag,
@@ -58,7 +64,8 @@ class Web3EthereumRequestMethods extends Web3NetworkRequestMethods {
     switchEthereumChain,
     requestAccounts,
     ethAccounts,
-    ethChainId
+    ethChainId,
+    ethSign
   ];
   static Web3EthereumRequestMethods fromId(int? id) {
     return values.firstWhere((e) => e.id == id,

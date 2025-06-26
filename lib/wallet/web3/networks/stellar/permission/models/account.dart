@@ -13,13 +13,12 @@ class Web3StellarChainAccount extends Web3ChainAccount<StellarAddress> {
   @override
   final int id;
   final List<int> publicKey;
-  final StellarChainType network;
+  // final StellarChainType network;
   Web3StellarChainAccount(
       {required super.keyIndex,
       required super.address,
       required super.defaultAddress,
       required this.id,
-      required this.network,
       required List<int> publicKey})
       : publicKey = publicKey.asImmutableBytes;
   @override
@@ -36,7 +35,6 @@ class Web3StellarChainAccount extends Web3ChainAccount<StellarAddress> {
         address: address ?? this.address,
         defaultAddress: defaultAddress ?? this.defaultAddress,
         id: id ?? this.id,
-        network: network ?? this.network,
         publicKey: publicKey ?? this.publicKey);
   }
 
@@ -50,7 +48,6 @@ class Web3StellarChainAccount extends Web3ChainAccount<StellarAddress> {
         address: address.networkAddress,
         id: id,
         defaultAddress: isDefault,
-        network: network,
         publicKey: address.publicKey);
   }
 
@@ -66,8 +63,7 @@ class Web3StellarChainAccount extends Web3ChainAccount<StellarAddress> {
         address: StellarAddress.fromBase32Addr(values.elementAt(1)),
         id: values.elementAt(2),
         defaultAddress: values.elementAt(3),
-        publicKey: values.elementAs(4),
-        network: StellarChainType.fromValue(values.elementAs(5)));
+        publicKey: values.elementAs(4));
   }
 
   @override
@@ -78,8 +74,7 @@ class Web3StellarChainAccount extends Web3ChainAccount<StellarAddress> {
           address.toString(),
           id,
           defaultAddress,
-          CborBytesValue(publicKey),
-          network.value
+          CborBytesValue(publicKey)
         ]),
         CborTagsConst.web3StellarAccount);
   }

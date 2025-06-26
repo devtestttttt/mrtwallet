@@ -3,7 +3,6 @@ import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/bitcoin/constant/constants/constant.dart';
-import 'package:on_chain_wallet/wallet/web3/networks/ethereum/constant/constant.dart';
 
 class Web3BitcoinRequestMethods extends Web3NetworkRequestMethods {
   const Web3BitcoinRequestMethods._(
@@ -12,23 +11,35 @@ class Web3BitcoinRequestMethods extends Web3NetworkRequestMethods {
   static const Web3BitcoinRequestMethods requestAccounts =
       Web3BitcoinRequestMethods._(
           id: Web3BitcoinConst.requestAccountTag,
-          name: Web3BitcoinConst.requestAccounts,
-          methodsName: [Web3EthereumConst.requestAccounts]);
+          name: Web3BitcoinConst.requestAccounts);
 
   static const Web3BitcoinRequestMethods signPersonalMessage =
       Web3BitcoinRequestMethods._(
           id: Web3BitcoinConst.signPersonalMessagTag,
           name: Web3BitcoinConst.signPersonalMessage);
 
+  static const Web3BitcoinRequestMethods signMessage =
+      Web3BitcoinRequestMethods._(
+          id: Web3BitcoinConst.signMessageTag,
+          name: Web3BitcoinConst.signMessage);
+
   static const Web3BitcoinRequestMethods signTransaction =
       Web3BitcoinRequestMethods._(
           id: Web3BitcoinConst.signTransactionTag,
-          name: Web3BitcoinConst.signTransaction);
+          name: Web3BitcoinConst.signTransaction,
+          methodsName: [Web3BitcoinConst.signPsbt]);
+
+  static const Web3BitcoinRequestMethods getAccountAddresses =
+      Web3BitcoinRequestMethods._(
+          id: Web3BitcoinConst.getAccountAddressesTag,
+          name: Web3BitcoinConst.getAccountAddresses,
+          methodsName: [Web3BitcoinConst.bitcoinGetAccountAddresses]);
 
   static const Web3BitcoinRequestMethods sendTransaction =
       Web3BitcoinRequestMethods._(
           id: Web3BitcoinConst.sendTransactionTag,
-          name: Web3BitcoinConst.sendTransaction);
+          name: Web3BitcoinConst.sendTransaction,
+          methodsName: [Web3BitcoinConst.sendTransfer]);
 
   @override
   NetworkType get network => NetworkType.bitcoinAndForked;
@@ -37,7 +48,9 @@ class Web3BitcoinRequestMethods extends Web3NetworkRequestMethods {
     requestAccounts,
     signTransaction,
     signPersonalMessage,
-    sendTransaction
+    sendTransaction,
+    signMessage,
+    getAccountAddresses
   ];
 
   static Web3BitcoinRequestMethods fromId(int? id) {

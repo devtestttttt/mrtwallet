@@ -2,7 +2,6 @@ import 'package:blockchain_utils/blockchain_utils.dart';
 import 'package:on_chain_wallet/app/serialization/serialization.dart';
 import 'package:on_chain_wallet/app/utils/list/extension.dart';
 import 'package:on_chain_wallet/wallet/wallet.dart';
-import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/ethereum/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/ethereum/methods/methods.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/ethereum/params/core/request.dart';
@@ -105,26 +104,22 @@ class Web3EthreumSendTransaction extends Web3EthereumRequestParam<String> {
     ETHTransactionType? ethTransactionType = ETHTransactionType.values
         .firstWhereOrNull((e) => e.prefix == transactionType);
     if (transactionType != null && ethTransactionType == null) {
-      throw Web3RequestExceptionConst.invalidParameters(
-          Web3RequestExceptionConst.invalidTransactionTypeMessage);
+      throw Web3EthereumExceptionConst.invalidTransactionType;
     }
     if (ethTransactionType != null) {
       if (maxFeePerGas != null) {
         if (ethTransactionType != ETHTransactionType.eip1559) {
-          throw Web3RequestExceptionConst.invalidParameters(
-              Web3RequestExceptionConst.invalidTransactionTypeOrGas);
+          throw Web3EthereumExceptionConst.invalidTransactionTypeOrGas;
         }
       }
       if (gasPrice != null) {
         if (ethTransactionType == ETHTransactionType.eip1559) {
-          throw Web3RequestExceptionConst.invalidParameters(
-              Web3RequestExceptionConst.invalidTransactionTypeOrGas);
+          throw Web3EthereumExceptionConst.invalidTransactionTypeOrGas;
         }
       }
       if (accessList != null) {
         if (ethTransactionType == ETHTransactionType.legacy) {
-          throw Web3RequestExceptionConst.invalidParameters(
-              Web3RequestExceptionConst.invalidTransactionAccessList);
+          throw Web3EthereumExceptionConst.invalidTransactionAccessList;
         }
       }
     } else {

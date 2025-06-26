@@ -1,16 +1,5 @@
 part of 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 
-// class LiveWidget extends LiveStatelessWidget {
-//   final Widget Function() builder;
-
-//   const LiveWidget(this.builder, {super.name, super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return builder();
-//   }
-// }
-
 typedef STREAMBUILER<T> = Widget Function(BuildContext context, T value);
 
 class StreamWidget<T> extends StatelessWidget {

@@ -1,12 +1,16 @@
 import 'package:bitcoin_base/bitcoin_base.dart';
-import 'package:blockchain_utils/helper/extensions/extensions.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
-// import 'package:on_chain_wallet/future/wallet/swaps/controller/models.dart';
 import 'package:on_chain_wallet/wallet/models/network/core/network.dart';
 import 'package:on_chain_wallet/wallet/models/network/params/solana.dart';
 import 'package:on_chain_swap/on_chain_swap.dart';
 
+import 'constants.dart';
 import 'models.dart';
+import 'package:blockchain_utils/blockchain_utils.dart';
+import 'package:cosmos_sdk/cosmos_sdk.dart';
+import 'package:on_chain_wallet/app/core.dart';
+import 'package:on_chain_wallet/wallet/api/api.dart';
+import 'package:on_chain_wallet/wallet/models/network/core/network/network.dart';
 
 class AppSwapServiceApi extends SwapServiceApi {
   AppSwapServiceApi(this.networks, super.services);
@@ -15,13 +19,14 @@ class AppSwapServiceApi extends SwapServiceApi {
       BaseSwapServiceApiParams params, List<WalletNetwork> networks) async {
     Map<SwapServiceType, SwapService> services = {};
     for (final s in params.services) {
-      final SwapService service = switch (s) {
+      final SwapService? service = switch (s) {
         SwapServiceType.chainFlip => await params.loadChainFlipService(),
         SwapServiceType.maya => await params.loadMayaService(),
         SwapServiceType.thor => await params.loadThorService(),
         SwapServiceType.skipGo => await params.loadSkipGoService(),
         SwapServiceType.swapKit => await params.loadSwapKitService(),
       };
+      if (service == null) continue;
       services[s] = service;
     }
     return AppSwapServiceApi(networks, services);
@@ -89,11 +94,11 @@ class AppSwapServiceApi extends SwapServiceApi {
           final substrateChains = networks.whereType<WalletSubstrateNetwork>();
           if (network.chainType.isMainnet) {
             return substrateChains.firstWhereNullable((e) {
-              return e.coinParam.token.name == "Polkadot";
+              return e.value == APPSwapConstants.polkadotMainnetId;
             });
           }
           return substrateChains.firstWhereNullable((e) {
-            return e.coinParam.token.name == "Cf PDOT";
+            return e.value == APPSwapConstants.cfTestnetNetworkId;
           });
         default:
           return null;
@@ -183,5 +188,82 @@ class AppSwapServiceApi extends SwapServiceApi {
       }
     }
     return routes;
+  }
+}
+
+class DefaultSwapServiceApiParams extends BaseSwapServiceApiParams {
+  final ChainType chainType;
+  final List<SwapKitSwapServiceProvider>? swapKitServiceProviders;
+  DefaultSwapServiceApiParams.testnet()
+      : chainType = ChainType.testnet,
+        swapKitServiceProviders = null,
+        super([SwapServiceType.chainFlip]);
+  DefaultSwapServiceApiParams({
+    List<SwapServiceType> services = const [
+      SwapServiceType.chainFlip,
+      SwapServiceType.maya,
+      SwapServiceType.thor,
+      SwapServiceType.swapKit
+    ],
+    List<SwapKitSwapServiceProvider>? swapKitServiceProviders,
+  })  : swapKitServiceProviders = swapKitServiceProviders?.immutable,
+        chainType = ChainType.mainnet,
+        super(services);
+
+  @override
+  Future<MayaSwapService?> loadMayaService() async {
+    final provider = APPSwapConstants.getProvider<CosmosAPIProvider>(
+        SwapServiceType.maya,
+        chainType: chainType);
+    if (provider == null) return null;
+    return MayaSwapService(
+        provider: ThorNodeProvider(ThorNodeHTTPService(
+            isolate: APPIsolate.separate, provider: provider)));
+  }
+
+  @override
+  Future<SkipGoSwapService?> loadSkipGoService() async {
+    final provider = APPSwapConstants.getProvider<CustomAPIProvider>(
+        SwapServiceType.skipGo,
+        chainType: chainType);
+    if (provider == null) return null;
+    return SkipGoSwapService(
+        provider: SkipGoApiProvider(SkipGoHTTPService(
+            provider: provider, isolate: APPIsolate.separate)));
+  }
+
+  @override
+  Future<SwapKitSwapService?> loadSwapKitService() async {
+    final provider = APPSwapConstants.getProvider<CustomAPIProvider>(
+        SwapServiceType.swapKit,
+        chainType: chainType);
+    if (provider == null) return null;
+    return SwapKitSwapService(
+        providers: swapKitServiceProviders ?? [],
+        provider: SwapKitProvider(SwapKitHTTPService(
+            isolate: APPIsolate.separate, provider: provider)));
+  }
+
+  @override
+  Future<ThorSwapService?> loadThorService() async {
+    final provider = APPSwapConstants.getProvider<CosmosAPIProvider>(
+        SwapServiceType.thor,
+        chainType: chainType);
+    if (provider == null) return null;
+    return ThorSwapService(
+        provider: ThorNodeProvider(ThorNodeHTTPService(
+            isolate: APPIsolate.separate, provider: provider)));
+  }
+
+  @override
+  Future<CfSwapService?> loadChainFlipService() async {
+    final provider = APPSwapConstants.getProvider<CustomAPIProvider>(
+        SwapServiceType.chainFlip,
+        chainType: chainType);
+    if (provider == null) return null;
+    return CfSwapService(
+        chainType: chainType,
+        provider: CfProvider(ChainFlipHTTPService(
+            isolate: APPIsolate.separate, provider: provider)));
   }
 }

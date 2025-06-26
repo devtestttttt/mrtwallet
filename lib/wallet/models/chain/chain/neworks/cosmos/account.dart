@@ -136,6 +136,7 @@ final class CosmosChain extends Chain<
   Future<void> updateAddressBalance(ICosmosAddress address,
       {bool tokens = true, bool saveAccount = true}) async {
     _isAccountAddress(address);
+    await initAddress(address);
     await onClient(onConnect: (client) async {
       final balances = await client.getAddressCoins(address.networkAddress);
       final nativeToken =
@@ -159,8 +160,8 @@ final class CosmosChain extends Chain<
   }
 
   @override
-  Future<void> _initInternal() async {
-    await super._initInternal();
+  Future<void> _initInternal({bool client = true}) async {
+    await super._initInternal(client: client);
     await _loadChannelIds();
   }
 

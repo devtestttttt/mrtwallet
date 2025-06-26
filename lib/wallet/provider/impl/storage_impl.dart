@@ -6,7 +6,7 @@ mixin WalletsStoragesManger on WalletStorageWriter, CryptoWokerImpl {
     if (wallet == null) {
       return HDWallets.init();
     }
-    return HDWallets.fromCborBytesOrObject(hex: wallet);
+    return HDWallets.deserialize(hex: wallet);
   }
 
   Future<void> _writeHdWallet(HDWallets wallet) async {
@@ -22,27 +22,19 @@ mixin WalletsStoragesManger on WalletStorageWriter, CryptoWokerImpl {
         .removeAllSecure(prefix: wallet.sharedStorageKey);
     await AppNativeMethods.platform
         .removeAllSecure(prefix: wallet.web3StorageKey);
-
-    // final keys = await _readAll();
-    // final walletKeys = keys.keys
-    //     .where((element) => element.startsWith(wallet.networkKey))
-    //     .toList();
-    // final permissionKeys = keys.keys
-    //     .where((element) => element.startsWith(wallet._web3StorageKey))
-    //     .toList();
-    // final repositoriesKey = keys.keys
-    //     .where((element) => element.startsWith(wallet._repositoriesKeys))
-    //     .toList();
-    // await _deleteMultiple(
-    //     keys: [...walletKeys, ...permissionKeys, ...repositoriesKey]);
+    await AppNativeMethods.platform
+        .removeAllSecure(prefix: wallet.wcStorageKey);
   }
 
-  Future<void> _setupWalletAccounts(
-      List<WalletChainBackup> accounts, HDWallet wallet) async {
-    for (final i in accounts) {
+  Future<void> _setupWalletBackupAccounts(
+      {required HDWallet wallet, required WalletRestoreV2 backup}) async {
+    for (final i in backup.chains) {
       final account = i.chain;
       await account.restoreAccount(i.repositories);
-      assert(account.id == wallet._checksum, "invalid account wallet id.");
+      assert(account.id == wallet.checksum, "invalid account wallet id.");
+    }
+    for (final i in backup.dapps) {
+      await _savePermission(wallet: wallet, permission: i);
     }
   }
 
@@ -70,6 +62,12 @@ mixin WalletsStoragesManger on WalletStorageWriter, CryptoWokerImpl {
     await _write(
         key: wallet.web3ClientStorageKey(permission.applicationKey),
         value: permission.toCbor().toCborHex());
+  }
+
+  Future<void> _removeWeb3Permission(
+      {required HDWallet wallet,
+      required Web3APPAuthentication permission}) async {
+    await _remove(wallet.web3ClientStorageKey(permission.applicationKey));
   }
 
   Future<int?> _readStorageVersion() async {

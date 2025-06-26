@@ -15,16 +15,6 @@ class Web3TonChainAccount extends Web3ChainAccount<TonAddress> {
   final TonAccountContext accountContext;
   final List<int> publicKey;
   final TonChain network;
-  String get identifier {
-    switch (network) {
-      case TonChain.testnet:
-        return "ton:testnet";
-      case TonChain.mainnet:
-        return "ton:mainnet";
-      default:
-        throw UnimplementedError("Invalid ton network.");
-    }
-  }
 
   Web3TonChainAccount._({
     required super.keyIndex,

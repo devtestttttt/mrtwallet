@@ -1,5 +1,6 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
 import 'package:blockchain_utils/helper/helper.dart';
+import 'package:on_chain/tron/src/models/contract/transaction/transaction.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
@@ -7,7 +8,7 @@ import 'package:on_chain_wallet/wallet/web3/networks/tron/methods/methods.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/tron/params/core/request.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/tron/permission/models/account.dart';
 
-class Web3TronSendTransaction extends Web3TronRequestParam<String> {
+class Web3TronSendTransaction extends Web3TronRequestParam<Transaction> {
   final List<int> transaction;
   final String? txId;
   final Web3TronChainAccount accessAccount;
@@ -52,18 +53,23 @@ class Web3TronSendTransaction extends Web3TronRequestParam<String> {
   }
 
   @override
-  Web3TronRequest<String, Web3TronSendTransaction> toRequest(
+  Web3TronRequest<Transaction, Web3TronSendTransaction> toRequest(
       {required Web3RequestInformation request,
       required Web3RequestAuthentication authenticated,
       required List<Chain> chains}) {
     final chain = super.findRequestChain(
         request: request, authenticated: authenticated, chains: chains);
-    return Web3TronRequest<String, Web3TronSendTransaction>(
+    return Web3TronRequest<Transaction, Web3TronSendTransaction>(
       params: this,
       authenticated: authenticated,
       chain: chain.$1,
       info: request,
       accounts: chain.$2,
     );
+  }
+
+  @override
+  Object? toJsWalletResponse(Transaction response) {
+    return response.toHex;
   }
 }

@@ -115,7 +115,7 @@ class _SetupTonAddressViewState extends State<SetupTonAddressView>
     final keyIndex = await widget.controller
         .getCoin(context: context, seedGeneration: SeedTypes.bip39);
     if (keyIndex == null) return;
-    if (widget.controller.form.currentState?.validate() ?? false) {
+    if (widget.controller.form.ready()) {
       if (hasSubWalletId && subWalletId == null) return;
       TonAccountContext? context;
       switch (version) {

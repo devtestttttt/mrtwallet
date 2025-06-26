@@ -4,6 +4,7 @@ import 'package:on_chain_bridge/platform_interface.dart';
 import 'package:on_chain_wallet/app/error/exception/wallet_ex.dart';
 import 'package:on_chain_wallet/app/euqatable/equatable.dart';
 import 'package:on_chain_wallet/app/serialization/serialization.dart';
+import 'package:on_chain_wallet/app/utils/extensions/numbers.dart';
 import 'package:on_chain_wallet/wallet/api/api.dart';
 import 'package:on_chain_wallet/crypto/coins/custom_coins/coins.dart';
 import 'package:on_chain_wallet/wallet/constant/chain/const.dart';
@@ -35,6 +36,9 @@ abstract class WalletNetwork<PARAMS extends NetworkCoinParams>
   String? get txExplorer => ChainConst.getTxExplorer(value);
   Object get identifier;
   int get blockInterval => 60;
+
+  String get caip;
+  String get wsIdentifier;
   String? getAccountExplorer(String? address) {
     if (address == null) return null;
     return accountExplorer?.replaceAll(
@@ -124,6 +128,10 @@ class WalletBitcoinNetwork extends WalletNetwork<BitcoinParams> {
   bool get supportWeb3 => true;
   @override
   bool get allowSwap => true;
+  @override
+  String get caip => ChainConst.buildCaip2(type, genesisBlock);
+  @override
+  String get wsIdentifier => coinParam.transacationNetwork.identifier;
   factory WalletBitcoinNetwork.fromCborBytesOrObject(
       {List<int>? bytes, CborObject? obj}) {
     final CborListValue cbor = CborSerializable.decodeCborTags(
@@ -189,6 +197,11 @@ class WalletBitcoinNetwork extends WalletNetwork<BitcoinParams> {
 
 class WalletBitcoinCashNetwork extends WalletBitcoinNetwork {
   @override
+  String get caip => ChainConst.buildCaip2(
+      type, coinParam.chainType.isMainnet ? "bitcoincash" : "bchtest");
+  @override
+  String get wsIdentifier => coinParam.transacationNetwork.identifier;
+  @override
   WalletBitcoinCashNetwork copyWith({int? value, BitcoinParams? coinParam}) {
     return WalletBitcoinCashNetwork(
         value ?? this.value, coinParam ?? this.coinParam);
@@ -223,7 +236,12 @@ class WalletXRPNetwork extends WalletNetwork<RippleNetworkParams> {
   final int value;
   @override
   final RippleNetworkParams coinParam;
+  @override
+  String get caip =>
+      ChainConst.buildCaip2(type, coinParam.networkId.toString());
 
+  @override
+  String get wsIdentifier => caip;
   const WalletXRPNetwork(this.value, this.coinParam);
   @override
   CborTagValue toCbor() {
@@ -276,6 +294,12 @@ class WalletEthereumNetwork extends WalletNetwork<EthereumNetworkParams> {
 
   @override
   bool get supportWeb3 => true;
+
+  @override
+  String get caip => ChainConst.buildCaip2(type, coinParam.chainId.toString());
+
+  @override
+  String get wsIdentifier => "ethereum:${coinParam.chainId}";
 
   const WalletEthereumNetwork(this.value, this.coinParam);
   factory WalletEthereumNetwork.fromCborBytesOrObject(
@@ -353,6 +377,13 @@ class WalletTronNetwork extends WalletNetwork<TronNetworkParams> {
   bool get supportWeb3 => true;
   TronChainType get tronNetworkType => TronChainType.fromId(value);
 
+  @override
+  String get caip =>
+      ChainConst.buildCaip2(type, tronNetworkType.genesisBlockNumber.toRadix16);
+
+  @override
+  String get wsIdentifier => caip;
+
   factory WalletTronNetwork.fromCborBytesOrObject(
       {List<int>? bytes, CborObject? obj}) {
     final CborListValue cbor =
@@ -400,6 +431,10 @@ class WalletSolanaNetwork extends WalletNetwork<SolanaNetworkParams> {
   @override
   final SolanaNetworkParams coinParam;
   String get genesisBlock => ChainConst.getDefaultGenesisBlock(value);
+
+  @override
+  String get caip => ChainConst.buildCaip2(type, coinParam.type.genesis);
+
   @override
   bool get supportWeb3 => true;
   const WalletSolanaNetwork(this.value, this.coinParam);
@@ -442,6 +477,9 @@ class WalletSolanaNetwork extends WalletNetwork<SolanaNetworkParams> {
   NetworkType get type => NetworkType.solana;
   @override
   Object get identifier => genesisBlock;
+
+  @override
+  String get wsIdentifier => coinParam.type.identifier;
 }
 
 class WalletCardanoNetwork extends WalletNetwork<CardanoNetworkParams> {
@@ -505,6 +543,12 @@ class WalletCardanoNetwork extends WalletNetwork<CardanoNetworkParams> {
 
   @override
   Object get identifier => coinParam.identifier;
+
+  @override
+  String get caip => throw UnimplementedError();
+
+  @override
+  String get wsIdentifier => throw UnimplementedError();
 }
 
 class WalletCosmosNetwork extends WalletNetwork<CosmosNetworkParams> {
@@ -514,6 +558,11 @@ class WalletCosmosNetwork extends WalletNetwork<CosmosNetworkParams> {
   final CosmosNetworkParams coinParam;
   @override
   bool get supportWeb3 => true;
+  @override
+  String get caip => ChainConst.buildCaip2(type, coinParam.chainId);
+
+  @override
+  String get wsIdentifier => caip;
   const WalletCosmosNetwork(this.value, this.coinParam);
   factory WalletCosmosNetwork.fromCborBytesOrObject(
       {List<int>? bytes, CborObject? obj}) {
@@ -612,6 +661,12 @@ class WalletTonNetwork extends WalletNetwork<TonNetworkParams> {
 
   @override
   Object get identifier => coinParam.identifier;
+
+  @override
+  String get caip => ChainConst.buildCaip2(type, coinParam.chain.id.toString());
+
+  @override
+  String get wsIdentifier => caip;
 }
 
 class WalletSubstrateNetwork extends WalletNetwork<SubstrateNetworkParams> {
@@ -677,6 +732,10 @@ class WalletSubstrateNetwork extends WalletNetwork<SubstrateNetworkParams> {
 
   @override
   bool get supportWeb3 => true;
+  @override
+  String get caip => ChainConst.buildCaip2(type, genesisBlock);
+  @override
+  String get wsIdentifier => caip;
 }
 
 class WalletStellarNetwork extends WalletNetwork<StellarNetworkParams> {
@@ -687,6 +746,13 @@ class WalletStellarNetwork extends WalletNetwork<StellarNetworkParams> {
 
   @override
   bool get supportWeb3 => true;
+
+  @override
+  String get caip =>
+      ChainConst.buildCaip2(type, coinParam.stellarChainType.name);
+
+  @override
+  String get wsIdentifier => caip;
 
   const WalletStellarNetwork(this.value, this.coinParam);
   factory WalletStellarNetwork.fromCborBytesOrObject(
@@ -779,6 +845,12 @@ class WalletMoneroNetwork extends WalletNetwork<MoneroNetworkParams> {
   String get genesisBlock => ChainConst.getDefaultGenesisBlock(value);
   @override
   Object get identifier => genesisBlock;
+
+  @override
+  String get caip => ChainConst.buildCaip2(type, genesisBlock);
+
+  @override
+  String get wsIdentifier => caip;
 }
 
 class WalletAptosNetwork extends WalletNetwork<AptosNetworkParams> {
@@ -788,6 +860,12 @@ class WalletAptosNetwork extends WalletNetwork<AptosNetworkParams> {
   final AptosNetworkParams coinParam;
   @override
   bool get supportWeb3 => true;
+
+  @override
+  String get caip => ChainConst.buildCaip2(type, coinParam.aptosChainType.name);
+
+  @override
+  String get wsIdentifier => coinParam.aptosChainType.identifier;
   const WalletAptosNetwork(this.value, this.coinParam);
   factory WalletAptosNetwork.fromCborBytesOrObject(
       {List<int>? bytes, CborObject? obj}) {
@@ -837,6 +915,8 @@ class WalletSuiNetwork extends WalletNetwork<SuiNetworkParams> {
   final SuiNetworkParams coinParam;
   @override
   bool get supportWeb3 => true;
+  @override
+  String get caip => ChainConst.buildCaip2(type, coinParam.suiChain.name);
   const WalletSuiNetwork(this.value, this.coinParam);
   factory WalletSuiNetwork.fromCborBytesOrObject(
       {List<int>? bytes, CborObject? obj}) {
@@ -877,4 +957,7 @@ class WalletSuiNetwork extends WalletNetwork<SuiNetworkParams> {
   NetworkType get type => NetworkType.sui;
   @override
   Object get identifier => coinParam.identifier;
+
+  @override
+  String get wsIdentifier => coinParam.suiChain.identifier;
 }

@@ -8,7 +8,7 @@ class SkipGoHTTPService extends HTTPService<CustomAPIProvider>
   SkipGoHTTPService(
       {required this.provider,
       required this.isolate,
-      this.defaultTimeOut = const Duration(seconds: 30)});
+      super.timeout = const Duration(minutes: 1)});
   @override
   final APPIsolate isolate;
 
@@ -16,11 +16,9 @@ class SkipGoHTTPService extends HTTPService<CustomAPIProvider>
   Future<SkipGoApiServiceResponse<T>> doRequest<T>(
       SkipGoApiRequestDetails params,
       {Duration? timeout}) async {
-    return await serviceRequest<T>(params, allowStatus: [200]);
+    return await serviceRequest<T>(params,
+        allowStatus: [200], timeout: timeout);
   }
-
-  @override
-  final Duration defaultTimeOut;
 
   @override
   final CustomAPIProvider provider;

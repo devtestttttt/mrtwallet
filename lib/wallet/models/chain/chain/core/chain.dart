@@ -300,33 +300,4 @@ abstract final class Chain<
       String? id,
       CONFIG? config,
       CLIENT? client});
-
-  Future<void> _reloadChain() async {
-    final account = await _storage.loadAccount();
-    final chain = Chain.deserialize(hex: account);
-    assert(chain.id == id);
-    if (chain.id != id || chain.network.type != network.type) {
-      return;
-    }
-    await chain.init();
-    await _callSynchronized(
-        t: () async {
-          _contacts = [];
-          _network = chain._network.toNetwork<NETWORK>();
-          _addresses = chain._addresses.cast<ADDRESS>();
-          _config = chain._config as CONFIG;
-          _client = chain._client as CLIENT;
-          _contacts = chain.contacts.cast<CONTACT>();
-          _status = _WalletChainStatus.init;
-          totalBalance.value._updateBalance(chain.totalBalance.value.balance);
-        },
-        type: ChainNotify.account,
-        notifyProgress: true,
-        allowStatus: null);
-    await init();
-  }
-
-  Future<void> reloadChain() async {
-    await _reloadChain();
-  }
 }

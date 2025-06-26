@@ -136,7 +136,7 @@ class WebViewController
     return result != null;
   }
 
-  static const bool isWorker = true;
+  static const bool isWorker = false;
   Future<WebViewScriptStatus?> _activeScript(WebViewEvent event) async {
     final applicationId =
         Web3APPAuthentication.toApplicationId(lastEvent.value?.evnet.url);
@@ -154,11 +154,11 @@ class WebViewController
     if (isWorker) {
       final script = await _loadWebViewScript();
       final responseEvent = await getPageAuthenticated(
-          clientId: auth.viewType, info: client, additional: script);
+          clientId: auth.viewId, info: client, additional: script);
       result = await _postEvent(responseEvent);
     } else {
       final responseEvent = await getPageAuthenticated(
-          clientId: auth.viewType, info: client, additional: null);
+          clientId: auth.viewId, info: client, additional: null);
       result = await _postEvent(responseEvent);
       if (result) {
         updatePageScriptStatus(
@@ -238,8 +238,11 @@ class WebViewController
     }
 
     final request = Web3RequestApplicationInformation(
-        info: client, request: event.request!);
-    onWalletEvent(request);
+        info: client,
+        requestId: event.request!.requestId,
+        data: event.request!.data,
+        applicationId: client.identifier);
+    onWalletEvent(request, event.request!.clientId);
     try {
       final responseEvent = await request.onCompleteRequest;
       final bool result = await _postEvent(responseEvent);

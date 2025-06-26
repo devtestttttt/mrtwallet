@@ -1,6 +1,7 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
+import 'package:on_chain_wallet/wallet/wallet.dart';
+import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 import 'package:on_chain_wallet/wallet/web3/web3.dart';
 import 'package:ton_dart/ton_dart.dart';
 
@@ -15,6 +16,32 @@ class Web3TonTransactionMessage with CborSerializable {
       required this.amount,
       required this.stateInit,
       required this.payload});
+  factory Web3TonTransactionMessage.fromJson(Map<String, dynamic> json) {
+    const method = Web3TonRequestMethods.sendTransaction;
+    final TonAddress address = Web3ValidatorUtils.parseAddress(
+        onParse: (e) => TonAddress(e),
+        key: "address",
+        method: method,
+        json: json,
+        network: method.network.name);
+    final BigInt amount = Web3ValidatorUtils.parseBigInt(
+        key: "amount", method: method, json: json);
+    final List<int>? stateInitBytes = Web3ValidatorUtils.parseBase64(
+        key: "stateInit", method: method, json: json);
+    final List<int>? payloadBytes = Web3ValidatorUtils.parseBase64(
+        key: "payload", method: method, json: json);
+    final Cell? stateInit = Web3ValidatorUtils.parseParams2(
+        () => stateInitBytes == null ? null : Cell.fromBytes(stateInitBytes),
+        errorOnNull: false);
+    final Cell? payload = Web3ValidatorUtils.parseParams2(
+        () => payloadBytes == null ? null : Cell.fromBytes(payloadBytes),
+        errorOnNull: false);
+    return Web3TonTransactionMessage(
+        address: address,
+        amount: amount,
+        stateInit: stateInit,
+        payload: payload);
+  }
 
   factory Web3TonTransactionMessage.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
@@ -45,17 +72,30 @@ class Web3TonTransactionMessage with CborSerializable {
   }
 }
 
-class Web3TonSendTransactionResponse {
+class Web3TonSendTransactionResponse with CborSerializable {
   final String message;
   final String? txHash;
   const Web3TonSendTransactionResponse({required this.message, this.txHash});
-  Map<String, dynamic> toJson() {
-    return {"message": message, "tx_hash": txHash};
+  factory Web3TonSendTransactionResponse.deserialize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: object,
+        hex: hex,
+        tags: CborTagsConst.defaultTag);
+    return Web3TonSendTransactionResponse(
+        message: values.elementAs(0), txHash: values.elementAs(1));
   }
 
-  factory Web3TonSendTransactionResponse.fromJson(Map<String, dynamic> json) {
-    return Web3TonSendTransactionResponse(
-        message: json["message"], txHash: json["tx_hash"]);
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(
+        CborListValue.fixedLength([message, txHash]), CborTagsConst.defaultTag);
+  }
+
+  Map<String, dynamic> toWalletConnectJson() {
+    if (txHash == null) return {"externalMessage": message};
+    return {"boc": message, if (txHash != null) "txId": txHash};
   }
 }
 
@@ -134,7 +174,7 @@ class Web3TonSendTransaction
 
   @override
   Object? toJsWalletResponse(Web3TonSendTransactionResponse response) {
-    return response.toJson();
+    return response.toCbor().encode();
   }
 
   @override

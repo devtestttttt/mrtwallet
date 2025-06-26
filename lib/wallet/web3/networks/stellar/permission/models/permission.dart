@@ -55,12 +55,16 @@ class Web3StellarChain extends Web3Chain<StellarAddress, StellarChain,
         getCurrentPermissionNetwork(networks.map((e) => e.network).toList());
     final web3Networks = networks
         .map((e) => Web3ChainDefaultIdnetifier(
-            id: e.network.value,
-            identifier: e.network.coinParam.stellarChainType.identifier))
+              id: e.network.value,
+              wsIdentifier: e.network.wsIdentifier,
+              caip2: e.network.caip,
+            ))
         .toList();
     final currentWeb3Network = Web3ChainDefaultIdnetifier(
-        id: currentNetwork.value,
-        identifier: currentNetwork.coinParam.stellarChainType.identifier);
+      id: currentNetwork.value,
+      wsIdentifier: currentNetwork.wsIdentifier,
+      caip2: currentNetwork.caip,
+    );
     return Web3StellarChainAuthenticated(
         accounts: activeAccounts,
         networks: web3Networks,

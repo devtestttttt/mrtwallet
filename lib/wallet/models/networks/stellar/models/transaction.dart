@@ -1,5 +1,6 @@
 import 'package:blockchain_utils/blockchain_utils.dart';
 import 'package:on_chain_wallet/app/error/exception/wallet_ex.dart';
+import 'package:on_chain_wallet/app/utils/datetime/datetime.dart';
 import 'package:on_chain_wallet/wallet/wallet.dart';
 import 'package:stellar_dart/stellar_dart.dart';
 import 'package:on_chain_wallet/app/utils/list/extension.dart';
@@ -194,7 +195,7 @@ class TransactionTimeBound {
   Preconditions condition() {
     final DateTime time = this.time?.toUtc() ??
         DateTime.now().toUtc().add(StellarConst.defaultTimeBound);
-    final secondsEpoch = time.microsecondsSinceEpoch ~/ 1000;
+    final secondsEpoch = DateTimeUtils.secondsSinceEpoch(time);
     return switch (type) {
       TransactiomTimeBoundType.none => const PrecondNone(),
       _ => PrecondTime(

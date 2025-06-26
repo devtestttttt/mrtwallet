@@ -6,7 +6,7 @@ import 'package:on_chain_wallet/app/error/exception/exception.dart'
     show ApiProviderException;
 import 'package:on_chain_wallet/wallet/api/provider/networks/ethereum.dart';
 import 'package:on_chain_wallet/wallet/api/services/core/base_service.dart'
-    show BaseServiceProtocol;
+    show NetworkServiceProtocol;
 import 'package:on_chain_wallet/wallet/api/services/models/models/protocols.dart';
 import 'package:on_chain_wallet/wallet/api/services/models/networks/ethereum.dart';
 import 'package:on_chain_wallet/wallet/api/services/networks/http/services/ethereum.dart';
@@ -34,8 +34,8 @@ class JSEthereumClient {
         provider: provider, requestTimeout: requestTimeout)));
   }
   bool get isConnect => true;
-  BaseServiceProtocol<EthereumAPIProvider> get service =>
-      provider.rpc as BaseServiceProtocol<EthereumAPIProvider>;
+  NetworkServiceProtocol<EthereumAPIProvider> get service =>
+      provider.rpc as NetworkServiceProtocol<EthereumAPIProvider>;
   bool get supportSubscribe => service.protocol == ServiceProtocol.websocket;
   void addSubscriptionListener(ONETHSubsribe listener) {
     if (!supportSubscribe) return;
@@ -51,9 +51,17 @@ class JSEthereumClient {
     if (!supportSubscribe) {
       throw Web3RequestExceptionConst.methodDoesNotSupport;
     }
-    final result = await provider.request(EthereumRequestDynamic<String>(
-        methodName: EthereumMethods.subscribe.value, params: params));
-    return result;
+    try {
+      final result = await provider.request(EthereumRequestDynamic<String>(
+          methodName: EthereumMethods.subscribe.value, params: params));
+      return result;
+    } on Web3RequestException {
+      rethrow;
+    } on RPCError catch (e) {
+      throw Web3RequestExceptionConst.fromException(e);
+    } catch (e) {
+      throw Web3RequestExceptionConst.disconnectProvider;
+    }
   }
 
   Future<dynamic> _dynamicCall(String method, dynamic params) async {

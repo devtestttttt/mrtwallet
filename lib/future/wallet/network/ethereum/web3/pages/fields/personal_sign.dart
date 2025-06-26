@@ -14,6 +14,10 @@ class EthereumWeb3PersonalSignRequestView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          ConditionalWidget(
+              enable: request.isEthSign,
+              onActive: (context) => ErrorTextContainer(
+                  error: "sign_message_private_key_desc".tr)),
           Text("message".tr, style: context.textTheme.titleMedium),
           TextAndLinkView(
               text: "eth_personal_sign_desc".tr,
@@ -50,7 +54,31 @@ class EthereumWeb3PersonalSignRequestView extends StatelessWidget {
                   padding: WidgetConstant.paddingVertical40,
                   child: Text("sign_message".tr),
                   onPressed: () {
-                    request.confirmRequest();
+                    request.signMessage(confirm: () async {
+                      return context.openSliverDialog<bool>(
+                          (ctx) => DialogTextView(
+                              widget: Column(
+                                children: [
+                                  Icon(
+                                    Icons.warning,
+                                    color: context.colors.error,
+                                    size: APPConst.double80,
+                                  ),
+                                  WidgetConstant.height8,
+                                  ContainerWithBorder(
+                                      backgroundColor:
+                                          context.colors.errorContainer,
+                                      enableTap: false,
+                                      child: Text(
+                                          "sign_message_private_key_desc".tr,
+                                          style: context.colors.onErrorContainer
+                                              .bodyMedium(context))),
+                                ],
+                              ),
+                              buttonWidget: const AsyncDialogDoubleButtonView(),
+                              text: "sign_message_private_key_desc".tr),
+                          "sign_message".tr);
+                    });
                   })
             ],
           )

@@ -14,6 +14,59 @@ external set onChain(JSAny onChain);
 @JS("ethereum")
 external set ethereum(Proxy<EIP1193>? ethereum);
 
+@JSExport()
+class ProxyMethodHandler<T> {
+  final String? debugKey;
+  final T object;
+  ProxyMethodHandler(this.object, {this.debugKey});
+
+  @JSExport("set")
+  bool set(JSAny object, JSAny? prop, JSAny? value, JSAny? receiver) {
+    try {
+      final r = Reflect.get(object, prop, receiver);
+      if (r.isUndefined) {
+        return Reflect.set(object, prop, value, receiver);
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @JSExport("get")
+  JSAny? get(JSAny object, JSAny? prop, JSAny? receiver) {
+    if (prop?.isDefinedAndNotNull ?? false) {
+      if (prop.isA<JSString>()) {
+        final pr = prop.dartify() as String;
+        // if (debugKey != null) {
+        //   Logg.log("$debugKey: $pr");
+        // }
+        if (pr.startsWith("is")) {
+          final r = Reflect.get(object, prop, receiver);
+          if (r.isDefinedAndNotNull) return r;
+          return true.toJS;
+        }
+      }
+    }
+    return Reflect.get(object, prop, receiver);
+  }
+}
+
+@JS("Reflect")
+extension type Reflect._(JSObject _) implements JSAny {
+  external factory Reflect();
+  @JS("get")
+  external static JSAny? get(JSAny? object, JSAny? prop, JSAny? receiver);
+  @JS("set")
+  external static bool set(
+      JSAny? object, JSAny? prop, JSAny? value, JSAny? receiver);
+}
+
+@JS("Proxy")
+extension type Proxy<T extends JSAny>._(JSObject _) implements JSAny {
+  external factory Proxy(T target, JSObject handler);
+}
+
 extension type OnChainWallet(JSObject _) implements JSOBJ {
   @JS("scriptId")
   external JSAny get _scriptId;

@@ -56,12 +56,14 @@ class Web3AptosChain extends Web3Chain<AptosAddress, AptosChain, IAptosAddress,
     final web3Networks = networks
         .map((e) => Web3AptosChainIdnetifier(
             id: e.network.value,
-            identifier: e.network.coinParam.aptosChainType.identifier,
+            wsIdentifier: e.network.wsIdentifier,
+            caip2: e.network.caip,
             chainId: e.network.coinParam.aptosChainType.id))
         .toList();
     final currentWeb3Network = Web3AptosChainIdnetifier(
         id: currentNetwork.value,
-        identifier: currentNetwork.coinParam.aptosChainType.identifier,
+        wsIdentifier: currentNetwork.wsIdentifier,
+        caip2: currentNetwork.caip,
         chainId: currentNetwork.coinParam.aptosChainType.id);
     return Web3AptosChainAuthenticated(
         accounts: activeAccounts,

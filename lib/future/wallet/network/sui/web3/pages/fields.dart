@@ -17,10 +17,10 @@ class SuiWeb3FieldsView extends StatelessWidget {
         return SuiWeb3GlobalFieldsView(request: request, wallet: wallet);
       case Web3SuiRequestMethods.signMessage:
       case Web3SuiRequestMethods.signPersonalMessage:
-        return SuiWeb3GlobalFieldsView<Map<String, dynamic>,
+        return SuiWeb3GlobalFieldsView<Web3SuiSignMessageResponse,
                 Web3SuiSignMessage>(
-            request: request
-                as Web3SuiRequest<Map<String, dynamic>, Web3SuiSignMessage>,
+            request: request as Web3SuiRequest<Web3SuiSignMessageResponse,
+                Web3SuiSignMessage>,
             wallet: wallet);
       case Web3SuiRequestMethods.signTransaction:
       case Web3SuiRequestMethods.signAndExecuteTransaction:

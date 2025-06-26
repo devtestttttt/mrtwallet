@@ -80,6 +80,7 @@ final class ADAChain extends Chain<
   Future<void> updateAddressBalance(ICardanoAddress address,
       {bool tokens = true, bool saveAccount = true}) async {
     _isAccountAddress(address);
+    await initAddress(address);
     await onClient(onConnect: (client) async {
       final balance = await client.getAccountBalance(address.networkAddress);
       _internalupdateAddressBalance(

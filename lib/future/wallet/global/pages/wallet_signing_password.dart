@@ -68,7 +68,7 @@ class _WalletSigningPasswordState extends State<WalletSigningPassword>
       }
     } else {
       keyState.success();
-      await Future.delayed(APPConst.milliseconds100);
+      await MethodUtils.wait(duration: APPConst.milliseconds100);
       if (context.mounted) {
         // ignore: use_build_context_synchronously
         context.pop(_password);
@@ -77,7 +77,7 @@ class _WalletSigningPasswordState extends State<WalletSigningPassword>
   }
 
   void onPassword() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     keyState.process();
     updateState();
     final result = await MethodUtils.call(() async {

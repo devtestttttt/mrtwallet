@@ -26,6 +26,7 @@ class UpdateChainPermissionWidget<
       required this.onChangeChain,
       required this.onChangeDefaultAccount,
       required this.activities,
+      required this.menuItems,
       super.key});
   final CHAIN chain;
   final List<CHAIN> chains;
@@ -35,6 +36,7 @@ class UpdateChainPermissionWidget<
   final ADDPERMISSIONACCOUNT<ADDRESS> addAccount;
   final ONCHANGEDEFAULTACCOUNT<CHAINACCOUNT> onChangeDefaultAccount;
   final List<Web3ActivityViewItem> activities;
+  final List<DropdownMenuItem<CHAIN>> menuItems;
 
   @override
   State<UpdateChainPermissionWidget> createState() =>
@@ -102,20 +104,7 @@ class _UpdateChainPermissionWidgetState<
               fillColor: context.colors.surface,
               label: null,
               isExpanded: true,
-              items: {
-                for (final i in widget.chains)
-                  i: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAPPImageView(i.network.token.assetLogo, radius: 15),
-                      WidgetConstant.width8,
-                      Flexible(
-                        child: OneLineTextWidget(i.network.token.name,
-                            style: context.textTheme.labelLarge),
-                      )
-                    ],
-                  )
-              },
+              menuItems: widget.menuItems,
               onChanged: widget.onChangeChain,
               value: widget.chain),
           pinned: true,

@@ -75,7 +75,9 @@ class ThemeController {
     );
   }
 
-  static Locale locale = const Locale("en");
+  static const APPLocale locale = APPLocale.en;
+
+  static final Locale materialLocale = Locale(locale.name);
 
   static void _rebuildTheme() {
     colorScheme = _buildColorSchame();
@@ -116,3 +118,7 @@ class ThemeController {
     } catch (_) {}
   }
 }
+
+// extension MaterialLocale on APPLocale {
+//   Locale get locale => Locale(name);
+// }

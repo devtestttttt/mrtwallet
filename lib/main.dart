@@ -96,7 +96,7 @@ class MyBTC extends StatelessWidget {
             ],
             theme: ThemeController.appTheme,
             darkTheme: ThemeController.appTheme,
-            locale: ThemeController.locale,
+            locale: ThemeController.materialLocale,
             onGenerateRoute: PageRouter.onGenerateRoute,
             initialRoute: PageRouter.home,
             navigatorObservers: [StateRepository.walletObserver(context)],

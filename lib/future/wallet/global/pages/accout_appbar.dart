@@ -19,17 +19,12 @@ class AccountAppbarActionView extends StatelessWidget {
       onTap: onAction,
       child: MaterialBanner(
         backgroundColor: context.colors.inverseSurface,
-        content: Text(
-          text,
-          style: context.colors.onInverseSurface.bodyMedium(context),
-        ),
+        content: Text(text,
+            style: context.colors.onInverseSurface.bodyMedium(context)),
         actions: [
           IconButton(
               onPressed: onHide,
-              icon: Icon(
-                Icons.close,
-                color: context.colors.onInverseSurface,
-              ))
+              icon: Icon(Icons.close, color: context.colors.onInverseSurface))
         ],
       ),
     );

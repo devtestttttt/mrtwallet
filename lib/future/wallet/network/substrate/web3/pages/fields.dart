@@ -16,7 +16,8 @@ class SubstrateWeb3FieldsView extends StatelessWidget {
       case Web3SubstrateRequestMethods.requestAccounts:
         return SubstrateWeb3GlobalFieldsView(request: request, wallet: wallet);
       case Web3SubstrateRequestMethods.signMessage:
-        return SubstrateWeb3GlobalFieldsView<Map<String, dynamic>,
+        return SubstrateWeb3GlobalFieldsView<
+            Web3SubstrateSendTransactionResponse,
             Web3SubstrateSignMessage>(request: request.cast(), wallet: wallet);
       case Web3SubstrateRequestMethods.addSubstrateChain:
         return SubstrateWeb3GlobalFieldsView<bool, Web3SubstrateAddNewChain>(

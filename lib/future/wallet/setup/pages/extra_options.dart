@@ -39,7 +39,7 @@ class _MnemonicExtraOptionViewState extends State<MnemonicExtraOptionView>
   }
 
   void setup() async {
-    if (!(form.currentState?.validate() ?? false)) return;
+    if (!form.ready()) return;
     final model = context.watch<SetupWalletController>(StateConst.setup);
     progressKey.progressText("launch_the_wallet".tr);
     final result = await MethodUtils.call(() async {

@@ -13,14 +13,14 @@ import 'package:on_chain_wallet/crypto/keys/access/crypto_keys/crypto_keys.dart'
 class Web3EthereumChainAccount extends Web3ChainAccount<ETHAddress> {
   @override
   final int id;
-  final List<int>? publicKey;
+  final List<int> publicKey;
   Web3EthereumChainAccount(
       {required super.keyIndex,
       required super.address,
       required super.defaultAddress,
       required this.id,
-      required List<int>? publicKey})
-      : publicKey = publicKey?.asImmutableBytes;
+      required List<int> publicKey})
+      : publicKey = publicKey.asImmutableBytes;
   @override
   Web3EthereumChainAccount clone(
       {AddressDerivationIndex? keyIndex,
@@ -70,7 +70,7 @@ class Web3EthereumChainAccount extends Web3ChainAccount<ETHAddress> {
           address.address,
           id,
           defaultAddress,
-          publicKey == null ? null : CborBytesValue(publicKey!)
+          CborBytesValue(publicKey)
         ]),
         CborTagsConst.web3EthereumAccount);
   }
@@ -82,10 +82,12 @@ class Web3EthereumChainAccount extends Web3ChainAccount<ETHAddress> {
 class Web3EthereumChainIdnetifier extends Web3ChainIdnetifier {
   final BigInt chainId;
   final bool supportEIP1559;
-  @override
-  String get identifier => "ethereum:$chainId";
-  const Web3EthereumChainIdnetifier(
-      {required this.chainId, required this.supportEIP1559, required super.id});
+  Web3EthereumChainIdnetifier(
+      {required this.chainId,
+      required this.supportEIP1559,
+      required super.wsIdentifier,
+      required super.caip2,
+      required super.id});
   factory Web3EthereumChainIdnetifier.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
     final CborListValue values = CborSerializable.cborTagValue(
@@ -96,12 +98,15 @@ class Web3EthereumChainIdnetifier extends Web3ChainIdnetifier {
     return Web3EthereumChainIdnetifier(
         chainId: values.elementAs(0),
         supportEIP1559: values.elementAs(1),
-        id: values.elementAs(2));
+        id: values.elementAs(2),
+        wsIdentifier: values.elementAs(3),
+        caip2: values.elementAs(4));
   }
   @override
   CborTagValue toCbor() {
     return CborTagValue(
-      CborListValue.fixedLength([chainId, supportEIP1559, id]),
+      CborListValue.fixedLength(
+          [chainId, supportEIP1559, id, wsIdentifier, caip2]),
       CborTagsConst.web3EthereumChainIdentifier,
     );
   }

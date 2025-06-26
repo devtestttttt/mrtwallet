@@ -53,12 +53,16 @@ class Web3TonChain extends Web3Chain<TonAddress, TheOpenNetworkChain,
 
     final web3Networks = networks
         .map((e) => Web3ChainDefaultIdnetifier(
-            id: e.network.value,
-            identifier: e.network.coinParam.tonChainIdentifier))
+              id: e.network.value,
+              wsIdentifier: e.network.wsIdentifier,
+              caip2: e.network.caip,
+            ))
         .toList();
     final currentWeb3Network = Web3ChainDefaultIdnetifier(
-        id: currentNetwork.value,
-        identifier: currentNetwork.coinParam.tonChainIdentifier);
+      id: currentNetwork.value,
+      wsIdentifier: currentNetwork.wsIdentifier,
+      caip2: currentNetwork.caip,
+    );
     return Web3TonChainAuthenticated(
         accounts: activeAccounts,
         networks: web3Networks,

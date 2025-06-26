@@ -1,20 +1,11 @@
 import 'dart:js_interop';
 
 import 'package:blockchain_utils/blockchain_utils.dart'
-    show BigintUtils, BytesUtils, StringUtils;
+    show BigintUtils, StringUtils;
 import 'package:on_chain_bridge/web/web.dart';
 import '../../models/models/base.dart';
 
 class JsUtils {
-  static int compareAddress(String a, String b, String? defaultAddress) {
-    if (a == defaultAddress) {
-      return -1;
-    } else if (b == defaultAddress) {
-      return 1;
-    }
-    return a.compareTo(b);
-  }
-
   static Map<String, dynamic>? toDartMap(JSAny? object) {
     try {
       if (object == null) return null;
@@ -22,15 +13,14 @@ class JsUtils {
         return StringUtils.toJson<Map<String, dynamic>>(
             (object as JSString).toDart);
       }
-      return StringUtils.toJson<Map<String, dynamic>>(jsJson.stringify(object));
+      return StringUtils.toJson<Map<String, dynamic>>(
+          StringUtils.fromJson(object.dartify()!, toStringEncodable: true));
     } catch (_) {
       return null;
     }
   }
 
-  static List<Map<String, dynamic>>? toListOfMap<T>(
-    JSAny? object,
-  ) {
+  static List<Map<String, dynamic>>? toListOfMap<T>(JSAny? object) {
     try {
       if (object == null) return null;
       if (object.isA<JSString>()) {
@@ -38,7 +28,8 @@ class JsUtils {
             .map((e) => Map<String, dynamic>.from(e))
             .toList();
       }
-      return StringUtils.toJson<List>(jsJson.stringify(object))
+      return StringUtils.toJson<List>(
+              StringUtils.fromJson(object.dartify()!, toStringEncodable: true))
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
     } catch (_) {
@@ -88,26 +79,20 @@ class JsUtils {
     }
   }
 
-  static JSArray<JSAny> asJSArray(JSAny obj) {
+  static JSArray<JSAny?>? asJSArray(JSAny? obj) {
+    if (obj.isUndefinedOrNull) return <JSAny>[].toJS;
     List<JSAny?> messages = [];
     if (obj.isA<JSArray>()) {
       messages = (obj as JSArray<JSAny?>).toDart;
     } else {
       messages.add(obj);
     }
-    return List<JSAny>.from(messages).toJS;
+    return List<JSAny?>.from(messages).toJS;
   }
 
-  static String? parseHexString(JSAny? obj, {bool required0x = true}) {
-    try {
-      if (obj.isA<JSString>()) {
-        final hex = (obj as JSString).toDart.toLowerCase();
-        if (required0x && !hex.startsWith("0x")) return null;
-        final msgBytes = BytesUtils.tryFromHexString(hex);
-        if (msgBytes != null) return hex;
-        return hex;
-      }
-    } catch (_) {}
+  static JSString? asJSString(JSString? obj) {
+    if (obj.isUndefinedOrNull) return null;
+    if (obj.isA<JSString>()) return obj;
     return null;
   }
 }

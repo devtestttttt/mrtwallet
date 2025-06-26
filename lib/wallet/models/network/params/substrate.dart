@@ -1,4 +1,5 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
+import 'package:on_chain_wallet/app/error/exception/wallet_ex.dart';
 import 'package:on_chain_wallet/app/serialization/serialization.dart';
 import 'package:on_chain_wallet/wallet/api/provider/core/provider.dart';
 import 'package:on_chain_wallet/wallet/api/provider/networks/substrate.dart';
@@ -106,9 +107,9 @@ class SubstrateNetworkParams extends NetworkCoinParams<SubstrateAPIProvider> {
   }
 
   SubstrateNetworkParams updateSpecVersion(int specVersion) {
-    // if (specVersion.isNegative || specVersion < this.specVersion) {
-    //   throw WalletException("invalid_spec_version");
-    // }
+    if (specVersion.isNegative || specVersion < this.specVersion) {
+      throw WalletException("invalid_spec_version");
+    }
     return SubstrateNetworkParams(
         token: token,
         providers: providers,

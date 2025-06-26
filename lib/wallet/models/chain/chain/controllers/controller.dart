@@ -31,6 +31,45 @@ base mixin BaseChainController<
             ADDRESSPARAM>,
         ChainRepository<ADDRESS, NETWORK, CLIENT, STORAGE, CONFIG, TOKEN, NFT,
             TRANSACTION, CONTACT, ADDRESSPARAM> {
+  StreamSubscription<void>? txSub;
+  bool _isOnline = true;
+  int _currentWalletChainId = -1;
+  bool get _isCurrentWalletChain => _currentWalletChainId == network.value;
+  bool get isCurrentWalletChain => _isCurrentWalletChain;
+  Future<void> _onWalletPing() async {
+    if (!haveAddress) return;
+    await init(client: false);
+    await updateAccountBalance();
+    _trackTxes();
+  }
+
+  Future<void> _onConnectionStatusChange(bool isOnline) async {
+    _isOnline = isOnline;
+    if (!isOnline) {
+      txSub?.cancel();
+      txSub = null;
+    }
+  }
+
+  Future<void> _onWalletChainChanged(ChainWalletChainChangeEvent evnet) async {}
+
+  Future<void> _onWalletEvent(ChainWalletEvent event) async {
+    switch (event.type) {
+      case ChainWalletEventType.ping:
+        await _onWalletPing();
+        break;
+      case ChainWalletEventType.connection:
+        _isOnline = event.cast<ChainWalletConnectionEvent>().isOnline;
+        await _onConnectionStatusChange(_isOnline);
+        break;
+      case ChainWalletEventType.chainChanged:
+        final changed = event.cast<ChainWalletChainChangeEvent>();
+        _currentWalletChainId = changed.current.network.value;
+        await _onWalletChainChanged(changed);
+        break;
+    }
+  }
+
   void _isAccountAddress(ADDRESS address) {
     if (!addresses.contains(address)) {
       throw WalletExceptionConst.accountDoesNotFound;
@@ -45,6 +84,7 @@ base mixin BaseChainController<
     bool notifyProgress = false,
     bool notifyComplete = true,
     bool wait = false,
+    int lockId = 0,
   }) async {
     return await _lock.synchronized(() async {
       if (allowStatus != null && allowStatus != _status) {
@@ -63,7 +103,7 @@ base mixin BaseChainController<
           _controller.add(ChainEvent.complete(type));
         }
       }
-    });
+    }, lockId: LockId.two);
   }
 
   @override
@@ -170,6 +210,7 @@ base mixin BaseChainController<
     }
     if (_clientStatus.isConnect) return cl;
     final init = await _callSynchronized(
+        allowStatus: null,
         notifyProgress: true,
         t: () async {
           if (_clientStatus.isConnect) return true;
@@ -177,13 +218,13 @@ base mixin BaseChainController<
           final init = await cl.init();
           if (init) {
             _clientStatus = NodeClientStatus.connect;
-            _onClientConnected();
           } else {
             _clientStatus = NodeClientStatus.disconnect;
           }
           return init;
         },
-        type: ChainNotify.client);
+        type: ChainNotify.client,
+        lockId: 1);
     if (!init) {
       throw WalletException("node_connection_error");
     }
@@ -431,30 +472,40 @@ base mixin BaseChainController<
         saveAccount: false);
   }
 
-  void _onClientConnected() {
-    for (final i in _addresses) {
-      _trackTxes(i);
-    }
-    updateAccountBalance();
-  }
-
-  Future<void> _trackTxes(ADDRESS address) async {
-    final unconfrimedTx = address.transactions
-        .where((e) => e.status.inMempool)
-        .whereType<TRANSACTION>()
-        .toList();
-    if (unconfrimedTx.isEmpty) {
-      return;
-    }
+  Future<void> _trackTxes() async {
     await onClient(onConnect: (client) async {
-      client.trackMempoolTransaction(unconfrimedTx).listen((e) async {
-        await _saveTransaction(address: address, transaction: e);
-        await _callSynchronized(
-            type: ChainNotify.transaction,
-            t: () async {
-              address._addTx(e);
-              updateAddressBalance(address);
-            });
+      _callSynchronized(t: () async {
+        if (txSub != null) return;
+        final List<TrackTransactionRequest<TRANSACTION, ADDRESS>> unCofirmTxes =
+            [];
+        for (final i in addresses) {
+          if (!i._transaction.havePendingTxes) continue;
+          final pendingTxes =
+              i._transaction.pendingTxes.whereType<TRANSACTION>().toList();
+          final txes = TrackTransactionRequest<TRANSACTION, ADDRESS>(
+              transactions: pendingTxes, account: i);
+          unCofirmTxes.add(txes);
+        }
+        if (unCofirmTxes.isEmpty) {
+          return;
+        }
+        txSub = client
+            .trackMempoolTransaction(
+                unCofirmTxes.expand((e) => e.transactions).toList())
+            .listen((tx) async {
+          final address = unCofirmTxes
+              .firstWhere((e) => e.transactions.contains(tx))
+              .account;
+          await _saveTransaction(address: address, transaction: tx);
+          await _callSynchronized(
+              type: ChainNotify.transaction,
+              t: () async {
+                address._addTx(tx);
+                updateAddressBalance(address);
+              });
+        }, onDone: () {
+          txSub = null;
+        });
       });
     });
   }
@@ -466,7 +517,7 @@ base mixin BaseChainController<
         t: () async {
           await _saveTransaction(address: address, transaction: transaction);
           address._addTx(transaction);
-          _trackTxes(address);
+          _trackTxes();
         });
   }
 
@@ -505,8 +556,9 @@ base mixin BaseChainController<
       {List<ADDRESS>? addresses, bool tokens = true}) async {
     addresses ??= _addresses;
     if (addresses.isEmpty) return;
-    await Future.wait(addresses.map(
-        (e) => updateAddressBalance(e, saveAccount: false, tokens: tokens)));
+    await Future.wait(addresses.map((e) async {
+      return updateAddressBalance(e, saveAccount: false, tokens: tokens);
+    }));
     _refreshTotalBalance();
     await save();
   }
@@ -515,6 +567,13 @@ base mixin BaseChainController<
       List<WalletBackupChainRepository> repositories) async {
     await _storage.restoreChainRepositories(repositories);
     await save();
+  }
+
+  Future<void> initAddress(ADDRESS address) async {
+    if (!address._status.isInit) return;
+    await _lock.synchronized(() async {
+      await _initAddress(address);
+    });
   }
 
   Future<void> _initAddress(ADDRESS? address) async {
@@ -526,26 +585,38 @@ base mixin BaseChainController<
     await address._init(nfts: nfts, tokens: tokens, transactions: transactions);
   }
 
-  Future<void> _initInternal() async {
+  Future<void> _initInternal({bool client = true}) async {
     _contacts = (await _getContacts()).toImutableList;
     await _initAddress(_addresses.elementAtOrNull(_addressIndex));
     _status = _WalletChainStatus.ready;
-    clientOrNull();
+    if (client) clientOrNull();
   }
 
-  Future<void> init() async {
+  Future<void> init({bool client = true}) async {
     if (!_status.isInit) return;
     try {
       await _callSynchronized(
           allowStatus: _WalletChainStatus.init,
           t: () async {
-            await _initInternal();
+            await _initInternal(client: client);
           },
           type: ChainNotify.address);
     } catch (e) {
       if (e == WalletExceptionConst.invalidChainState) return;
       rethrow;
     }
+  }
+
+  void _disposeInternal() {
+    _callSynchronized(
+        t: () async {
+          _status = _WalletChainStatus.dispose;
+          _controller.close();
+          _client?.service.disposeService();
+          txSub?.cancel();
+          txSub = null;
+        },
+        allowStatus: null);
   }
 
   Future<void> dispose() async {

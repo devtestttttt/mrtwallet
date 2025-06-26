@@ -96,7 +96,7 @@ class __GenerateTonMnemonicViewState extends State<_GenerateTonMnemonicView>
   }
 
   void onTapContinue() {
-    if (formKey.currentState?.validate() ?? false) {
+    if (formKey.ready()) {
       if (hasPassword) {
         password = passwordKey.currentState!.getValue();
         if (password!.isEmpty) return;
@@ -152,7 +152,7 @@ class __GenerateTonMnemonicViewState extends State<_GenerateTonMnemonicView>
   }
 
   void generateMnemonic() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     final int? wordsNum = mnemonicWordsKey.currentState?.getValue();
     if (wordsNum == null) return;
     progressKey.progressText("generating_mnemonic".tr);
@@ -171,14 +171,14 @@ class __GenerateTonMnemonicViewState extends State<_GenerateTonMnemonicView>
   }
 
   void generatePrivateKey() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     mnemonic = mnemonicKey.currentState?.getValue() ?? "";
     mnemonicList = CryptoKeyUtils.normalizeMnemonic(mnemonic);
     _generatePrivateKey();
   }
 
   void _generatePrivateKey() async {
-    if (formKey.currentState?.validate() ?? false) {
+    if (formKey.ready()) {
       progressKey.progressText("validating_mnemonic".tr);
       final result = await MethodUtils.call(
           () async => CryptoKeyUtils.validateMnemonicWords(mnemonicList));

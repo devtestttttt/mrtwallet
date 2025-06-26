@@ -114,7 +114,7 @@ class _SubstrateMetadataRuntimeApiWidgetState
   String? get result => _result;
 
   Future<void> callApi() async {
-    if (!(formState.currentState?.validate() ?? false)) return;
+    if (!formState.ready()) return;
     final field = this.field;
     if (field == null) return;
     final hasError = field.forms.any((e) => e.error != null);

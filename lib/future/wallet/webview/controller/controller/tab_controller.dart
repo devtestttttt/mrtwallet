@@ -6,13 +6,13 @@ class WebViewTabController {
   final APPAndroidViewController controller;
   final StreamValue<WebViewTab> _tab;
   final List<int> viewTypeBytes;
-  final String viewType;
+  final String viewId;
   WebViewTabController(
       {required this.controller,
-      required this.viewType,
+      required this.viewId,
       required List<int> key,
       required WebViewTab tab})
-      : viewTypeBytes = BytesUtils.fromHexString(viewType),
+      : viewTypeBytes = BytesUtils.fromHexString(viewId),
         _tab = StreamValue<WebViewTab>(tab);
   StreamValue<WebViewTab> get tab => _tab;
   bool _inBookmark = false;

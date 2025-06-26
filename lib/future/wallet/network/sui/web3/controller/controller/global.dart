@@ -1,5 +1,4 @@
 import 'package:blockchain_utils/helper/helper.dart';
-import 'package:blockchain_utils/utils/string/string.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/crypto/requets/messages/messages.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
@@ -26,8 +25,8 @@ class Web3SuiGlobalRequestController<RESPONSE,
       case Web3SuiRequestMethods.signMessage:
       case Web3SuiRequestMethods.signPersonalMessage:
         return Web3SuiSignMessageForm(
-            request: request
-                as Web3SuiRequest<Map<String, dynamic>, Web3SuiSignMessage>);
+            request: request as Web3SuiRequest<Web3SuiSignMessageResponse,
+                Web3SuiSignMessage>);
 
       default:
         throw Web3RequestExceptionConst.internalError;
@@ -37,7 +36,7 @@ class Web3SuiGlobalRequestController<RESPONSE,
   LiveTransactionForm? _liveRequest;
   SuiWeb3Form get form => _liveRequest!.value;
 
-  Future<Map<String, dynamic>> _signMessage() async {
+  Future<Web3SuiSignMessageResponse> _signMessage() async {
     final Web3SuiSignMessageForm form = this.form as Web3SuiSignMessageForm;
     final signingMessage = form.challengeBytes().asImmutableBytes;
     final digest = SuiCryptoUtils.generatePersonalMessageDigest(signingMessage);
@@ -81,10 +80,8 @@ class Web3SuiGlobalRequestController<RESPONSE,
     ));
     final signature = address.createTransactionAuthenticated(signatures.result);
     final signedMessage = Web3SuiSignMessageResponse(
-        messageBytes:
-            StringUtils.decode(signingMessage, type: StringEncoding.base64),
-        signature: signature.toVariantBcsBase64());
-    return signedMessage.toJson();
+        messageBytes: signingMessage, signature: signature.toVariantBcs());
+    return signedMessage;
   }
 
   void onCompleteForm(Object? obj) async {

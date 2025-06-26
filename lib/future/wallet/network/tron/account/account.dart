@@ -40,6 +40,7 @@ class _Services extends StatelessWidget {
             AppListTile(
               title: Text("multi_sig_addr".tr),
               subtitle: Text("establishing_multi_sig_addr".tr),
+              trailing: const Icon(Icons.arrow_forward),
               onTap: () {
                 context.to(PageRouter.tronMultiSigAddress,
                     argruments: chainAccount);
@@ -49,6 +50,7 @@ class _Services extends StatelessWidget {
             AppListTile(
               title: Text("update_account_permission".tr),
               subtitle: Text("update_account_permissions".tr),
+              trailing: const Icon(Icons.arrow_forward),
               onTap: () {
                 if (account.accountInfo == null) {
                   context.showAlert("account_not_found".tr);
@@ -62,6 +64,7 @@ class _Services extends StatelessWidget {
             AppListTile(
               title: Text("update_account".tr),
               subtitle: Text("modify_account_name".tr),
+              trailing: const Icon(Icons.arrow_forward),
               onTap: () {
                 final validator =
                     LiveTransactionForm(validator: TronUpdateAccountForm());
@@ -71,6 +74,7 @@ class _Services extends StatelessWidget {
             WidgetConstant.divider,
             AppListTile(
               title: Text("tron_stack_v2".tr),
+              trailing: const Icon(Icons.arrow_forward),
               subtitle: Text("frozen_balance".tr),
               onTap: () {
                 final validator =
@@ -80,6 +84,7 @@ class _Services extends StatelessWidget {
             ),
             AppListTile(
               title: Text("tron_unstack_v2".tr),
+              trailing: const Icon(Icons.arrow_forward),
               subtitle: Text("unfreeze_balance".tr),
               onTap: () {
                 final validator =
@@ -90,6 +95,7 @@ class _Services extends StatelessWidget {
             AppListTile(
               title: Text("delegated_resource".tr),
               subtitle: Text("delegate_resource_desc".tr),
+              trailing: const Icon(Icons.arrow_forward),
               onTap: () {
                 final validator = LiveTransactionForm(
                     validator: TronDelegatedResourceV2Form());
@@ -99,6 +105,7 @@ class _Services extends StatelessWidget {
             AppListTile(
               title: Text("undelegated_resource".tr),
               subtitle: Text("undelegated_resource_desc".tr),
+              trailing: const Icon(Icons.arrow_forward),
               onTap: () {
                 final validator = LiveTransactionForm(
                     validator: TronUnDelegatedResourceV2Form());
@@ -109,6 +116,7 @@ class _Services extends StatelessWidget {
             AppListTile(
               title: Text("create_witness".tr),
               subtitle: Text("create_witness_desc".tr),
+              trailing: const Icon(Icons.arrow_forward),
               onTap: () {
                 final validator =
                     LiveTransactionForm(validator: TronCreateWitnessForm());
@@ -118,6 +126,7 @@ class _Services extends StatelessWidget {
             AppListTile(
               title: Text("update_witness".tr),
               subtitle: Text("update_witness_desc".tr),
+              trailing: const Icon(Icons.arrow_forward),
               onTap: () {
                 if (account.accountInfo == null) {
                   context.showAlert("account_not_found".tr);

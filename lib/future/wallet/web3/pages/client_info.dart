@@ -3,7 +3,6 @@ import 'package:on_chain_wallet/app/constant/global/app.dart';
 import 'package:on_chain_wallet/future/future.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
-import 'package:on_chain_wallet/wallet/web3/models/models/client_info.dart';
 
 ///
 class Web3ApplicationView extends StatelessWidget {
@@ -38,7 +37,7 @@ class _Web3ClientInfoView extends StatelessWidget {
           child: Row(
             children: [
               CircleAPPImageView(
-                info?.info.image ?? permission.icon,
+                permission.icon,
                 radius: APPConst.circleRadius25,
                 onError: (c) =>
                     const Icon(Icons.broken_image, size: APPConst.double40),
@@ -48,9 +47,9 @@ class _Web3ClientInfoView extends StatelessWidget {
                   child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(permission.applicationId,
+                  OneLineTextWidget(permission.name,
                       style: context.onPrimaryTextTheme.labelLarge),
-                  OneLineTextWidget(info?.info.name ?? permission.name,
+                  Text(permission.url ?? permission.applicationId,
                       style: context.onPrimaryTextTheme.bodySmall),
                 ],
               )),
@@ -88,9 +87,9 @@ class Web3ClientInfoView extends StatelessWidget {
                   child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(cleint.applicationId,
-                      style: context.onPrimaryTextTheme.labelLarge),
                   OneLineTextWidget(cleint.name,
+                      style: context.onPrimaryTextTheme.labelLarge),
+                  OneLineTextWidget(cleint.view,
                       style: context.onPrimaryTextTheme.bodySmall),
                 ],
               )),

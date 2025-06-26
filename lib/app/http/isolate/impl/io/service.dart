@@ -116,11 +116,12 @@ class _WorkerConnection {
   }
 
   Future<HTTPWorkerResponse> getResult(
-      {required HTTPWorkerMessage message, Duration? timeout}) async {
+      {required HTTPWorkerMessage message}) async {
     final next = await _getRequestId();
     try {
+      final timeout = message.timeout + Duration(seconds: 1);
       _sentRequest(message, next);
-      final args = await _requests[next]!.getResult(timeout: timeout);
+      final args = await _requests[next]!.getResult(timeout);
       return args;
     } finally {
       _requests.remove(next);

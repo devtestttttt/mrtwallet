@@ -82,11 +82,11 @@ final class AptosChain extends Chain<
   Future<void> updateAddressBalance(IAptosAddress address,
       {bool tokens = true, bool saveAccount = true}) async {
     _isAccountAddress(address);
+    await initAddress(address);
     await onClient(onConnect: (client) async {
       final balance = await client.getAccountBalance(address.networkAddress);
       _internalupdateAddressBalance(
           address: address, balance: balance, saveAccount: saveAccount);
-
       if (tokens) {
         final accountTokens = address.tokens;
         final tokenbalances = await client.getAccountTokenBalances(

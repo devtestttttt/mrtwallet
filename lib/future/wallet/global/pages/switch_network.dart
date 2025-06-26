@@ -19,14 +19,7 @@ class _SwitchNetworkViewState extends State<SwitchNetworkView>
     with SafeState<SwitchNetworkView> {
   final GlobalKey<PageProgressState> progressKey =
       GlobalKey<PageProgressState>();
-
-  double? height;
-  void onChangeSize(Size size) {
-    if (size.height != height) {
-      height = size.height;
-      setState(() {});
-    }
-  }
+  static const double imageRadius = 15;
 
   List<Chain> allChains = [];
   late List<Chain> networks;
@@ -34,6 +27,8 @@ class _SwitchNetworkViewState extends State<SwitchNetworkView>
 
   int initialIndex = 0;
   bool showTestnet = false;
+  NetworkType? showImport;
+
   void toggleShowTestnet() {
     showTestnet = !showTestnet;
     final setting = wallet.appSetting.walletSetting
@@ -43,11 +38,8 @@ class _SwitchNetworkViewState extends State<SwitchNetworkView>
     updateState();
   }
 
-  void rebuild() {}
-
   void initNetwork() {
     wallet = context.watch<WalletProvider>(StateConst.main);
-    // wallet.changeCurrency(currency);
     showTestnet = wallet.appSetting.walletSetting.showTestnetNetworks;
     allChains = wallet.wallet.getChains();
     initialIndex = findIndex(widget.selectedNetwork.type);
@@ -61,7 +53,6 @@ class _SwitchNetworkViewState extends State<SwitchNetworkView>
     buildChains();
     updateState();
   }
-  // Chain compare(Chain a){}
 
   Iterable<Chain> findChains(int index) {
     switch (index) {
@@ -141,8 +132,6 @@ class _SwitchNetworkViewState extends State<SwitchNetworkView>
     }
   }
 
-  NetworkType? showImport;
-
   void buildChains() {
     networks = findChains(initialIndex).toList()
       ..sort((a, b) => a.network.value.compareTo(b.network.value));
@@ -183,8 +172,6 @@ class _SwitchNetworkViewState extends State<SwitchNetworkView>
     allChains = [];
     super.safeDispose();
   }
-
-  static const double imageRadius = 15;
 
   @override
   Widget build(BuildContext context) {

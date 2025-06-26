@@ -12,3 +12,4 @@ export 'status/status.dart';
 export 'access/wallet_access.dart';
 export 'transaction/transaction.dart';
 export 'swap/swap.dart';
+export 'wallet/hd_wallet.dart';

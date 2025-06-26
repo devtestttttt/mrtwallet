@@ -146,7 +146,6 @@ class SubstrateTransferForm extends SubstrateTransactionForm {
     if (!isFakeTx) {
       nonce = await client.getAccountNonce(address.networkAddress);
     }
-
     final calls = SubstrateUtils.buildMethod(_toCalls(memos: memos));
     final bool batch = destination.length + memos.length > 1;
 

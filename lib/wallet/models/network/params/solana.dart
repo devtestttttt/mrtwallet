@@ -9,13 +9,25 @@ import 'package:on_chain_wallet/wallet/constant/tags/constant.dart';
 import 'package:blockchain_utils/bip/bip.dart';
 
 enum SolanaNetworkType {
-  mainnet('solana:mainnet', 0),
-  testnet('solana:testnet', 1),
-  devnet('solana:devnet', 2);
+  mainnet(
+      identifier: 'solana:mainnet',
+      value: 0,
+      genesis: "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"),
+  testnet(
+      identifier: 'solana:testnet',
+      value: 1,
+      genesis: "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z"),
+
+  devnet(
+      identifier: 'solana:devnet',
+      value: 2,
+      genesis: "EtWTRABZaYq6iMfeYKouRu166VU2xqa1");
 
   final String identifier;
   final int value;
-  const SolanaNetworkType(this.identifier, this.value);
+  final String genesis;
+  const SolanaNetworkType(
+      {required this.identifier, required this.value, required this.genesis});
   static SolanaNetworkType fromValue(int? value) {
     return values.firstWhere((e) => e.value == value,
         orElse: () => throw WalletExceptionConst.invalidData(

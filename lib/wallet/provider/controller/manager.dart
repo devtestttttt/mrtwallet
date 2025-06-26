@@ -3,13 +3,10 @@
 part of 'package:on_chain_wallet/wallet/provider/wallet_provider.dart';
 
 mixin WalletManager on _WalletController {
-  final Cancelable _balanceUpdaterCancelable = Cancelable();
-  StreamSubscription<void>? _balanceUpdaterStream;
+  Future<List<Web3APPAuthentication>> _getAllWeb3Authenticated();
 
   /// emit unlocking walllet
   void _onUnlock() {}
-
-  /// wallet lock timeout handler
 
   WStatus getStatus() {
     if (_walletKey != null) {
@@ -36,9 +33,9 @@ mixin WalletManager on _WalletController {
   Future<void> _login(String password) async {
     final storageKey = await crypto.cryptoIsolateRequest(
         CryptoRequestGenerateMasterKey.fromStorageWithStringKey(
-            storageData: _wallet._data,
+            storageData: _wallet.data,
             key: password,
-            checksum: _wallet._checksum));
+            checksum: _wallet.checksum));
     _massterKey = storageKey.masterKey;
     _walletKey = storageKey.walletKey;
     _onUnlock();
@@ -77,7 +74,8 @@ mixin WalletManager on _WalletController {
         key: keyBytes,
         encryptedMasterKey: _massterKey!.masterKey);
     _massterKey = encrypt.masterKey;
-    await _updateWallet(_wallet._updateData(encrypt.storageData));
+    _appChains.updateWalletData(_wallet.updateData(encrypt.storageData));
+    await _updateWallet();
   }
 
   /// - [removeKey]: private key from current wallet
@@ -93,7 +91,8 @@ mixin WalletManager on _WalletController {
         key: keyBytes,
         encryptedMasterKey: _massterKey!.masterKey);
     _massterKey = encrypt.masterKey;
-    await _updateWallet(_wallet._updateData(encrypt.storageData));
+    _appChains.updateWalletData(_wallet.updateData(encrypt.storageData));
+    await _updateWallet();
   }
 
   /// confirm the current wallet password
@@ -103,7 +102,7 @@ mixin WalletManager on _WalletController {
       throw WalletExceptionConst.walletIsLocked;
     }
 
-    final keyBytes = await _core._toWalletPassword(password, _wallet._checksum);
+    final keyBytes = await _core._toWalletPassword(password, _wallet.checksum);
     if (!BytesUtils.bytesEqual(keyBytes, _walletKey)) {
       throw WalletExceptionConst.incorrectPassword;
     }
@@ -121,12 +120,12 @@ mixin WalletManager on _WalletController {
       throw WalletExceptionConst.passwordUsedBefore;
     }
     final keyBytes = await _validatePassword(password);
-    final newKey =
-        await _core._toWalletPassword(newPassword, _wallet._checksum);
+    final newKey = await _core._toWalletPassword(newPassword, _wallet.checksum);
     final encrypt = await crypto.cryptoIsolateRequest(
         CryptoRequestGenerateMasterKey.fromStorage(
-            storageData: _wallet._data, key: keyBytes, newKey: newKey));
-    await _updateWallet(_wallet._updateData(encrypt.storageData));
+            storageData: _wallet.data, key: keyBytes, newKey: newKey));
+    _appChains.updateWalletData(_wallet.updateData(encrypt.storageData));
+    await _updateWallet();
     _setDefaultPageStatus();
   }
 
@@ -150,20 +149,29 @@ mixin WalletManager on _WalletController {
 
   /// generate fully wallet backup
   /// -[password]: current wallet password
-  Future<String> _generateWalletBackup(String password) async {
+  Future<String> _generateWalletBackup({
+    required String password,
+    required GenerateWalletBackupOptions options,
+  }) async {
     final key = await _validatePassword(password);
     final encrypt = await crypto.walletArgs(
-        message: WalletRequestBackupWallet(password),
+        message: WalletRequestBackupWallet(
+            key: password,
+            newPassword: options.newPassword,
+            passhrase: options.passphrase),
         encryptedMasterKey: _massterKey!.masterKey,
         key: key);
     final List<WalletChainBackup> backupChains = [];
-    final appChains = _appChains.chains();
-    for (final i in appChains) {
+    for (final i in options.chains) {
       final chainBackup = await i.toBackup();
       backupChains.add(chainBackup);
     }
-    final walletBackup = WalletBackup(key: encrypt, chains: backupChains);
-
+    List<Web3APPAuthentication> dapps = [];
+    if (options.backupDapps) {
+      dapps = await _getAllWeb3Authenticated();
+    }
+    final walletBackup =
+        WalletBackup(key: encrypt, chains: backupChains, dapps: dapps);
     return walletBackup.toCbor().toCborHex();
   }
 
@@ -283,13 +291,13 @@ mixin WalletManager on _WalletController {
       required String password}) async {
     await _validatePassword(password);
     final requiredPassword = _wallet.requiredPassword;
-    final updatedWallet = _wallet._updateSettings(
+    final updatedWallet = _wallet.updateSettings(
         newLockTime: walletInfos.lockTime,
         reqPassword: walletInfos.requirmentPassword,
         newName: walletInfos.name,
         protectWallet: walletInfos.protectWallet);
-    await _updateWallet(updatedWallet,
-        asDefaultWallet: walletInfos.asDefaultWallet);
+    _appChains.updateWalletData(updatedWallet);
+    await _updateWallet(asDefaultWallet: walletInfos.asDefaultWallet);
     if (!requiredPassword && _wallet.requiredPassword) {
       _setDefaultPageStatus();
     }
@@ -320,7 +328,7 @@ mixin WalletManager on _WalletController {
   Future<void> _switchNetwork(int changeNetwork) async {
     final change = await _appChains.switchNetwork(changeNetwork);
     if (change) {
-      await _updateWallet(_wallet.updateNetwork(_appChains.network.value));
+      await _updateWallet();
     }
   }
 
@@ -383,33 +391,9 @@ mixin WalletManager on _WalletController {
 
   /// init the wallet
   Future<void> _onInitController() async {
-    await _chain.init();
-    if (_core.isJsWallet) return;
-    return;
-    // final chains = _appChains.chains();
-    // _balanceUpdaterStream = MethodUtils.prediocCaller(
-    //         () async => await MethodUtils.call(() async {
-    //               for (final chain in chains) {
-    //                 if (!chain.haveAddress) continue;
-    //                 await chain.init();
-    //                 await _updateAccountBalance(chain);
-    //                 if (chain != this._chain) {
-    //                   chain.disposeProvider();
-    //                 }
-    //               }
-    //             }),
-    //         canclable: _balanceUpdaterCancelable,
-    //         waitOnSuccess: const Duration(minutes: 10),
-    //         waitOnError: const Duration(minutes: 1))
-    //     .listen((s) {});
+    await _appChains.init();
   }
 
   /// dispose wallet before switching wallet.
-  void _dispose() {
-    MethodUtils.nullOnException(() {
-      _balanceUpdaterStream?.cancel();
-      _balanceUpdaterStream = null;
-      _balanceUpdaterCancelable.cancel();
-    });
-  }
+  void _dispose() {}
 }

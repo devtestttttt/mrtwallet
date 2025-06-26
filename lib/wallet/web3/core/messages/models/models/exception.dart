@@ -1,7 +1,5 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
-
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/wallet/web3/constant/constant.dart';
 import 'package:on_chain_wallet/wallet/web3/core/exception/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/messages/types/message.dart';
 import 'package:on_chain_wallet/wallet/web3/core/messages/types/message_types.dart';
@@ -48,11 +46,6 @@ class Web3ExceptionMessage extends Web3MessageCore {
 
   @override
   Web3MessageTypes get type => Web3MessageTypes.error;
-
-  bool get isAuthenticatedError {
-    return code == Web3RequestExceptionConst.missingPermission.code ||
-        code == Web3RequestExceptionConst.bannedHost.code;
-  }
 
   Web3RequestException toException() {
     return Web3RequestException(

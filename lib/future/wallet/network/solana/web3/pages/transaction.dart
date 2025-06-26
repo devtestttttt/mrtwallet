@@ -14,7 +14,8 @@ import 'package:on_chain/solana/src/rpc/models/models/simulate_transaction_respo
 class SolanaWeb3TransactionFieldsView extends StatelessWidget {
   const SolanaWeb3TransactionFieldsView(
       {required this.wallet, super.key, required this.request});
-  final Web3SolanaRequest<List<List<int>>, Web3SolanaSendTransaction> request;
+  final Web3SolanaRequest<List<Web3SolanaTransactionResponse>,
+      Web3SolanaSendTransaction> request;
   final WalletProvider wallet;
 
   @override

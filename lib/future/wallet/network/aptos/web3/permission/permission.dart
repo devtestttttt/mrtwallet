@@ -52,6 +52,7 @@ class _AptosWeb3PermissionViewState extends State<AptosWeb3PermissionView>
         addAccount: addAccount,
         onChangeChain: onChangeChain,
         onChangeDefaultAccount: onChangeDefaultPermission,
-        activities: activities);
+        activities: activities,
+        menuItems: menuItems);
   }
 }

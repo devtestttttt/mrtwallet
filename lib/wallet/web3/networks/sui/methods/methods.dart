@@ -2,17 +2,13 @@ import 'package:on_chain_wallet/app/utils/list/extension.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
-import 'package:on_chain_wallet/wallet/web3/networks/ethereum/constant/constant.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/sui/constant/constants/constant.dart';
 
 class Web3SuiRequestMethods extends Web3NetworkRequestMethods {
-  const Web3SuiRequestMethods._(
-      {required super.id, required super.name, super.methodsName});
+  const Web3SuiRequestMethods._({required super.id, required super.name});
 
   static const Web3SuiRequestMethods requestAccounts = Web3SuiRequestMethods._(
-      id: Web3SuiConst.requestAccountTag,
-      name: Web3SuiConst.requestAccounts,
-      methodsName: [Web3EthereumConst.requestAccounts]);
+      id: Web3SuiConst.requestAccountTag, name: Web3SuiConst.requestAccounts);
 
   static const Web3SuiRequestMethods signMessage = Web3SuiRequestMethods._(
       id: Web3SuiConst.signMessagTag, name: Web3SuiConst.signMessage);

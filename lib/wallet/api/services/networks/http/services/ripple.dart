@@ -7,10 +7,7 @@ import 'package:xrpl_dart/xrpl_dart.dart';
 
 class RippleHTTPService extends HTTPService<RippleAPIProvider>
     implements XRPServiceProvider {
-  RippleHTTPService(
-      {required this.provider,
-      required this.isolate,
-      this.defaultTimeOut = const Duration(seconds: 30)});
+  RippleHTTPService({required this.provider, required this.isolate});
   @override
   final APPIsolate isolate;
 
@@ -19,8 +16,6 @@ class RippleHTTPService extends HTTPService<RippleAPIProvider>
 
   @override
   final RippleAPIProvider provider;
-  @override
-  final Duration defaultTimeOut;
 
   @override
   Future<BaseServiceResponse<T>> doRequest<T>(XRPRequestDetails params,

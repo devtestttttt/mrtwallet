@@ -26,8 +26,8 @@ class RippleClient
   final WalletXRPNetwork network;
 
   @override
-  BaseServiceProtocol<RippleAPIProvider> get service =>
-      provider.rpc as BaseServiceProtocol<RippleAPIProvider>;
+  NetworkServiceProtocol<RippleAPIProvider> get service =>
+      provider.rpc as NetworkServiceProtocol<RippleAPIProvider>;
 
   Future<BigInt> getAccountBalance(XRPAddress address) async {
     final accountInfo = await getAccountInfo(address.address);

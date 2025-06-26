@@ -11,8 +11,8 @@ import 'package:on_chain/sui/src/keypair/types/types.dart';
 import 'package:on_chain/sui/src/keypair/utils/utils.dart';
 import 'package:on_chain/sui/src/transaction/types/types.dart';
 
-class Web3SuiTransactionRequestController
-    extends Web3SuiImpl<Map<String, dynamic>, Web3SuiSignOrExecuteTransaction> {
+class Web3SuiTransactionRequestController extends Web3SuiImpl<
+    Web3SuiSignOrExcuteTransactionResponse, Web3SuiSignOrExecuteTransaction> {
   late final LiveTransactionForm<Web3SuiSendTransactionForm> liveRequest =
       LiveTransactionForm(
           validator: Web3SuiSendTransactionForm(request: request));
@@ -74,8 +74,8 @@ class Web3SuiTransactionRequestController
 
     final signature = address.createTransactionAuthenticated(signatures.result);
     return Web3SuiSignTransactionResponse(
-        bytes: transaction.toVariantBcsBase64(),
-        signature: signature.toVariantBcsBase64(),
+        transactionBytes: transaction.toVariantBcs(),
+        signature: signature.toVariantBcs(),
         digest: transaction.txHash());
   }
 
@@ -116,8 +116,8 @@ class Web3SuiTransactionRequestController
     if (isExecute) {
       final execute = await MethodUtils.call(() async {
         final txId = await apiProvider.executeWeb3Transaction(
-            signatures: [signedTransaction.result.signature],
-            transactionBcs: signedTransaction.result.bytes,
+            signatures: [signedTransaction.result.signatureAsBase64],
+            transactionBcs: signedTransaction.result.transactionAsBase64,
             options: request.params.executeOptions,
             type: request.params.executeType);
         await _saveTransaction(
@@ -139,10 +139,10 @@ class Web3SuiTransactionRequestController
           effects: execute.result.rawTransactionData ?? '',
           excuteResponse: execute.result.effects);
 
-      request.completeResponse(response.toJson());
+      request.completeResponse(response);
       progressKey.responseTx(hash: response.digest, network: network);
     } else {
-      request.completeResponse(signedTransaction.result.toJson());
+      request.completeResponse(signedTransaction.result);
       progressKey.response(text: "transaction_signed".tr);
     }
   }

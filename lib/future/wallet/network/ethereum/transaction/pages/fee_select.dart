@@ -256,7 +256,7 @@ class _ETHEip1559CustomGasViewSelectViewState
   }
 
   void setupFee() {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     context.pop(initialFee);
   }
 
@@ -498,7 +498,7 @@ class __ETHLegacyCustomGasViewSelectViewState
   }
 
   void setupFee() {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!formKey.ready()) return;
     context.pop(initialFee);
   }
 

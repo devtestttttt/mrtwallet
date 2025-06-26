@@ -13,11 +13,15 @@ class GenerateBackupView extends StatefulWidget {
       required this.data,
       required this.password,
       required this.type,
-      this.descriptions = const []});
+      this.walletBackupOptions,
+      this.descriptions = const []})
+      : assert((type != WalletBackupTypes.walletV2 &&
+            type != WalletBackupTypes.wallet));
   final String data;
   final String password;
   final List<Widget> descriptions;
   final WalletBackupTypes type;
+  final GenerateWalletBackupOptions? walletBackupOptions;
 
   @override
   State<GenerateBackupView> createState() => _SecureBackupViewState();
@@ -41,8 +45,14 @@ class _SecureBackupViewState extends State<GenerateBackupView>
     final wallet = context.watch<WalletProvider>(StateConst.main);
     progressKey.progressText("creating_backup_desc".tr);
     final MethodResult<String> result;
-    if (widget.type == WalletBackupTypes.wallet) {
-      result = await wallet.wallet.generateWalletBackup(widget.password);
+    if (widget.type == WalletBackupTypes.walletV3) {
+      final options = widget.walletBackupOptions;
+      if (options == null) {
+        progressKey.errorText("invalid_backup_options".tr, backToIdle: false);
+        return;
+      }
+      result = await wallet.wallet
+          .generateWalletBackup(password: widget.password, options: options);
     } else {
       result = await wallet.wallet.generateWalletKeyBackup(
         data: widget.data,

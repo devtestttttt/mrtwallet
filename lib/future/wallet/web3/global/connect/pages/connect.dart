@@ -14,10 +14,12 @@ class GlobalWeb3ConnectView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Web3GlobalPageRequestControllerView(
-        controller: () => Web3GlobalRequestConnectStateController(request),
+        controller: () => Web3GlobalRequestConnectStateController(
+            request: request, wallet: wallet),
         builder: (context, controller) {
           return Web3ApplicationPermissionView(
-              web3RequestController: controller);
+              authenticated: controller.authenticated,
+              onPermissionUpdate: controller.onUpdateApplication);
         },
         request: request);
   }
