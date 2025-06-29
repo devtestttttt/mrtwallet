@@ -33,7 +33,7 @@ class Web3NetworkPageRequestControllerView<T extends Web3StateContoller>
   Widget build(BuildContext context) {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
-        request.reject();
+        request.onPopRequestPage();
       },
       child: PasswordCheckerView(
         appbar: AppBar(
@@ -122,7 +122,7 @@ class Web3GlobalPageRequestControllerView<
   Widget build(BuildContext context) {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
-        request.reject();
+        request.onPopRequestPage();
       },
       child: PasswordCheckerView(
         appbar: AppBar(

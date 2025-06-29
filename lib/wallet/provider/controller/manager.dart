@@ -136,6 +136,9 @@ mixin WalletManager on _WalletController {
       {required String data,
       required WalletBackupTypes type,
       required String password}) async {
+    if (type.isWalletBackup) {
+      throw WalletExceptionConst.dataVerificationFailed;
+    }
     final encrypt = await crypto.cryptoIsolateRequest(CryptoRequestEncodeBackup(
         password: password,
         backup: type.toEncryptionBytes(data),
@@ -297,7 +300,7 @@ mixin WalletManager on _WalletController {
         newName: walletInfos.name,
         protectWallet: walletInfos.protectWallet);
     _appChains.updateWalletData(updatedWallet);
-    await _updateWallet(asDefaultWallet: walletInfos.asDefaultWallet);
+    await _updateWallet();
     if (!requiredPassword && _wallet.requiredPassword) {
       _setDefaultPageStatus();
     }
@@ -361,31 +364,24 @@ mixin WalletManager on _WalletController {
   /// retrive all addresses create with current key and remove from wallet.
   /// -[removedKey]: imported key
   Future<void> _cleanUpdateRemovedKeyAccounts(String removedKey) async {
-    final List<ChainAccount> removeList = [];
-    final List<ChainAccount> accs = _appChains.accounts;
-    for (final address in accs) {
-      if (address.multiSigAccount) {
-        final multiSigAccount = address as MultiSigCryptoAccountAddress;
-        for (final i in multiSigAccount.keyDetails) {
-          if (i.$2.importedKeyId == removedKey) {
-            removeList.add(address);
-            break;
+    final chains = _appChains.chains();
+    for (final chain in chains) {
+      final addresses = chain.addresses.clone();
+      for (final address in addresses) {
+        if (address.multiSigAccount) {
+          final multiSigAccount = address as MultiSigCryptoAccountAddress;
+          for (final i in multiSigAccount.keyDetails) {
+            if (i.$2.importedKeyId == removedKey) {
+              await chain.removeAccount(address);
+              break;
+            }
+          }
+        } else {
+          if (address.keyIndex.importedKeyId == removedKey) {
+            await chain.removeAccount(address);
           }
         }
-      } else {
-        if (address.keyIndex.importedKeyId == removedKey) {
-          removeList.add(address);
-        }
       }
-    }
-
-    if (removeList.isEmpty) return;
-    for (final address in removeList) {
-      final account = _appChains.fromAddress(address);
-      if (account == null) {
-        continue;
-      }
-      await account.removeAccount(address);
     }
   }
 

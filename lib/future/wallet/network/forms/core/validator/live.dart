@@ -3,7 +3,7 @@ import 'transaction_form.dart';
 
 typedef OnChangeForm = void Function();
 
-class LiveTransactionForm<T extends ValidatorForm> extends LiveListenable {
+class LiveTransactionForm<T extends ValidatorForm> extends LiveListenable<T> {
   LiveTransactionForm({required this.validator}) : super(validator) {
     validator.onChanged = onChanged;
   }

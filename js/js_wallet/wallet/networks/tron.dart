@@ -70,7 +70,7 @@ class TronWeb3JSStateAccount extends Web3JSStateAccount<
         e.id == authenticated.currentNetwork.id);
     return TronWeb3JSStateAccount._(
         accounts: accounts.whereType<TronWeb3JSStateAddress>().toList(),
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null
@@ -133,85 +133,6 @@ class TronWeb3JSStateHandler extends Web3JSStateHandler<
     return event;
   }
 
-  // @override
-  // Web3TronSignMessageV2 toSignMessageRequest(
-  //     {required Web3JsClientRequest params,
-  //     required TronWeb3JSStateAccount state,
-  //     required Web3TronRequestMethods method,
-  //     Web3TronChainIdnetifier? network}) {
-  //   List<int> message;
-  //   Web3TronChainAccount account;
-  //   if (params.request.isWalletStandard) {
-  //     return super.toSignMessageRequest(
-  //         params: params, state: state, method: method, network: network);
-  //   } else {
-  //     message = params.objectAsBytes(
-  //         object: params.requestParams.elementAtOrNull(0),
-  //         name: 'message',
-  //         encoding: [
-  //           StringEncoding.hex,
-  //           StringEncoding.utf8,
-  //         ],
-  //         error: Web3RequestExceptionConst.invalidBytesArgrumentElement(
-  //             index: 0,
-  //             encoding: [
-  //               StringEncoding.hex,
-  //               StringEncoding.utf8,
-  //             ]));
-  //     account = state.defaultNetworkChainAccountOrThrow;
-  //   }
-
-  //   return Web3TronSignMessageV2(
-  //       accessAccount: account,
-  //       challeng: BytesUtils.toHexString(message),
-  //       content: StringUtils.tryDecode(message));
-  // }
-
-  // @override
-  // Web3TronSendTransaction toSignTransactionRequest(
-  //     {required Web3JsClientRequest params,
-  //     required TronWeb3JSStateAccount state,
-  //     required Web3TronRequestMethods method,
-  //     Web3TronChainIdnetifier? network}) {
-  //   return Web3ValidatorUtils.parseParams2(() {
-  //     const List<String> keys = ["txID", "raw_data_hex"];
-  //     Web3TronChainAccount account;
-  //     Map<String, dynamic> txObject;
-  //     if (params.request.isWalletStandard) {
-  //       final param = params.paramsAsMap(
-  //           keys: JSTronWalletStandardTransactionParams.properties);
-  //       txObject = params.objectAsMap(
-  //           object: param["transaction"], name: "transaction", keys: keys);
-  //       account = state.getJsAddressChainAccountOrThrow(param["account"]);
-  //     } else {
-  //       txObject = params.paramsAsMap(keys: keys, method: method);
-  //       account = state.defaultNetworkChainAccountOrThrow;
-  //     }
-  //     final List<int> txBytes = Web3ValidatorUtils.parseHex(
-  //         key: "raw_data_hex",
-  //         method: method,
-  //         json: txObject,
-  //         required0x: false);
-  //     final String txId = Web3ValidatorUtils.parseHex(
-  //         key: "txID", method: method, json: txObject, required0x: false);
-  //     final transaction = TransactionRaw.deserialize(txBytes);
-  //     if (transaction.txID != txId) {
-  //       return null;
-  //     }
-  //     if (!params.request.isWalletStandard &&
-  //         transaction.ownerAddress != account.address) {
-  //       account = state.findAddressOrNull(
-  //               address: transaction.ownerAddress,
-  //               network: state.defaultChain) ??
-  //           account;
-  //     }
-  //     return Web3TronSendTransaction(
-  //         transaction:
-  //             Transaction(rawData: transaction, signature: []).toBuffer(),
-  //         accessAccount: account);
-  //   }, error: Web3RequestExceptionConst.invalidTransaction);
-  // }
-
   @override
   Future<Web3MessageCore> request(Web3JsClientRequest params,
       {Web3TronChainIdnetifier? network}) async {
@@ -243,6 +164,7 @@ class TronWeb3JSStateHandler extends Web3JSStateHandler<
       required Web3RequestParams? params,
       required Web3WalletResponseMessage response}) async {
     final method = Web3TronRequestMethods.fromName(message.request.method);
+
     switch (method) {
       case Web3TronRequestMethods.requestAccounts:
         return onConnectResponse(message);

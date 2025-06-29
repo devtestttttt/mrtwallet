@@ -53,7 +53,6 @@ mixin WalletConnectRelayClient on WalletConnectCore {
               request: request,
               status: WcInternalPublishMessageStatus.pending));
         }
-
         final result = await _rpc.send(request.toPublishMessage()).timeout(
             timeout,
             onTimeout: () =>
@@ -77,8 +76,10 @@ mixin WalletConnectRelayClient on WalletConnectCore {
   }
 
   Future<void> _onConnect() async {
-    await Future.wait(_topics.map((e) => _subscribe(topic: e)));
-    await Future.wait(_publishedMessage.values.map((e) => _publish(e)));
+    await Future.wait(
+        _topics.map((e) => _subscribe(topic: e).catchError((e) => null)));
+    await Future.wait(_publishedMessage.values
+        .map((e) => _publish(e).catchError((e) => null)));
   }
 
   Future<dynamic> _subscribe(
@@ -194,6 +195,7 @@ mixin WalletConnectRelayClient on WalletConnectCore {
         message: WcJsonRpcMessage.fromJson(data),
         session: session,
         publishedAt: messagEvent.publishedAt);
+
     switch (message.message.messageType) {
       case WcJsonRpcMessageType.unknwon:
         final error = WCSDKErrors.invalidMethod.toRpcError();

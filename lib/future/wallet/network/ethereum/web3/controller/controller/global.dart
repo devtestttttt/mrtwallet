@@ -21,7 +21,7 @@ class Web3EthereumGlobalRequestController<RESPONSE,
     notify();
   }
 
-  LiveTransactionForm? _liveRequest;
+  LiveTransactionForm<EthereumWeb3Form>? _liveRequest;
 
   EthereumWeb3Form get form => _liveRequest!.value;
 
@@ -118,6 +118,6 @@ class Web3EthereumGlobalRequestController<RESPONSE,
   void close() {
     super.close();
     _liveRequest?.removeListener(onChangeForm);
-    form.onCompleteForm = null;
+    _liveRequest?.value.onCompleteForm = null;
   }
 }

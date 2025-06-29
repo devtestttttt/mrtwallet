@@ -18,4 +18,3 @@ part 'controller/networks/monero.dart';
 part 'core/core.dart';
 part 'impl/manager.dart';
 part 'impl/storage_impl.dart';
-part 'impl/storage_manager.dart';

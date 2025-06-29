@@ -4,7 +4,8 @@ class Logg {
   static bool get isDebug => true;
 
   static void log(Object? text) {
-    print('\x1B[33m$text\x1B[0m');
+    print(text);
+    // print('\x1B[33m$text\x1B[0m');
   }
 
   static void error(String text) {

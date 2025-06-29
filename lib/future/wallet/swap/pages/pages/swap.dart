@@ -23,7 +23,7 @@ class SwapView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamWidget(
+    return APPStreamBuilder(
       value: swapController.notifier,
       builder: (context, value) {
         return Shimmer(

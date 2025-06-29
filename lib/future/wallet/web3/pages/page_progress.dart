@@ -206,7 +206,7 @@ SnackBar _requestStatusView(
         _ => const Duration(minutes: 10)
       },
       action: SnackBarAction(label: 'close'.tr, onPressed: onHide),
-      content: StreamWidget(
+      content: APPStreamBuilder(
         value: status,
         builder: (context, status) => Row(
           children: [

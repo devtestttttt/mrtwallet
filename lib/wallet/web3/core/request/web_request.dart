@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:blockchain_utils/blockchain_utils.dart';
-import 'package:on_chain_bridge/models/models.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/wallet/models/models.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
@@ -46,21 +44,33 @@ abstract class Web3RequestInformation with Equatable {
   late final StreamController<Web3RequestCompleterEvent> _controller =
       StreamController<Web3RequestCompleterEvent>.broadcast(sync: true);
 
-  final Completer<WalletEvent> _requestComoleter = Completer<WalletEvent>();
-  final Completer<Object?> _responseCompleter = Completer();
+  // final Completer<WalletEvent> _requestComoleter = Completer<WalletEvent>();
+  final Completer<Object?> _completer = Completer();
+  bool _responseHasListener = false;
 
-  void completeResponse(Object? response) {
-    if (_responseCompleter.isCompleted) return;
-    _responseCompleter.complete(response);
+  Completer<Object?>? _getResponseCompleter() {
+    if (_completer.isCompleted || _responseHasListener) return null;
+    try {
+      return _completer;
+    } finally {
+      _responseHasListener = true;
+    }
+  }
+
+  void _completeResponse(Object? response) {
+    assert(!_completer.isCompleted, "request already completed");
+    if (_completer.isCompleted) return;
+    _completer.complete(response);
     final event =
         Web3RequestCompleterEvent(type: Web3RequestCompleterEventType.response);
     _controller.add(event);
   }
 
-  void errorResponse(
+  void _errorResponse(
       {Object error = Web3RequestExceptionConst.rejectedByUser}) {
-    if (_responseCompleter.isCompleted) return;
-    _responseCompleter.completeError(error is Web3RequestException
+    assert(!_completer.isCompleted, "request already completed");
+    if (_completer.isCompleted) return;
+    _completer.completeError(error is Web3RequestException
         ? error
         : Web3RequestExceptionConst.fromException(error));
     final event =
@@ -73,8 +83,8 @@ abstract class Web3RequestInformation with Equatable {
         type: Web3RequestCompleterEventType.closed, message: error?.message);
     _controller.add(event);
     _controller.close();
-    if (!_responseCompleter.isCompleted) {
-      _responseCompleter.completeError(error ?? Web3RejectException.instance);
+    if (!_completer.isCompleted && _responseHasListener) {
+      _completer.completeError(error ?? Web3RequestClosed.instance);
     }
   }
 
@@ -83,21 +93,6 @@ abstract class Web3RequestInformation with Equatable {
         Web3RequestCompleterEvent(type: Web3RequestCompleterEventType.success);
     _controller.add(event);
     _controller.close();
-    // assert(_requestComoleter.isCompleted, "must be completed.");
-  }
-
-  // String get applicationId => info.applicationId;
-
-  void completeRequest(WalletEvent event) {
-    _requestComoleter.complete(event);
-  }
-
-  void errorRequest() {
-    _requestComoleter.completeError(Web3RejectException.instance);
-  }
-
-  Future<WalletEvent> get onCompleteRequest {
-    return _requestComoleter.future;
   }
 
   String get requestId;
@@ -109,18 +104,16 @@ class Web3RequestLocalInformation extends Web3RequestInformation {
   @override
   final String requestId;
 
-  @override
   void completeResponse(Object? response) {
-    if (_responseCompleter.isCompleted) return;
-    super.completeResponse(response);
+    if (_completer.isCompleted) return;
+    super._completeResponse(response);
     completeSuccess();
   }
 
-  @override
   void errorResponse(
       {Object error = Web3RequestExceptionConst.rejectedByUser}) {
-    if (_responseCompleter.isCompleted) return;
-    super.errorResponse(error: error);
+    if (_completer.isCompleted) return;
+    super._errorResponse(error: error);
     completeSuccess();
   }
 
@@ -132,26 +125,23 @@ class Web3RequestLocalInformation extends Web3RequestInformation {
 }
 
 class Web3RequestApplicationInformation extends Web3RequestInformation {
-  final List<int> data;
+  final Web3MessageCore message;
+  // final Web3ActiveClient client;
   @override
   final String requestId;
   final String applicationId;
 
   Web3RequestApplicationInformation._(
       {required this.requestId,
-      required List<int> data,
-      required this.applicationId})
-      : data = data.asImmutableBytes;
+      required this.message,
+      required this.applicationId});
   factory Web3RequestApplicationInformation(
-      {required Web3ClientInfo info,
-      required List<int> data,
+      {required Web3MessageCore message,
       required String requestId,
       required String applicationId}) {
     return Web3RequestApplicationInformation._(
-        data: data, requestId: requestId, applicationId: applicationId);
+        message: message, requestId: requestId, applicationId: applicationId);
   }
-
-  // String get applicationId => info.identifier;
 
   @override
   List get variabels => [applicationId, requestId];
@@ -199,27 +189,25 @@ abstract class Web3Request<RESPONSE, PARAMS extends Web3WalletRequestParams,
       throw WalletExceptionConst.invalidArgruments(
           "$RESPONSE", response.runtimeType.toString());
     }
-    info.completeResponse(response);
+    info._completeResponse(response);
   }
 
   void error(Object message) {
-    info.errorResponse(error: message);
+    info._errorResponse(error: message);
   }
 
-  void reject() {
-    info.errorResponse();
+  void onPopRequestPage() {
+    if (info._completer.isCompleted || !info._responseHasListener) return;
+    info._errorResponse();
   }
 
   Future<RESPONSE> getResponse() async {
+    final completer = info._getResponseCompleter();
     if (info.isClosed) {
-      if (!info._responseCompleter.isCompleted) {
-        MethodUtils.nullOnException(() => info._responseCompleter
-            .completeError(Web3RejectException.instance));
-      }
-
-      throw Web3RejectException.instance;
+      throw Web3RequestClosed.instance;
     }
-    final result = await info._responseCompleter.future;
+    assert(completer != null, "response has already listener.");
+    final result = await completer?.future;
     return result as RESPONSE;
   }
 }

@@ -57,20 +57,22 @@ class Web3SubstrateChain extends Web3Chain<BaseSubstrateAddress, SubstrateChain,
         getCurrentPermissionNetwork(networks.map((e) => e.network).toList());
     final web3Networks = networks
         .map((e) => Web3SubstrateChainIdnetifier(
-              genesisHash: e.network.genesisBlock,
-              specVersion: e.network.coinParam.specVersion,
-              id: e.network.value,
-              wsIdentifier: e.network.wsIdentifier,
-              caip2: e.network.caip,
-            ))
+            genesisHash: e.network.genesisBlock,
+            specVersion: e.network.coinParam.specVersion,
+            id: e.network.value,
+            wsIdentifier: e.network.wsIdentifier,
+            caip2: e.network.caip,
+            type: e.network.coinParam.substrateChainType,
+            ss58Fromat: e.network.coinParam.ss58Format))
         .toList();
     final currentWeb3Network = Web3SubstrateChainIdnetifier(
-      genesisHash: currentNetwork.genesisBlock,
-      specVersion: currentNetwork.coinParam.specVersion,
-      id: currentNetwork.value,
-      wsIdentifier: currentNetwork.wsIdentifier,
-      caip2: currentNetwork.caip,
-    );
+        genesisHash: currentNetwork.genesisBlock,
+        specVersion: currentNetwork.coinParam.specVersion,
+        id: currentNetwork.value,
+        wsIdentifier: currentNetwork.wsIdentifier,
+        caip2: currentNetwork.caip,
+        type: currentNetwork.coinParam.substrateChainType,
+        ss58Fromat: currentNetwork.coinParam.ss58Format);
     return Web3SubstrateChainAuthenticated(
         accounts: activeAccounts,
         networks: web3Networks,

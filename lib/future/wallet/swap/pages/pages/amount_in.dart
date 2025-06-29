@@ -84,7 +84,7 @@ class SetupSwapAmoutView extends StatelessWidget {
                   ),
                 ],
               ),
-              StreamWidget(
+              APPStreamBuilder(
                 value: controller.inputPrice,
                 builder: (context, value) {
                   return Positioned(

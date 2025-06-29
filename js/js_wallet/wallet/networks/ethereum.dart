@@ -1,4 +1,5 @@
 import 'dart:js_interop';
+import 'package:blockchain_utils/blockchain_utils.dart';
 import 'package:blockchain_utils/exception/exceptions.dart';
 import 'package:on_chain/on_chain.dart';
 import 'dart:async';
@@ -77,7 +78,7 @@ class EthereumWeb3JSStateAccount extends Web3JSStateAccount<
     final provider = authenticated.serviceIdentifier;
     return EthereumWeb3JSStateAccount._(
         accounts: accounts.whereType<EthereumWeb3JSStateAddress>().toList(),
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         client: provider == null ? null : JSEthereumClient(provider),
         defaultChain: authenticated.currentNetwork,
@@ -109,6 +110,7 @@ class EthereumWeb3JSStateHandler extends Web3JSStateHandler<
             JSWalletNetworkEvent> {
   EthereumWeb3JSStateHandler(
       {required super.sendMessageToClient, required super.sendInternalMessage});
+
   void _onSubscribe(EthereumSubscribeResult result) {
     final event = JSWalletNetworkEvent(
         events: [JSNetworkEventType.message], message: result.toJson().jsify());

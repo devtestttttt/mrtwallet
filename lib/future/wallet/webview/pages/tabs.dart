@@ -10,22 +10,27 @@ class WebViewTabsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamWidget(
+    return APPStreamBuilder(
         value: controller.notifier,
-        // controller: () => controller,
-        // repositoryId: StateConst.webview,
-        // removable: false,
         builder: (context, value) {
           return CustomScrollView(
             slivers: [
-              SliverAppBar(title: Text("tabs".tr), actions: [
-                TextButton.icon(
-                    onPressed: () {
-                      controller.newTab((v) {});
-                    },
-                    label: Text("new_tab".tr),
-                    icon: const Icon(Icons.add_box)),
-              ]),
+              SliverAppBar(
+                  automaticallyImplyLeading: false,
+                  title: Text("tabs".tr),
+                  leading: IconButton(
+                      onPressed: () {
+                        controller.backToBorwser();
+                      },
+                      icon: Icon(Icons.arrow_back)),
+                  actions: [
+                    TextButton.icon(
+                        onPressed: () {
+                          controller.newTab((v) {});
+                        },
+                        label: Text("new_tab".tr),
+                        icon: const Icon(Icons.add_box)),
+                  ]),
               SliverConstraintsBoxView(
                 padding: WidgetConstant.paddingHorizontal20,
                 sliver: SliverList.builder(

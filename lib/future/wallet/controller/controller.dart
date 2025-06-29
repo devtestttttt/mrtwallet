@@ -11,6 +11,7 @@ import 'package:on_chain_wallet/app/models/models/currencies.dart';
 import 'package:on_chain_wallet/future/tools/frame_tracker/desktop_frame_tracker.dart';
 import 'package:on_chain_wallet/future/wallet/controller/tabs/tabs.dart';
 import 'package:on_chain_wallet/repository/repository.dart';
+import 'package:on_chain_wallet/wallet/models/others/models/status.dart';
 import 'wallet/ui_wallet.dart';
 import 'wallet/cross/cross.dart'
     if (dart.library.js_interop) 'wallet/cross/web.dart'
@@ -88,14 +89,13 @@ class WalletProvider extends StateController
 
   void changeCurrency(Currency? currency) {
     if (currency == null || _appSetting.currency == currency) return;
-    wallet.currency.changeCurrency(currency);
+    this.currency.changeCurrency(currency);
     _appSetting = _appSetting.copyWith(currency: currency);
     saveAppSetting(_appSetting);
   }
 
   Future<void> _initWallet() async {
     final init = await MethodUtils.call(() async {
-      wallet.currency.changeCurrency(appSetting.currency);
       return await wallet.init();
     });
     if (init.hasError) {
@@ -112,15 +112,44 @@ class WalletProvider extends StateController
     await saveAppSetting(_appSetting);
   }
 
+  StreamSubscription<WalletActionEvent>? _onWalletStatus;
+  @override
+  Future<void> onWalletEvent(WalletActionEvent event) async {
+    if (!event.status.isSuccess) return;
+    switch (event.walletStatus) {
+      case WStatus.init:
+      case WStatus.setup:
+      case WStatus.lock:
+        navigatorKey?.currentContext?.popToHome();
+        break;
+      case WStatus.readOnly:
+      case WStatus.unlock:
+        currency.streamPrices(wallet.coinIds());
+        break;
+    }
+    switch (event.action) {
+      case WalletActionEventType.setup:
+        navigatorKey?.currentContext?.popToHome();
+        break;
+      default:
+    }
+    await super.onWalletEvent(event);
+    await wallet.onWalletEvent(event);
+  }
+
   @override
   void close() {
     super.close();
+    _onWalletStatus?.cancel();
+    _onWalletStatus = null;
     wallet.dispose();
   }
 
   @override
   void ready() {
     super.ready();
+    currency.changeCurrency(appSetting.currency);
+    _onWalletStatus = wallet.status.stream.listen(onWalletEvent);
     _initWallet();
   }
 

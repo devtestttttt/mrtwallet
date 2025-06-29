@@ -156,7 +156,9 @@ class PageRouter {
   static const String web3WalletConnect = "web3/wallet_connect";
 
   static const String webview = "web/";
+  static const String webviewMenu = "web/menu";
   static const String webViewSearch = "webview/search";
+  static const String settingMenu = "setting/menu";
 
   static Widget _page(String? name) {
     switch (name) {

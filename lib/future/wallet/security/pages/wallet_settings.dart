@@ -41,7 +41,6 @@ class _ExportSeedViewState extends State<_ExportSeedView> with SafeState {
   late final HDWallet hdWallet;
   late String name = hdWallet.name;
   late bool reqPassword = hdWallet.requiredPassword;
-  late bool defaultWallet = true;
   late bool protectWallet = hdWallet.protectWallet;
   late WalletLockTime locktime = hdWallet.locktime;
   late List<String> walletIds;
@@ -54,7 +53,6 @@ class _ExportSeedViewState extends State<_ExportSeedView> with SafeState {
       hdWallet = wallet.wallet.wallet;
       walletIds = wallet.wallet.wallets.map((e) => e.name).toList();
       walletIds.remove(hdWallet.name);
-      defaultWallet = wallet.wallet.defaultWalletId == hdWallet.name;
     }
   }
 
@@ -68,7 +66,6 @@ class _ExportSeedViewState extends State<_ExportSeedView> with SafeState {
     name = walletInfos.name;
     locktime = walletInfos.lockTime;
     reqPassword = walletInfos.requirmentPassword;
-    defaultWallet = walletInfos.asDefaultWallet;
     protectWallet = walletInfos.protectWallet;
 
     progressKey.progressText("updating".tr);
@@ -102,7 +99,6 @@ class _ExportSeedViewState extends State<_ExportSeedView> with SafeState {
                   locktime: locktime,
                   requrmentPassword: reqPassword,
                   exitsIds: walletIds,
-                  asDefaultWallet: defaultWallet,
                   setupButtonTitle: "update_settings".tr,
                   onUpdate: (update) => setup(update),
                   protectWallet: protectWallet,

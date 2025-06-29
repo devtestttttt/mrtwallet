@@ -35,6 +35,7 @@ abstract class Web3StateAccount<
     CHAIN extends Web3ChainIdnetifier,
     STATEADDRESS extends Web3StateAddress> {
   Web3StateProtocol get protocol;
+
   Web3StateAccount.init()
       : state = Web3NetworkState.disconnect,
         chains = const [],
@@ -188,37 +189,6 @@ abstract class Web3StateAccount<
         .chainaccount as CHAINACCOUNT;
   }
 
-  CHAINACCOUNT findAddressStrOrDefault(
-      {String? address, CHAIN? network, String? networkStr}) {
-    if (network == null && networkStr != null) {
-      network = chains.firstWhere(
-          (e) => e.caip2 == networkStr || e.wsIdentifier == networkStr,
-          orElse: () => throw Web3RequestExceptionConst.networkDoesNotExists);
-    }
-    if (address == null) {
-      return _findDefaultAddress(network: network);
-    }
-
-    if (network != null) {
-      if (defaultAccount?.networkIdentifier == network &&
-          defaultAccount?.addressStr == address) {
-        return defaultAccount!.chainaccount as CHAINACCOUNT;
-      }
-      return accounts
-          .firstWhere(
-              (e) =>
-                  e.networkIdentifier.id == network!.id &&
-                  e.addressStr == address,
-              orElse: () => throw Web3RequestExceptionConst.missingPermission)
-          .chainaccount as CHAINACCOUNT;
-    }
-    final addresses = accounts.where((e) => e.addressStr == address);
-    if (addresses.length != 1) {
-      throw Web3RequestExceptionConst.missingPermission;
-    }
-    return addresses.first.chainaccount as CHAINACCOUNT;
-  }
-
   CHAINACCOUNT? findAddressOrNull({NETWORKADDRESS? address, CHAIN? network}) {
     try {
       return findAddressOrDefault(address: address, network: network);
@@ -292,6 +262,78 @@ abstract class Web3StateHandler<
     RESPONSE,
     REQUEST extends Web3ClientRequest,
     EVENT> {
+  NETWORKADDRESS toAddress(String v, {CHAIN? network});
+  NETWORKADDRESS? tryToAddress(String v, {CHAIN? network}) {
+    try {
+      final address = toAddress(v, network: network);
+      return address;
+    } catch (_) {}
+    return null;
+  }
+
+  ParsedNetworkStateAddress<NETWORKADDRESS, CHAIN> parseStateAddress(
+      {required dynamic addr,
+      required REQUEST params,
+      required STATE state,
+      CHAIN? network,
+      Web3RequestException? error}) {
+    try {
+      if (addr == null) {
+        throw Web3RequestExceptionConst.invalidAddress(
+            key: addr, network: networkType.name);
+      }
+      if (addr is String) {
+        final address = toAddress(addr, network: network);
+        return ParsedNetworkStateAddress<NETWORKADDRESS, CHAIN>(
+            address: address, chain: network);
+      }
+
+      final obj = params.tryObjectAsMap(addr, keys: ["address", "chains"]);
+      if (obj == null) {
+        throw Web3RequestExceptionConst.invalidAddress(
+            key: addr, network: networkType.name);
+      }
+      if (network != null) {
+        return ParsedNetworkStateAddress(
+            address: toAddress(obj["address"], network: network),
+            chain: network);
+      }
+      final String chainName = (obj["chains"] as List).firstOrNull;
+      final chain = state.chains.firstWhere((e) => e.isChain(chainName),
+          orElse: () => throw Web3RequestExceptionConst.networkDoesNotExists);
+      final address = toAddress(obj["address"], network: chain as CHAIN);
+      return ParsedNetworkStateAddress(address: address, chain: chain);
+    } on Web3RequestException {
+      if (error != null) throw error;
+      rethrow;
+    } catch (_) {
+      throw error ??
+          Web3RequestExceptionConst.invalidAddress(
+              key: addr, network: networkType.name);
+    }
+  }
+
+  ParsedNetworkStateAddress<NETWORKADDRESS, CHAIN>? tryParseStateAddress(
+      {required dynamic addr,
+      required REQUEST params,
+      required STATE state,
+      Web3RequestException? error,
+      CHAIN? network,
+      bool throwOnFailed = false}) {
+    if (addr == null) return null;
+    try {
+      return parseStateAddress(
+          addr: addr,
+          params: params,
+          network: network,
+          error: error,
+          state: state);
+    } catch (_) {
+      if (throwOnFailed) rethrow;
+    }
+    return null;
+  }
+
   Web3StateHandler({required this.sendInternalMessage});
   EVENT createStateEvent(
       {required STATE previousState,
@@ -452,16 +494,18 @@ abstract class Web3ClientRequest {
       Web3RequestException? error,
       List<String> keys = const []}) {
     final result = Web3ValidatorUtils.tryObjectAsMap(object);
-    if (result == null || !keys.every((e) => result.containsKey(e))) {
+
+    if (result == null || !keys.every((e) => result[e] != null)) {
       throw error ??
           Web3RequestExceptionConst.invalidMapArguments(name: name, keys: keys);
     }
     return result;
   }
 
-  Map<String, dynamic>? tryObjectAsMap(Object? object) {
+  Map<String, dynamic>? tryObjectAsMap(Object? object,
+      {List<String> keys = const []}) {
     try {
-      return objectAsMap(object: object, name: '');
+      return objectAsMap(object: object, name: '', keys: keys);
     } catch (_) {
       return null;
     }

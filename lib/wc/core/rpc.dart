@@ -111,7 +111,7 @@ class JsonRpcWebSocketService {
           _controller.add(RelayClientConnectResponse());
         }
       }
-    });
+    }, lockId: LockId.two);
   }
 
   Future<dynamic> send(RelayClientRequest request) async {
@@ -169,7 +169,6 @@ class JsonRpcWebSocketService {
 
   Future<void> close() {
     return _lock.synchronized(() {
-      status.value = WcRpcSocketStatus.dispose;
       _connectivityStream?.cancel();
       _connectivityStream = null;
       _onClose();

@@ -31,8 +31,6 @@ import 'package:on_chain_wallet/wc/core/types/types.dart';
 
 typedef SENDMESSAGETOWALLET = void Function(WalletMessageRequest message);
 typedef SENDEVENTTOCLIENT = Future<void> Function(WalletEventRequest message);
-typedef AUTHREQUEST = Future<Web3APPData?> Function(
-    Web3ClientInfo onAuthRequest, bool create);
 
 class Web3WalletConnectSessionHandler extends Web3WalletHandler<
     Web3WalletConnectStateHandler, WalletConnectNetworkRequest> {
@@ -195,7 +193,8 @@ class Web3WalletConnectSessionHandler extends Web3WalletHandler<
           break;
         case Web3MessageTypes.chains:
           final Web3ChainMessage msg = message.cast<Web3ChainMessage>();
-          updateAuthenticated(msg.authenticated);
+          final auth = msg.authenticated;
+          updateAuthenticated(auth);
           break;
         default:
       }

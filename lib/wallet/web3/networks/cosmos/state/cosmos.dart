@@ -7,7 +7,6 @@ import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/messages/types/message.dart';
 import 'package:on_chain_wallet/wallet/web3/state/core/network.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/cosmos/cosmos.dart';
-import 'package:on_chain_wallet/wallet/web3/state/core/types.dart';
 import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 
 mixin CosmosWeb3StateHandler<
@@ -24,6 +23,15 @@ mixin CosmosWeb3StateHandler<
         EVENT>
     on Web3StateHandler<CosmosBaseAddress, Web3CosmosChainAccount, STATEADDRESS,
         Web3CosmoshainIdnetifier, STATEACCOUNT, RESPONSE, REQUEST, EVENT> {
+  @override
+  CosmosBaseAddress toAddress(String v, {Web3CosmoshainIdnetifier? network}) {
+    try {
+      return CosmosBaseAddress(v, forceHrp: network?.hrp);
+    } catch (_) {}
+    throw Web3RequestExceptionConst.invalidAddress(
+        key: v, network: networkType.name);
+  }
+
   @override
   NetworkType get networkType => NetworkType.cosmos;
 
@@ -57,13 +65,14 @@ mixin CosmosWeb3StateHandler<
       const List<String> keys = ["message"];
       final data = params.paramsAsMap(keys: keys, method: method);
       final account = Web3ValidatorUtils.parseParams2(() {
-        final address =
-            DefaultStateAddress.parse(data["account"] ?? data["address"]);
+        final address = tryParseStateAddress(
+            addr: data["account"] ?? data["address"],
+            params: params,
+            state: state,
+            network: network);
         if (address == null) return null;
         return state.findAddressOrDefault(
-            address: CosmosBaseAddress(address.address),
-            network: network,
-            networkStr: address.chain);
+            address: address.address, network: network ?? address.chain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: "account", network: networkType.name));
@@ -94,8 +103,8 @@ mixin CosmosWeb3StateHandler<
         }
       }
       final account = Web3ValidatorUtils.parseAddress(
-          onParse: (e) =>
-              state.findAddressStrOrDefault(address: e, network: network),
+          onParse: (e) => state.findAddressOrDefault(
+              address: CosmosBaseAddress(e), network: network),
           key: "signerAddress",
           method: method,
           json: param,

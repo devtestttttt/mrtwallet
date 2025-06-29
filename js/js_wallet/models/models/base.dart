@@ -74,14 +74,8 @@ extension type OnChainWallet(JSObject _) implements JSOBJ {
   external String _scriptIdFunc();
   @JS("scriptId")
   external String get _scriptIdStr;
-
-  @JS("ethereum")
-  external set ethereum(EIP1193 ethereum);
   external set version(int version);
   external int get version;
-
-  external EIP1193 get ethereum;
-
   @JS("onWebViewMessage")
   external set onWebViewMessage(JSFunction? f);
 

@@ -72,7 +72,7 @@ class _CoinAndMarketPriceViewState extends State<CoinAndMarketPriceView>
     if (price == null) return null;
     final token = balance.token;
     final wallet = context.watch<WalletProvider>(StateConst.main);
-    return wallet.wallet.currency.amount(price, token);
+    return wallet.currency.amount(price, token);
   }
 
   void onUpdateMarketInfo(Currency _) {
@@ -88,8 +88,8 @@ class _CoinAndMarketPriceViewState extends State<CoinAndMarketPriceView>
     price = balance.price;
     final marketId = balance.token.market;
     if (marketId != null) {
-      _marketAmountSubscription = context.wallet.wallet.currency.currency.stream
-          .listen(onUpdateMarketInfo);
+      _marketAmountSubscription =
+          context.wallet.currency.currency.stream.listen(onUpdateMarketInfo);
     }
     marketPrice = onMarketPriceChange(price);
     updateState();
@@ -236,7 +236,7 @@ class MarketPriceView extends StatelessWidget {
     final balance = this.balance;
 
     if (balance == null || balance.isZero) return WidgetConstant.sizedBox;
-    final market = wallet.wallet.currency.amount(balance.price, balance.token);
+    final market = wallet.currency.amount(balance.price, balance.token);
     if (market == null || market.isZero) return WidgetConstant.sizedBox;
     return ToolTipView(
       tooltipWidget: disableTooltip ? null : (c) => PriceTooltipWidget(market),
@@ -319,7 +319,7 @@ class _CoinAndMarketLivePriceViewState extends State<CoinAndMarketLivePriceView>
     if (price == null) return null;
     final token = balance.token;
     final wallet = context.watch<WalletProvider>(StateConst.main);
-    final marketPrice = wallet.wallet.currency.amount(price, token);
+    final marketPrice = wallet.currency.amount(price, token);
     return marketPrice;
   }
 
@@ -347,8 +347,8 @@ class _CoinAndMarketLivePriceViewState extends State<CoinAndMarketLivePriceView>
     _amountSubscription = widget.liveBalance.stream.listen(onUpdateBalance);
     final marketId = balance.token.market;
     if (marketId != null) {
-      _marketAmountSubscription = context.wallet.wallet.currency.currency.stream
-          .listen(onUpdateMarketInfo);
+      _marketAmountSubscription =
+          context.wallet.currency.currency.stream.listen(onUpdateMarketInfo);
     }
     marketPrice = onMarketPriceChange(price);
     updateState();

@@ -232,7 +232,7 @@ class _CosmosPickChannelIdViewState
                                         },
                                         icon: Icon(Icons.list)),
                                   ),
-                                  StreamWidget(
+                                  APPStreamBuilder(
                                     value: saveChannelId,
                                     builder: (context, value) {
                                       return APPAnimatedSize(

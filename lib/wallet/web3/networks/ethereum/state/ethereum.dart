@@ -28,6 +28,15 @@ mixin EthereumWeb3StateHandler<
     on Web3StateHandler<ETHAddress, Web3EthereumChainAccount, STATEADDRESS,
         Web3EthereumChainIdnetifier, STATEACCOUNT, RESPONSE, REQUEST, EVENT> {
   @override
+  ETHAddress toAddress(String v, {Web3EthereumChainIdnetifier? network}) {
+    try {
+      return ETHAddress(v);
+    } catch (_) {}
+    throw Web3RequestExceptionConst.invalidAddress(
+        key: v, network: networkType.name);
+  }
+
+  @override
   NetworkType get networkType => NetworkType.ethereum;
   @override
   List<Web3EthereumRequestMethods> get methods =>
@@ -63,13 +72,14 @@ mixin EthereumWeb3StateHandler<
             index: messageIndex,
             encoding: [StringEncoding.hex, StringEncoding.utf8])));
     final account = Web3ValidatorUtils.parseParams2(() {
-      final address =
-          DefaultStateAddress.parse(data.elementAtOrNull(addressIndex));
+      final address = tryParseStateAddress(
+          addr: data.elementAtOrNull(addressIndex),
+          params: params,
+          state: state,
+          network: network);
       if (address == null) return null;
       return state.findAddressOrDefault(
-          address: ETHAddress(address.address),
-          network: network,
-          networkStr: address.chain);
+          address: address.address, network: network ?? address.chain);
     },
         error: Web3RequestExceptionConst.invalidAddressArgrument(
             key: 'address', network: networkType.name));
@@ -89,17 +99,16 @@ mixin EthereumWeb3StateHandler<
           ? null
           : EIP712Version.fromVersion(versionNumber);
       final param = params.getParams(length: 2);
-      DefaultStateAddress? address;
+      ParsedNetworkStateAddress<ETHAddress, Web3EthereumChainIdnetifier>?
+          address;
       Map<String, dynamic>? typedDataJson;
       for (int i = 0; i < 2; i++) {
         if (address == null) {
-          address = MethodUtils.nullOnException(() {
-            final address = DefaultStateAddress.parse(param.elementAt(i));
-            if (address == null) return null;
-            ETHAddress(address.address);
-            return address;
-            // ETHAddress(param.elementAt(i))
-          });
+          address = tryParseStateAddress(
+              addr: param.elementAt(i),
+              params: params,
+              state: state,
+              network: network);
           if (address != null) continue;
         }
         typedDataJson = Web3ValidatorUtils.parseParams2(() {
@@ -123,9 +132,7 @@ mixin EthereumWeb3StateHandler<
       return Web3EthreumTypdedData.fromJson(
           json: typedDataJson!,
           account: state.findAddressOrDefault(
-              address: ETHAddress(address!.address),
-              network: network,
-              networkStr: address.chain),
+              address: address!.address, network: network ?? address.chain),
           version: version);
     }, error: Web3EthereumExceptionConst.invalidTypeData);
   }
@@ -141,12 +148,14 @@ mixin EthereumWeb3StateHandler<
         if (txData["from"] == null) {
           return state.findAddressOrDefault(network: network);
         }
-        final address = DefaultStateAddress.parse(txData["from"]);
+        final address = tryParseStateAddress(
+            addr: txData["from"],
+            params: params,
+            state: state,
+            network: network);
         if (address == null) return null;
         return state.findAddressOrDefault(
-            address: ETHAddress(address.address),
-            network: network,
-            networkStr: address.chain);
+            address: address.address, network: network ?? address.chain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: "from", network: networkType.name));

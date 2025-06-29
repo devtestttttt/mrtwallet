@@ -33,7 +33,7 @@ class Web3AptosGlobalRequestController<RESPONSE,
     }
   }
 
-  LiveTransactionForm? _liveRequest;
+  LiveTransactionForm<AptosWeb3Form>? _liveRequest;
   AptosWeb3Form get form => _liveRequest!.value;
 
   Future<Web3AptosSignMessageResponse> _signMessage() async {
@@ -122,6 +122,6 @@ class Web3AptosGlobalRequestController<RESPONSE,
   void close() {
     super.close();
     _liveRequest?.removeListener(onChangeForm);
-    form.onCompleteForm = null;
+    _liveRequest?.value.onCompleteForm = null;
   }
 }

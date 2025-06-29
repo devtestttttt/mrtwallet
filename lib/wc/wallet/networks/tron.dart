@@ -92,7 +92,7 @@ class TronWeb3WalletConnectStateAccount extends Web3WalletConnectStateAccount<
     return TronWeb3WalletConnectStateAccount._(
         accounts:
             accounts.whereType<TronWeb3WalletConnectStateAddress>().toList(),
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null

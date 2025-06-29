@@ -141,7 +141,7 @@ class EthereumWeb3WalletConnectStateAccount
         accounts: accounts
             .whereType<EthereumWeb3WalletConnectStateAddress>()
             .toList(),
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         client: provider == null
             ? null

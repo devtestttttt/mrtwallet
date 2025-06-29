@@ -3,7 +3,6 @@ import 'package:blockchain_utils/uuid/uuid.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 import 'package:on_chain_wallet/wallet/web3/state/core/network.dart';
 import 'package:blockchain_utils/blockchain_utils.dart';
-import 'package:on_chain_wallet/app/utils/list/extension.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
 
 class MessageCompleterHandler {
@@ -38,12 +37,12 @@ class MessageCompleter {
 }
 
 enum Web3NetworkState {
-  init,
+  ready,
   disconnect,
   block;
 
   bool get isBlock => this == block;
-  bool get isInit => this == init;
+  bool get isReady => this == ready;
 }
 
 typedef SENDINTERNALWALLETMESSAGE = Future<Web3MessageCore> Function(
@@ -77,25 +76,25 @@ enum Web3RequestSource {
   bool get isInjected => this == Web3RequestSource.injected;
 }
 
-class DefaultStateAddress {
-  final String address;
-  final String? chain;
-  const DefaultStateAddress._({required this.address, required this.chain});
-  static DefaultStateAddress? parse(dynamic json) {
-    try {
-      if (json is String) {
-        return DefaultStateAddress._(address: json, chain: null);
-      }
-      if (json is Map &&
-          json.containsKey("address") &&
-          json.containsKey("chains")) {
-        return DefaultStateAddress._(
-            address: json["address"],
-            chain: (json["chains"] as List).firstOrNull);
-      }
-    } catch (_) {}
-    return null;
-  }
+// class DefaultStateAddress {
+//   final String address;
+//   final String? chain;
+//   const DefaultStateAddress({required this.address, required this.chain});
+//   static DefaultStateAddress? parse(dynamic json) {
+//     try {
+//       if (json is String) {
+//         return DefaultStateAddress(address: json, chain: null);
+//       }
+//     } catch (_) {}
+//     return null;
+//   }
+// }
+
+class ParsedNetworkStateAddress<NETWORKADDRESS,
+    CHAIN extends Web3ChainIdnetifier> {
+  final NETWORKADDRESS address;
+  final CHAIN? chain;
+  const ParsedNetworkStateAddress({required this.address, required this.chain});
 }
 
 abstract class Web3WalletHandler<STATE extends Web3StateHandler,

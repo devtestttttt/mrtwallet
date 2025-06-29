@@ -15,8 +15,8 @@ class ChainsHandler {
         _networks = networks,
         _wallet = wallet;
 
-  factory ChainsHandler(
-      {required List<Chain> chains, required HDWallet wallet}) {
+  static Future<ChainsHandler> setup(
+      {required List<Chain> chains, required HDWallet wallet}) async {
     for (final i in chains) {
       if (i.id != wallet.checksum) {
         throw WalletExceptionConst.invalidData(
@@ -24,14 +24,17 @@ class ChainsHandler {
       }
     }
     final toMap = {for (final i in chains) i.network.value: i};
+    List<Chain> newChains = [];
     for (final i in ChainConst.defaultCoins.keys) {
       if (toMap.containsKey(i)) {
         continue;
       }
       final network = ChainConst.defaultCoins[i]!;
       final chain = Chain.setup(network: network, id: wallet.checksum);
+      newChains.add(chain);
       toMap.addAll({chain.network.value: chain});
     }
+    await Future.wait(newChains.map((e) => e.save()));
     int currentNetwork = wallet.network;
     if (!toMap.containsKey(wallet.network)) {
       currentNetwork = 0;
@@ -39,6 +42,7 @@ class ChainsHandler {
     return ChainsHandler._(
         networks: toMap, network: currentNetwork, wallet: wallet);
   }
+
   final Map<int, Chain> _networks;
   String get id => _wallet.checksum;
   int _network;
@@ -89,14 +93,6 @@ class ChainsHandler {
     await _emitChainChanged(emit);
     updateWalletData(_wallet.updateNetwork(networkId));
     return true;
-  }
-
-  Chain? fromAddress(ChainAccount adress) {
-    final chain = _networks[adress.network];
-    if (chain?.addresses.contains(adress) ?? false) {
-      return chain;
-    }
-    return null;
   }
 
   Future<Chain> updateImportNetwork(WalletNetwork network) async {
@@ -226,7 +222,6 @@ class ChainsHandler {
   Future<void> init() async {
     await chain.init();
     assert(_networkStream == null && _ping == null);
-    return;
     _networkStream =
         PlatformInterface.instance.onNetworkStatus.listen(_onConnectionStatus);
     _ping = Stream.periodic(const Duration(minutes: 10)).listen(_onPing);

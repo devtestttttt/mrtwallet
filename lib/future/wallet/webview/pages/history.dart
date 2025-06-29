@@ -103,6 +103,7 @@ class _HistoriesPageState extends State<WebViewHistoriesView> with SafeState {
       child: (c) => CustomScrollView(
         slivers: [
           SliverAppBar(
+              automaticallyImplyLeading: false,
               leading: IconButton(
                   onPressed: () {
                     widget.model.backToBorwser();

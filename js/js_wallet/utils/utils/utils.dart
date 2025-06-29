@@ -6,13 +6,77 @@ import 'package:on_chain_bridge/web/web.dart';
 import '../../models/models/base.dart';
 
 class JsUtils {
-  static Map<String, dynamic>? toDartMap(JSAny? object) {
+  static JSAny? convert(JSAny? k, JSAny? v) {
+    if (v.isUndefinedOrNull) return null;
+    if (v.isA<JSString>()) {
+      return v;
+    }
+    if (v.isA<JSBigInt>()) {
+      return v.toString().toJS;
+    }
+    if (v.isA<JSNumber>()) {
+      return v;
+    }
+    if (v.isA<JSBoolean>()) {
+      return v;
+    }
+    if (v.isA<JSUint8Array>()) {
+      return v;
+    }
+    if (v.isA<JSArray>()) {
+      return v;
+    }
+    if (v.isA<JSArrayBuffer>()) {
+      return v;
+    }
+    if (v.typeofEquals("object")) {
+      try {
+        final toInt = List<int>.from(v.dartify() as List);
+        return toInt.map((e) => e.toJS).toList().toJS;
+      } catch (_) {}
+    }
+    return v;
+  }
+
+  static Map<String, dynamic>? toDartMapMozila(JSAny? object) {
     try {
       if (object == null) return null;
       if (object.isA<JSString>()) {
         return StringUtils.toJson<Map<String, dynamic>>(
             (object as JSString).toDart);
       }
+      try {
+        final inDart = object.dartify();
+        return StringUtils.toJson<Map<String, dynamic>>(
+            StringUtils.fromJson(inDart!));
+      } catch (_) {}
+      return StringUtils.toJson<Map<String, dynamic>>(
+          jsJson.stringify(object, convert.toJS));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Map<String, dynamic>? toDartMap(JSAny? object) {
+    if (object == null) return null;
+    if (isMozila) {
+      return toDartMapMozila(object);
+    }
+    try {
+      if (object.isA<JSString>()) {
+        return StringUtils.toJson<Map<String, dynamic>>(
+            (object as JSString).toDart);
+      }
+      try {
+        return StringUtils.toJson<Map<String, dynamic>>(jsJson.stringify(
+            object,
+            (JSAny? k, JSAny? v) {
+              if (v.isA<JSBigInt>()) {
+                return v?.toString().toJS;
+              }
+              return v;
+            }.toJS));
+      } catch (_) {}
       return StringUtils.toJson<Map<String, dynamic>>(
           StringUtils.fromJson(object.dartify()!, toStringEncodable: true));
     } catch (_) {

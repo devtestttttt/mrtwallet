@@ -6,10 +6,17 @@ import 'package:on_chain_wallet/crypto/requets/messages/models/models/wc_sym_key
 
 final class CryptoRequestGenerateWalletConnectSymKeyInfo
     extends CryptoRequest<GeneratedSharedKey, MessageArgsThreeBytes> {
-  final String publicKey;
-  final bool hashKey;
-  const CryptoRequestGenerateWalletConnectSymKeyInfo(
-      {required this.publicKey, required this.hashKey});
+  final List<int> publicKey;
+  final List<int> privateKey;
+  CryptoRequestGenerateWalletConnectSymKeyInfo._(
+      {required List<int> publicKey, required List<int> privateKey})
+      : publicKey = publicKey.asImmutableBytes,
+        privateKey = privateKey.asImmutableBytes;
+  factory CryptoRequestGenerateWalletConnectSymKeyInfo(
+      {required String publicKey, required List<int> privateKey}) {
+    return CryptoRequestGenerateWalletConnectSymKeyInfo._(
+        publicKey: BytesUtils.fromHexString(publicKey), privateKey: privateKey);
+  }
 
   factory CryptoRequestGenerateWalletConnectSymKeyInfo.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
@@ -18,19 +25,8 @@ final class CryptoRequestGenerateWalletConnectSymKeyInfo
         object: object,
         hex: hex,
         tags: CryptoRequestMethod.symkey.tag);
-    return CryptoRequestGenerateWalletConnectSymKeyInfo(
-        publicKey: values.elementAt(0), hashKey: values.elementAs(1));
-  }
-
-  static (List<int>, List<int>) encrypt(
-      {required List<int> key,
-      required int nonceLength,
-      required List<int> message,
-      List<int>? nonce}) {
-    final chacha = ChaCha20Poly1305(key);
-    nonce ??= QuickCrypto.generateRandom(nonceLength);
-    final encrypt = chacha.encrypt(nonce, message);
-    return (encrypt, nonce);
+    return CryptoRequestGenerateWalletConnectSymKeyInfo._(
+        publicKey: values.elementAt(0), privateKey: values.elementAs(1));
   }
 
   @override
@@ -51,7 +47,7 @@ final class CryptoRequestGenerateWalletConnectSymKeyInfo
   @override
   CborTagValue toCbor() {
     return CborTagValue(
-        CborListValue.fixedLength([publicKey, hashKey]), method.tag);
+        CborListValue.fixedLength([publicKey, privateKey]), method.tag);
   }
 
   @override
@@ -59,16 +55,8 @@ final class CryptoRequestGenerateWalletConnectSymKeyInfo
 
   @override
   GeneratedSharedKey result() {
-    List<int> peerKey;
-    if (hashKey) {
-      peerKey = X25519
-          .scalarMultBase(QuickCrypto.sha256Hash(publicKey.codeUnits))
-          .publicKey;
-    } else {
-      peerKey = BytesUtils.fromHexString(publicKey);
-    }
-    final kp = X25519Keypair.generate(seed: QuickCrypto.generateRandom());
-    final sharedKey1 = X25519.scalarMult(kp.privateKey, peerKey);
+    final kp = X25519Keypair.generate(seed: privateKey);
+    final sharedKey1 = X25519.scalarMult(kp.privateKey, publicKey);
     final hdkf = HKDF(
         ikm: sharedKey1,
         hash: () => SHA256(),
@@ -78,5 +66,54 @@ final class CryptoRequestGenerateWalletConnectSymKeyInfo
         topic: QuickCrypto.sha256Hash(symKey),
         publicKey: kp.publicKey,
         symkey: symKey);
+  }
+}
+
+final class CryptoRequestGenerateX25519Key
+    extends CryptoRequest<GeneratedX25519Key, MessageArgsTwoBytes> {
+  final List<int>? seed;
+  const CryptoRequestGenerateX25519Key({this.seed});
+
+  factory CryptoRequestGenerateX25519Key.deserialize(
+      {List<int>? bytes, CborObject? object, String? hex}) {
+    final CborListValue values = CborSerializable.cborTagValue(
+        cborBytes: bytes,
+        object: object,
+        hex: hex,
+        tags: CryptoRequestMethod.x25519.tag);
+    return CryptoRequestGenerateX25519Key(seed: values.elementAt(0));
+  }
+
+  @override
+  MessageArgsTwoBytes getResult() {
+    final data = result();
+    return MessageArgsTwoBytes(
+      keyOne: data.publicKey,
+      keyTwo: data.privateKey,
+    );
+  }
+
+  @override
+  GeneratedX25519Key parsResult(MessageArgsTwoBytes result) {
+    return GeneratedX25519Key(
+        publicKey: result.keyOne, privateKey: result.keyTwo);
+  }
+
+  @override
+  CborTagValue toCbor() {
+    return CborTagValue(CborListValue.fixedLength([seed]), method.tag);
+  }
+
+  @override
+  CryptoRequestMethod get method => CryptoRequestMethod.x25519;
+
+  @override
+  GeneratedX25519Key result() {
+    final kp = X25519Keypair.generate(
+        seed: seed == null
+            ? QuickCrypto.generateRandom()
+            : QuickCrypto.sha256Hash(seed!));
+    return GeneratedX25519Key(
+        publicKey: kp.publicKey, privateKey: kp.privateKey);
   }
 }

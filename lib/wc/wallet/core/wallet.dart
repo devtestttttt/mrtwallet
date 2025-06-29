@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:on_chain_wallet/app/core.dart';
-import 'package:on_chain_wallet/crypto/models/networks.dart';
+import 'package:on_chain_wallet/crypto/worker.dart';
 import 'package:on_chain_wallet/wallet/web3/web3.dart';
 import 'package:on_chain_wallet/wc/core/types/exception.dart';
 import 'package:on_chain_wallet/wc/wallet/core/network.dart';
@@ -12,6 +12,8 @@ import 'session.dart';
 typedef SENDWEB3WALLETCONNECTREQUEST = Future<Web3MessageCore> Function(
     Web3RequestWalletConnectpplicationInformation);
 typedef LOCALAUTH = Future<Web3APPData> Function();
+typedef AUTHREQUEST = Future<Web3DappInfo?> Function(
+    Web3ClientInfo onAuthRequest, bool create);
 
 class Web3WalletConnectHandler {
   final SENDWEB3WALLETCONNECTREQUEST sendRequest;
@@ -190,7 +192,7 @@ class Web3WalletConnectHandler {
         client: client,
         session: session);
     sessions[clientId] = handler;
-    handler.updateAuthenticated(auth);
+    handler.updateAuthenticated(auth.dappData);
     return handler;
   }
 
@@ -237,9 +239,13 @@ class Web3WalletConnectHandler {
       return SessionProposalReject(
           request: request, exception: Web3RequestExceptionConst.bannedHost);
     }
+    final sharedKey = await walletConnectCore.crypto.cryptoIsolateRequest(
+        CryptoRequestGenerateWalletConnectSymKeyInfo(
+            publicKey: clientId,
+            privateKey: auth.authentication.token.privateKey));
     SessionData createSession = SessionData(
-        topic: auth.token.topicAsHex,
-        symkey: auth.token.symkeyAsHex,
+        topic: sharedKey.topicAsHex,
+        symkey: sharedKey.symkeyAsHex,
         relay: WcProtocolOptions(protocol: WcConstans.relayProtocol),
         namespaces: WCSessionNamespaces([]),
         optionalNamespaces: request.params.optionalNamespaces,
@@ -252,7 +258,7 @@ class Web3WalletConnectHandler {
         sendEventToClient: _sendEvent,
         client: client,
         session: createSession);
-    await handler.updateAuthenticated(auth);
+    await handler.updateAuthenticated(auth.dappData);
     sessions[clientId] = handler;
     final rId = request.id.toString();
     final connectRequest = WalletConnectNetworkRequest.global(
@@ -276,13 +282,14 @@ class Web3WalletConnectHandler {
     await _storage.setSession(handler.session);
     return SessionProposalAprove(
         request: request,
-        publicKey: auth.token.publicKeyAsHex,
+        publicKey: sharedKey.publicKeyAsHex,
         session: handler.session);
   }
 
   Future<void> _onSessionRequest(SessionRequest request) async {
     await _lock.synchronized(() async {
       final session = await _getInternalSession(request.session.topic);
+
       final timeout = request.timout();
       if (timeout == null) return;
       if (session == null) {
@@ -292,7 +299,6 @@ class Web3WalletConnectHandler {
             response: PairResultError(error: error.toRpcError()));
         return;
       }
-
       try {
         final response = await session
             .onClientRequest(WalletConnectClientRequestParams(request))
@@ -397,7 +403,7 @@ class Web3WalletConnectHandler {
       await handler.updateAuthenticated(auth);
       return;
     }
-    final session = getSession(topic: auth.token.topicAsHex);
+    final session = getSession(peerKey: auth.applicationId);
     if (session == null) return;
     handler = Web3WalletConnectSessionHandler(
         sendMessagetowallet: (message) {},
@@ -415,25 +421,25 @@ class Web3WalletConnectHandler {
       final sessions = _storage.getActiveSessions();
       final messages = _storage.getPendingMessages();
       await walletConnectCore.init(sessions: sessions, messages: messages);
-    });
+    }, lockId: LockId.three);
   }
 
   Future<void> dispose() async {
     await _lock.synchronized(() async {
       await walletConnectCore.dispose();
-    });
+    }, lockId: LockId.three);
   }
 
   Future<void> init() async {
     await _lock.synchronized(() async {
       await _storage.init();
-    });
+    }, lockId: LockId.three);
   }
 
   Future<void> close() async {
     await _lock.synchronized(() async {
       await walletConnectCore.close();
       await _storage.close();
-    });
+    }, lockId: LockId.three);
   }
 }

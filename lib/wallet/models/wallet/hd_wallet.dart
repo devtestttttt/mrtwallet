@@ -1,8 +1,10 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
 import 'package:blockchain_utils/utils/utils.dart';
 import 'package:on_chain_wallet/app/constant/global/storage_key.dart';
+import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/app/error/exception/wallet_ex.dart';
 import 'package:on_chain_wallet/app/serialization/cbor/cbor.dart';
+import 'package:on_chain_wallet/app/synchronized/basic_lock.dart';
 import 'package:on_chain_wallet/wallet/constant/tags/constant.dart';
 import 'package:on_chain_wallet/wallet/models/setting/models/lock_time.dart';
 
@@ -12,99 +14,92 @@ final class HDWalletsConst {
 }
 
 final class HDWallets with CborSerializable {
+  final _lock = SynchronizedLock();
   Map<String, HDWallet> _wallets;
   Map<String, HDWallet> get wallets => _wallets;
-  String? _defaultWallet;
-  String? get defaultWallet => _defaultWallet;
+  String? _currentWallet;
   bool get hasWallet => _wallets.isNotEmpty;
   bool get needSetup => _wallets.isEmpty;
 
   List<String> get walletNames => _wallets.keys.toList();
 
-  factory HDWallets.init() => HDWallets._(wallets: {}, defaultWallet: null);
+  factory HDWallets.init() => HDWallets._(wallets: {});
 
-  factory HDWallets.legacy(
-          {required String checksum, required String data, int? network}) =>
-      HDWallets._(wallets: {
-        HDWalletsConst.firstWalletName: HDWallet(
-            checksum: checksum,
-            name: HDWalletsConst.firstWalletName,
-            requiredPassword: true,
-            data: data,
-            network: network ?? 0,
-            locktime: WalletLockTime.fiveMinute,
-            created: DateTime.now())
-      }, defaultWallet: HDWalletsConst.firstWalletName);
-
-  HDWallets._(
-      {required Map<String, HDWallet> wallets, required String? defaultWallet})
+  HDWallets._({required Map<String, HDWallet> wallets, String? currentWallet})
       : _wallets = Map<String, HDWallet>.unmodifiable(wallets),
-        _defaultWallet = defaultWallet;
+        _currentWallet = wallets.containsKey(currentWallet)
+            ? currentWallet
+            : wallets.isEmpty
+                ? null
+                : wallets.keys.first;
+
   factory HDWallets.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
-    final CborListValue cbor = CborSerializable.cborTagValue(
+    final CborListValue values = CborSerializable.cborTagValue(
         cborBytes: bytes,
         object: object,
         hex: hex,
         tags: CborTagsConst.wallets);
-    final wallets = cbor
-        .elementAt<List<dynamic>>(0)
+    final wallets = values
+        .elementAsListOf<CborTagValue>(0)
         .map((e) => HDWallet.deserialize(obj: e));
     return HDWallets._(
         wallets: Map<String, HDWallet>.fromEntries(
             wallets.map((e) => MapEntry<String, HDWallet>(e.name, e))),
-        defaultWallet: cbor.elementAt(1));
+        currentWallet: values.elementAs(1));
   }
 
-  HDWallet getInitializeWallet({String? name}) {
+  HDWallet _getInitializeWallet({String? name}) {
     if (_wallets.isEmpty) {
       throw WalletExceptionConst.incompleteWalletSetup;
     }
-    if (_wallets.containsKey(name ?? defaultWallet)) {
-      return _wallets[name ?? defaultWallet]!;
-    }
-    return _wallets.values.first;
-  }
-
-  HDWallet getWallet(String name) {
     if (_wallets.containsKey(name)) {
       return _wallets[name]!;
     }
-    throw WalletExceptionConst.walletDoesNotExists;
+    if (_wallets.containsKey(_currentWallet)) {
+      return _wallets[_currentWallet]!;
+    }
+    final wallet = _wallets.values.first;
+    return wallet;
   }
 
-  void removeWallet(HDWallet wallet) {
-    if (_wallets.containsKey(wallet.name)) {
-      final wallets = Map<String, HDWallet>.from(_wallets);
-      wallets.remove(wallet.name);
-      _wallets = Map<String, HDWallet>.unmodifiable(wallets);
-      return;
-    }
-    throw WalletExceptionConst.walletDoesNotExists;
+  Future<HDWallet> getInitializeWallet({String? name}) async {
+    return _lock.synchronized(() async {
+      final wallet = _getInitializeWallet(name: name);
+      _currentWallet = wallet.name;
+      return wallet;
+    });
   }
 
-  void updateWallet(HDWallet wallet, {bool? asDefaultWallet}) {
-    final current = _wallets.values.firstWhere(
-        (element) => element.checksum == wallet.checksum,
-        orElse: () => throw WalletExceptionConst.walletDoesNotExists);
-    if (wallet.name != current.name && _wallets.containsKey(wallet.name)) {
-      throw WalletExceptionConst.walletNameExists;
-    }
-
-    final wallets = Map<String, HDWallet>.from(_wallets);
-    wallets.remove(current.name);
-    wallets.addAll({wallet.name: wallet});
-    _wallets = Map<String, HDWallet>.unmodifiable(wallets);
-    if (asDefaultWallet != null) {
-      if (asDefaultWallet) {
-        _defaultWallet = wallet.name;
-      } else if (_defaultWallet == current.name) {
-        _defaultWallet = null;
+  Future<void> removeWallet(HDWallet wallet) async {
+    _lock.synchronized(() async {
+      if (_wallets.containsKey(wallet.name)) {
+        final wallets = Map<String, HDWallet>.from(_wallets);
+        wallets.remove(wallet.name);
+        _wallets = Map<String, HDWallet>.unmodifiable(wallets);
+        return;
       }
-    }
+      throw WalletExceptionConst.walletDoesNotExists;
+    });
   }
 
-  void validateImport(HDWallet newWallet) {
+  Future<void> updateWallet(HDWallet wallet) async {
+    await _lock.synchronized(() async {
+      final current = _wallets.values.firstWhere(
+          (element) => element.checksum == wallet.checksum,
+          orElse: () => throw WalletExceptionConst.walletDoesNotExists);
+      if (wallet.name != current.name && _wallets.containsKey(wallet.name)) {
+        throw WalletExceptionConst.walletNameExists;
+      }
+
+      final wallets = Map<String, HDWallet>.from(_wallets);
+      wallets.remove(current.name);
+      wallets.addAll({wallet.name: wallet});
+      _wallets = Map<String, HDWallet>.unmodifiable(wallets);
+    });
+  }
+
+  void _validateImport(HDWallet newWallet) {
     if (_wallets.containsKey(newWallet.name) ||
         _wallets.values
             .any((element) => element.checksum == newWallet.checksum)) {
@@ -112,20 +107,16 @@ final class HDWallets with CborSerializable {
     }
   }
 
-  void setupWallet(HDWallet newWallet, {bool asDefault = false}) {
-    if (_wallets.containsKey(newWallet.name) ||
-        _wallets.values
-            .any((element) => element.checksum == newWallet.checksum)) {
-      throw WalletExceptionConst.walletAlreadyExists;
-    }
-
-    final updateWallet = newWallet._updateCreated();
-    final wallets = Map<String, HDWallet>.from(_wallets);
-    wallets.addAll({updateWallet.name: updateWallet});
-    _wallets = Map<String, HDWallet>.unmodifiable(wallets);
-    if (asDefault || !_wallets.containsKey(defaultWallet)) {
-      _defaultWallet = updateWallet.name;
-    }
+  Future<void> setupNewWallet(
+    HDWallet newWallet,
+  ) async {
+    return _lock.synchronized(() async {
+      _validateImport(newWallet);
+      final updateWallet = newWallet._updateCreated();
+      final wallets = Map<String, HDWallet>.from(_wallets);
+      wallets.addAll({updateWallet.name: updateWallet});
+      _wallets = Map<String, HDWallet>.unmodifiable(wallets);
+    });
   }
 
   @override
@@ -134,7 +125,7 @@ final class HDWallets with CborSerializable {
         CborListValue.fixedLength([
           CborListValue.fixedLength(
               _wallets.values.map((e) => e._toCbor()).toList()),
-          defaultWallet ?? const CborNullValue()
+          _currentWallet ?? const CborNullValue()
         ]),
         CborTagsConst.wallets);
   }
@@ -150,7 +141,7 @@ final class HDWallet {
   final int network;
   final DateTime created;
 
-  HDWallet._(
+  const HDWallet._(
       {required this.checksum,
       required this.name,
       required this.data,

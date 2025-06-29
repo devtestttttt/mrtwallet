@@ -6,7 +6,6 @@ import 'package:on_chain_wallet/wallet/web3/core/messages/types/message.dart';
 import 'package:on_chain_wallet/wallet/web3/core/permission/types/account.dart';
 import 'package:on_chain_wallet/wallet/web3/state/core/network.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/stellar/stellar.dart';
-import 'package:on_chain_wallet/wallet/web3/state/core/types.dart';
 import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 import 'package:stellar_dart/stellar_dart.dart';
 
@@ -25,6 +24,15 @@ mixin StellarWeb3StateHandler<
     on Web3StateHandler<StellarAddress, Web3StellarChainAccount, STATEADDRESS,
         Web3ChainDefaultIdnetifier, STATEACCOUNT, RESPONSE, REQUEST, EVENT> {
   @override
+  StellarAddress toAddress(String v, {Web3ChainDefaultIdnetifier? network}) {
+    try {
+      return StellarAddress.fromBase32Addr(v);
+    } catch (_) {}
+    throw Web3RequestExceptionConst.invalidAddress(
+        key: v, network: networkType.name);
+  }
+
+  @override
   NetworkType get networkType => NetworkType.stellar;
   @override
   List<Web3StellarRequestMethods> get methods =>
@@ -39,14 +47,15 @@ mixin StellarWeb3StateHandler<
       const List<String> keys = ["transaction"];
       final data = params.paramsAsMap(keys: keys, method: method);
       final account = Web3ValidatorUtils.parseParams2(() {
-        final account =
-            DefaultStateAddress.parse(data["address"] ?? data["account"]);
+        final account = tryParseStateAddress(
+            addr: data["address"] ?? data["account"],
+            params: params,
+            state: state,
+            network: network);
         if (account == null) return null;
 
         return state.findAddressOrDefault(
-            address: StellarAddress.fromBase32Addr(account.address),
-            network: network,
-            networkStr: account.chain);
+            address: account.address, network: network ?? account.chain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: "address", network: networkType.name));
@@ -68,14 +77,15 @@ mixin StellarWeb3StateHandler<
       const List<String> keys = ["message"];
       final data = params.paramsAsMap(keys: keys, method: method);
       final account = Web3ValidatorUtils.parseParams2(() {
-        final account =
-            DefaultStateAddress.parse(data["address"] ?? data["account"]);
+        final account = tryParseStateAddress(
+            addr: data["address"] ?? data["account"],
+            params: params,
+            state: state,
+            network: network);
         if (account == null) return null;
 
         return state.findAddressOrDefault(
-            address: StellarAddress.fromBase32Addr(account.address),
-            network: network,
-            networkStr: account.chain);
+            address: account.address, network: network ?? account.chain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: "address", network: networkType.name));

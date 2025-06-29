@@ -5,7 +5,7 @@ import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/router/page_router.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 import 'package:on_chain_wallet/future/wallet/controller/controller.dart';
-import 'package:on_chain_wallet/future/wallet/controller/impl/extention_wallet.dart';
+import 'package:on_chain_wallet/future/wallet/controller/extension/models/models.dart';
 import 'package:on_chain_wallet/future/wallet/controller/wallet/cross/web.dart';
 import 'package:on_chain_wallet/future/wallet/security/pages/password_checker.dart';
 import 'package:on_chain_wallet/future/wallet/swap/pages/pages/swap.dart';
@@ -32,7 +32,7 @@ class _AppbarExtentionWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (walletIsUnlock)
-          StreamWidget(
+          APPStreamBuilder(
               value: extension.latestClient,
               builder: (context, client) => Web3ClientInfoIconView(
                   client: client,
@@ -52,6 +52,7 @@ class _AppbarExtentionWidget extends StatelessWidget {
         PopupMenuButton<ExtensionWalletContextType?>(
             iconColor: context.colors.onSurface,
             icon: Icon(Icons.more_vert),
+            routeSettings: RouteSettings(name: PageRouter.settingMenu),
             constraints: WidgetConstant.constraintsMinWidth200,
             onSelected: (v) {
               if (v == null) return;
@@ -178,6 +179,7 @@ class _AppbarWebWidget extends StatelessWidget {
             iconColor: context.colors.onSurface,
             icon: Icon(Icons.more_vert),
             constraints: WidgetConstant.constraintsMinWidth200,
+            routeSettings: RouteSettings(name: PageRouter.settingMenu),
             onSelected: (v) {},
             itemBuilder: (c) {
               return [

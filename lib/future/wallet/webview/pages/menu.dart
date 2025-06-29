@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:on_chain_wallet/future/router/page_router.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 import 'package:on_chain_wallet/future/wallet/webview/controller/controller/controller.dart';
 import 'package:on_chain_wallet/future/widgets/widgets/list_tile.dart';
@@ -12,6 +13,7 @@ class WebViewPopupMenu extends StatelessWidget {
     return PopupMenuButton<int>(
         iconColor: context.colors.onSurface,
         icon: Icon(Icons.more_vert),
+        routeSettings: RouteSettings(name: PageRouter.webviewMenu),
         constraints: WidgetConstant.constraintsMinWidth200,
         onSelected: (v) {
           switch (v) {

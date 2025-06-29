@@ -135,16 +135,6 @@ class __Web3APPPermissionViewState extends State<_Web3ApplicationPermissionView>
 
   final GlobalKey<PageProgressState> progressKey = GlobalKey();
 
-  // Future<Web3RequestAuthentication?> getApplication() async {
-  //   return switch (widget.mode) {
-  //     Web3PermissionUpdateMode.request =>
-  //       widget.web3RequestController?.request.authenticated,
-  //     Web3PermissionUpdateMode.walletConnect => widget.walletConnect,
-  //     Web3PermissionUpdateMode.web3 =>
-  //       (await widget.controller?.getCurrentApplication())
-  //   };
-  // }
-
   void findInitNetwork() {
     if (authenticated.hasLockedNetwork) {
       chainType = authenticated.lockedNetworks.first;
@@ -176,7 +166,7 @@ class __Web3APPPermissionViewState extends State<_Web3ApplicationPermissionView>
                         .join(", ")),
                 buttonWidget: DialogDoubleButtonView(),
               ),
-          '');
+          'update_permission'.tr);
       if (accept != true) return;
     }
     if (requiredChains.isEmpty) {
@@ -189,7 +179,7 @@ class __Web3APPPermissionViewState extends State<_Web3ApplicationPermissionView>
                       requiredNetworks.map((e) => e.name).join(", ")),
                   buttonWidget: DialogDoubleButtonView(),
                 ),
-            '');
+            'update_permission'.tr);
         if (accept != true) return;
       }
     }
@@ -372,9 +362,8 @@ class __Web3APPPermissionViewState extends State<_Web3ApplicationPermissionView>
                               maxWidth: APPConst.tooltipConstrainedWidth),
                           child: Container(
                               decoration: BoxDecoration(
-                                color: context.colors.surface,
-                                borderRadius: WidgetConstant.border8,
-                              ),
+                                  color: context.colors.surface,
+                                  borderRadius: WidgetConstant.border8),
                               padding: WidgetConstant.padding10,
                               child: Web3ApplicationView(
                                   permission: application))),
@@ -406,6 +395,10 @@ class _APPPermissionWidget extends StatelessWidget {
       length: 2,
       child: CustomScrollView(
         slivers: [
+          SliverPinnedHeaderSurface(
+              child: ErrorTextContainer(
+                  error:
+                      application.active ? null : "client_disabled_desc".tr)),
           APPSliverAnimatedSwitcher<int>(
               enable: state._selectedIndex,
               widgets: {
@@ -460,15 +453,21 @@ class _APPSettingView extends StatelessWidget {
                 validator: state.validateApplicationName,
                 hint: "application_name".tr,
                 initialValue: state.applicationName),
-            WidgetConstant.height20,
-            AppSwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text("web3_activation".tr,
-                    style: context.textTheme.titleMedium),
-                subtitle: Text("web3_activation_desc".tr),
-                maxLine: 3,
-                value: state.active,
-                onChanged: state.onChangeActivation),
+            ConditionalWidget(
+                enable: state.application.protocol.isInjected,
+                onActive: (context) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          WidgetConstant.height20,
+                          AppSwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text("web3_activation".tr,
+                                  style: context.textTheme.titleMedium),
+                              subtitle: Text("web3_activation_desc".tr),
+                              maxLine: 3,
+                              value: state.active,
+                              onChanged: state.onChangeActivation),
+                        ])),
             AppListTile(
               contentPadding: EdgeInsets.zero,
               onTap: state.clearActivities,

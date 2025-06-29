@@ -37,6 +37,5 @@ void main() async {
           name: "MyWallet",
           lockTime: WalletLockTime.fiveMinute,
           requirmentPassword: false,
-          asDefaultWallet: true,
           protectWallet: false));
 }

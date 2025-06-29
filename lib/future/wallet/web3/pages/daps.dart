@@ -4,7 +4,7 @@ import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/future/future.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
-import 'package:on_chain_wallet/future/wallet/controller/impl/web3_request_controller.dart';
+import 'package:on_chain_wallet/future/wallet/web3/controller/web3_request_controller.dart';
 import 'package:on_chain_wallet/future/wallet/web3/types/types.dart';
 import 'package:on_chain_wallet/wallet/models/access/wallet_access.dart';
 import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
@@ -73,7 +73,7 @@ class _WalletConnectActiveSessionsState extends State<_ManageWeb3DapssView>
         await walletConnect.removeSession(app.object.clientInfo);
         break;
       case Web3APPProtocol.injected:
-        await web3Controller?.sendAuthenticatedToClient(app.object);
+        await web3Controller?.updateClientAuthenticated(app.object);
         break;
     }
     sessions.remove(app);
@@ -95,7 +95,7 @@ class _WalletConnectActiveSessionsState extends State<_ManageWeb3DapssView>
         }
         break;
       case Web3APPProtocol.injected:
-        await web3Controller?.sendAuthenticatedToClient(updateResult.result);
+        await web3Controller?.updateClientAuthenticated(updateResult.result);
         break;
     }
     context.showAlert("application_updated".tr);

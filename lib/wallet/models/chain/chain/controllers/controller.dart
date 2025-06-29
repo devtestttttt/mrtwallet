@@ -118,8 +118,6 @@ base mixin BaseChainController<
         saveAccount: true);
   }
 
-  // void hideStatus() {}
-
   AddressDerivationIndex nextDerive(
       CryptoCoins coin, SeedTypes seedGeneration) {
     return BipDerivationUtils.generateAccountNextKeyIndex(

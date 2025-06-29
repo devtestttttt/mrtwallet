@@ -70,7 +70,7 @@ class SolanaWeb3WalletConnectStateAccount extends Web3WalletConnectStateAccount<
         accounts:
             accounts.whereType<SolanaWeb3WalletConnectStateAddress>().toList(),
         applicationId: applicationId,
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null

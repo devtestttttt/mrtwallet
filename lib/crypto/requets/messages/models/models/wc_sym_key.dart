@@ -16,3 +16,13 @@ class GeneratedSharedKey {
   late final String publicKeyAsHex = BytesUtils.toHexString(publicKey);
   late final String symkeyAsHex = BytesUtils.toHexString(symkey);
 }
+
+class GeneratedX25519Key {
+  final List<int> publicKey;
+  final List<int> privateKey;
+  GeneratedX25519Key(
+      {required List<int> privateKey, required List<int> publicKey})
+      : publicKey = publicKey.asImmutableBytes,
+        privateKey = privateKey.asImmutableBytes;
+  late final String publicKeyAsHex = BytesUtils.toHexString(publicKey);
+}

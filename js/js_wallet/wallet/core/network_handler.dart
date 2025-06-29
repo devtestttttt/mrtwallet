@@ -225,7 +225,7 @@ abstract class Web3JSStateHandler<
   }
 
   @override
-  Future<JSWalletNetworkEvent> initChain(Web3APPData authenticated) async {
+  Future<JSWalletNetworkEvent> initChain(Web3APPData? authenticated) async {
     return await lock.synchronized(() async {
       final currentState = this._state;
       final state = createState(authenticated);

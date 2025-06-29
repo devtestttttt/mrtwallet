@@ -56,18 +56,18 @@ class Web3CosmosChain extends Web3Chain<CosmosBaseAddress, CosmosChain,
         getCurrentPermissionNetwork(networks.map((e) => e.network).toList());
     final web3Networks = networks
         .map((e) => Web3CosmoshainIdnetifier(
-              id: e.network.value,
-              chainId: e.network.coinParam.chainId,
-              wsIdentifier: e.network.wsIdentifier,
-              caip2: e.network.caip,
-            ))
+            id: e.network.value,
+            chainId: e.network.coinParam.chainId,
+            wsIdentifier: e.network.wsIdentifier,
+            caip2: e.network.caip,
+            hrp: e.network.coinParam.hrp))
         .toList();
     final currentWeb3Network = Web3CosmoshainIdnetifier(
-      id: currentNetwork.value,
-      chainId: currentNetwork.coinParam.chainId,
-      wsIdentifier: currentNetwork.wsIdentifier,
-      caip2: currentNetwork.caip,
-    );
+        id: currentNetwork.value,
+        chainId: currentNetwork.coinParam.chainId,
+        wsIdentifier: currentNetwork.wsIdentifier,
+        caip2: currentNetwork.caip,
+        hrp: currentNetwork.coinParam.hrp);
     return Web3CosmosChainAuthenticated(
         accounts: activeAccounts,
         networks: web3Networks,

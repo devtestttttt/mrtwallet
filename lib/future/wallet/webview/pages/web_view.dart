@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/router/page_router.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
+import 'package:on_chain_wallet/future/wallet/web3/pages/client_info.dart';
 import 'package:on_chain_wallet/future/wallet/web3/pages/permission_view.dart';
 import 'package:on_chain_wallet/future/wallet/webview/controller/controller/controller.dart';
 import 'package:on_chain_wallet/future/wallet/webview/controller/controller/tab_handler.dart';
@@ -21,7 +22,7 @@ class WebView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamWidget(
+    return APPStreamBuilder(
         value: model.notifier,
         builder: (context, value) {
           return APPAnimated(
@@ -40,7 +41,8 @@ class WebView extends StatelessWidget {
                                         children: [
                                           ConditionalWidget(
                                             enable: model.enableBackForwardKey,
-                                            onActive: (context) => StreamWidget(
+                                            onActive: (context) =>
+                                                APPStreamBuilder(
                                               value: model.navigatorStatus,
                                               builder: (context, value) {
                                                 return Row(
@@ -64,7 +66,7 @@ class WebView extends StatelessWidget {
                                             ),
                                           ),
                                           Flexible(
-                                            child: StreamWidget(
+                                            child: APPStreamBuilder(
                                               value: model.controller.tab,
                                               builder: (context, value) =>
                                                   Padding(
@@ -110,7 +112,7 @@ class WebView extends StatelessWidget {
                                           WebViewPopupMenu(model)
                                         ],
                                       ),
-                                      StreamWidget(
+                                      APPStreamBuilder(
                                           value: model.progress,
                                           builder: (context, value) {
                                             if (value != null) {
@@ -196,66 +198,30 @@ class EagerGestureRecognizer2 extends OneSequenceGestureRecognizer {
   void handleEvent(PointerEvent event) {}
 }
 
-class WebViewFloatingActionButton extends StatelessWidget {
+class WebViewAppBar extends StatelessWidget {
   final WebViewController? webviewController;
-  const WebViewFloatingActionButton(this.webviewController, {super.key});
+  const WebViewAppBar(this.webviewController, {super.key});
 
   @override
   Widget build(BuildContext context) {
     final model = webviewController;
     if (model == null) return WidgetConstant.sizedBox;
-    return StreamWidget(
-        value: model.lastEvent,
-        builder: (context, value) {
-          final status = value?.web3Status;
-          return APPAnimated(
-            isActive: value != null,
-            onDeactive: (context) => null,
-            onActive: (context) => FloatingActionButton(
-              heroTag: 'webview',
-              shape: CircleBorder(),
-              onPressed: status?.inProgress ?? true
-                  ? null
-                  : () {
-                      model.updateApplicationAuthenticated(
-                        (authenticated, onPermissionUpdate) {
-                          if (authenticated == null) return;
-                          context.openDialogPage(
-                            "update_permission".tr,
-                            fullWidget: (context) => Web3PermissionUpdateView(
-                                authenticated: authenticated,
-                                onPermissionUpdate: onPermissionUpdate),
-                          );
-                        },
-                      );
-                    },
-              child: ConditionalWidget(
-                enable: value?.client?.image != null,
-                onActive: (context) => CircleAPPImageView(
-                  value?.client?.image,
-                  radius: APPConst.circleRadius12,
-                  onError: (context) =>
-                      Icon(Icons.security, color: context.colors.primary),
-                  onNull: value!.client!.name.firstOrNull,
-                ),
-                onDeactive: (context) => APPAnimatedSwitcher(
-                  enable: status,
-                  widgets: {
-                    WebViewScriptStatus.active: (context) =>
-                        Icon(Icons.security, color: context.colors.primary),
-                    WebViewScriptStatus.failed: (context) =>
-                        const Icon(Icons.error),
-                    WebViewScriptStatus.block: (context) =>
-                        const Icon(Icons.block),
-                    WebViewScriptStatus.progress: (context) =>
-                        Icon(Icons.security, color: context.colors.disable),
-                    null: (context) =>
-                        Icon(Icons.security, color: context.colors.disable)
-                  },
-                ),
-              ),
-            ),
-          );
-        });
+    return APPStreamBuilder(
+        value: model.latestClient,
+        builder: (context, client) => Web3ClientInfoIconView(
+            client: client,
+            onTap: (s) {
+              model.updateApplicationAuthenticated(
+                (authenticated, onPermissionUpdate) async {
+                  if (authenticated == null) return;
+                  context.openDialogPage(
+                    "update_permission".tr,
+                    fullWidget: (context) => Web3PermissionUpdateView(
+                        authenticated: authenticated,
+                        onPermissionUpdate: onPermissionUpdate),
+                  );
+                },
+              );
+            }));
   }
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:on_chain_wallet/app/constant/global/app.dart';
+import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/future.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
+import 'package:on_chain_wallet/future/wallet/web3/controller/web3_request_controller.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 
 ///
@@ -31,7 +32,7 @@ class _Web3ClientInfoView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("client".tr, style: context.textTheme.titleMedium),
-        Text("web3_client_desc".tr),
+        Text("web3_client_desc".tr, style: context.textTheme.bodySmall),
         WidgetConstant.height8,
         ContainerWithBorder(
           child: Row(
@@ -106,26 +107,61 @@ typedef ONWEB3CLIENTTAP = void Function(Web3ClientInfo? client);
 class Web3ClientInfoIconView extends StatelessWidget {
   const Web3ClientInfoIconView(
       {super.key, required this.client, required this.onTap});
-  final Web3ClientInfo? client;
+  final LastWeb3ActiveClient client;
   final ONWEB3CLIENTTAP onTap;
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: () => onTap(client),
-      icon: ConditionalWidget(
-          onActive: (context) => ConditionalWidget(
-                enable: client?.image != null,
-                onActive: (context) => CircleAPPImageView(
-                  client?.image,
-                  radius: APPConst.circleRadius12,
-                  onError: (context) => Icon(Icons.security),
-                  onProgress: (context) => APPCircularProgressIndicator(),
-                ),
-                onDeactive: (context) => Icon(Icons.security),
-              ),
-          enable: client != null,
-          onDeactive: (context) => Icon(Icons.security)),
+    return IgnorePointer(
+      ignoring: client.web3Status.inProgress,
+      child: IconButton(
+        onPressed: () {
+          switch (client.web3Status) {
+            case WalletJSScriptStatus.unknownHost:
+              context.showAlert("unable_to_verify_page_origin".tr);
+              break;
+            case WalletJSScriptStatus.failed:
+              context.showAlert("page_didnot_work_as_expected".tr);
+              break;
+            default:
+              onTap(client.client?.client);
+              break;
+          }
+        },
+        icon: ConditionalWidget(
+          enable: client.client != null,
+          onActive: (context) => _Web3ClientInfoIcon(
+              icon: switch (client.web3Status) {
+                WalletJSScriptStatus.active => const Icon(Icons.link),
+                WalletJSScriptStatus.block => const Icon(Icons.block),
+                _ => Icon(Icons.error)
+              },
+              client: client.client?.client),
+          onDeactive: (context) => switch (client.web3Status) {
+            WalletJSScriptStatus.progress =>
+              const APPCircularProgressIndicator(),
+            _ => Icon(Icons.error)
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _Web3ClientInfoIcon extends StatelessWidget {
+  final Icon icon;
+  final Web3ClientInfo? client;
+  const _Web3ClientInfoIcon({required this.icon, required this.client});
+
+  @override
+  Widget build(BuildContext context) {
+    return ConditionalWidget(
+      enable: client?.image != null,
+      onActive: (context) => CircleAPPImageView(client?.image,
+          radius: APPConst.circleRadius12,
+          onError: (context) => icon,
+          onProgress: (context) => APPCircularProgressIndicator()),
+      onDeactive: (context) => icon,
     );
   }
 }

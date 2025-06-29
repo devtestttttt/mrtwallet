@@ -1,11 +1,9 @@
 import 'dart:async';
-
 import 'package:blockchain_utils/blockchain_utils.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/wallet/constant/tags/constant.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/exception/exception.dart';
-
 import 'exception.dart';
 
 class WcMetadata with CborSerializable {
@@ -162,6 +160,19 @@ class WCSessionNamespaces with Equatable, CborSerializable {
       {bool allowEmptyAccount = false}) {
     namespaces = namespaces.clone();
     if (!allowEmptyAccount) {
+      // namespaces = namespaces
+      //     .map((e) => WCChainNamespace(
+      //           identifier: e.identifier,
+      //           namespace: WCNamespace(
+      //               chains: e.namespace.chains
+      //                   .where((i) =>
+      //                       e.namespace.accounts.any((e) => e.startsWith(i)))
+      //                   .toList(),
+      //               methods: e.namespace.methods,
+      //               events: e.namespace.events,
+      //               accounts: e.namespace.accounts),
+      //         ))
+      //     .toList();
       namespaces =
           namespaces.where((e) => e.namespace.accounts.isNotEmpty).toList();
     }
@@ -1499,9 +1510,7 @@ class WcSessionUpdateRequest extends WcBaseSessionRequest {
       : super(method: WalletConnectKnownMethods.sessionUpdate);
 
   @override
-  Map<String, dynamic> toJson() => {
-        'namespaces': namespaces.toJson(),
-      };
+  Map<String, dynamic> toJson() => {'namespaces': namespaces.toJson()};
 }
 
 class WcSessionRequestRequest {
@@ -1635,8 +1644,8 @@ class WcSessionProposeResult {
 }
 
 class WcJsonRpcErrorResponse {
-  final int code;
-  final String message;
+  final int? code;
+  final String? message;
   final dynamic data;
 
   const WcJsonRpcErrorResponse({

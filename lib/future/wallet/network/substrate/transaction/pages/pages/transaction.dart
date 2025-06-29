@@ -138,9 +138,9 @@ class _SubstrateTransactionsFields extends StatelessWidget {
     final field = validator.value;
     return switch (field.runtimeType) {
       const (SubstrateTransferForm) => _SubstrateTransactionTransferFields(
-          controller: controller, field: field),
+          controller: controller, field: field.cast()),
       const (SubstrateExtersincForm) => _SubstrateTransactionExtersincFields(
-          controller: controller, field: field),
+          controller: controller, field: field.cast()),
       _ => const SizedBox()
     };
   }

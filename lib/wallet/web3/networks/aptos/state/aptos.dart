@@ -25,6 +25,16 @@ mixin AptosWeb3StateHandler<
     on Web3StateHandler<AptosAddress, Web3AptosChainAccount, STATEADDRESS,
         Web3AptosChainIdnetifier, STATEACCOUNT, RESPONSE, REQUEST, EVENT> {
   @override
+  AptosAddress toAddress(String v, {Web3AptosChainIdnetifier? network}) {
+    try {
+      return AptosAddress(v);
+    } catch (e) {
+      throw Web3RequestExceptionConst.invalidAddress(
+          key: v, network: networkType.name);
+    }
+  }
+
+  @override
   NetworkType get networkType => NetworkType.aptos;
   @override
   List<Web3NetworkEvent> get events => [

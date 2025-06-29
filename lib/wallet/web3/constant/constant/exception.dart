@@ -77,9 +77,7 @@ class Web3RequestExceptionConst {
 
   static const Web3RequestException bannedHost = Web3RequestException(
       message:
-          "The requested method and/or account has not been authorized by the user.",
-      data:
-          "The URL is disable by the owner of the wallet. Please use an allowed URL or contact the wallet owner for further assistance.",
+          "The requested method and/or account has not been authorized by the user. The client is disable by the owner of the wallet.",
       walletCode: "WEB3-4040",
       code: 4100);
 
@@ -127,6 +125,21 @@ class Web3RequestExceptionConst {
               "Invalid method parameters. $key is not a valid $network address.",
           walletCode: "WEB3-0030",
           code: -32602);
+
+  static Web3RequestException invalidAddress(
+      {required String? key, required String network}) {
+    if (key == null) {
+      return Web3RequestException(
+          message: "Failed to parse $network address.",
+          walletCode: "WEB3-0030",
+          code: -32602);
+    }
+    return Web3RequestException(
+        message:
+            "Failed to parse address. `$key` is not a valid $network address.",
+        walletCode: "WEB3-0030",
+        code: -32602);
+  }
 
   static Web3RequestException invalidBase58(String key) => Web3RequestException(
       message: "Invalid method parameters. $key is not a valid Base58 string.",

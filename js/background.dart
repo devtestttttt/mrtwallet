@@ -7,6 +7,7 @@ import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/wallet.dart';
 import 'package:on_chain_wallet/wallet/web3/web3.dart';
+import 'js_crypto_utils.dart';
 import 'js_wallet/constant/constant.dart';
 
 class _JSBackgroundHandler {
@@ -101,22 +102,15 @@ class _JSBackgroundHandler {
   }
 
   Web3APPAuthenticationKey generateKey() {
-    final kp = X25519Keypair.generate(seed: QuickCrypto.generateRandom());
-
-    final sharedKey1 = X25519.scalarMult(kp.privateKey, []);
-    final hdkf = HKDF(
-        ikm: sharedKey1,
-        hash: () => SHA256(),
-        length: X25519KeyConst.privateKeyLength);
-    final symKey = hdkf.derive().asImmutableBytes;
+    final key = JsCryptoUtils.generateKey();
     return Web3APPAuthenticationKey(
-        topic: QuickCrypto.sha256Hash(symKey),
-        publicKey: kp.publicKey,
-        symkey: symKey);
+        publicKey: key.publicKey, privateKey: key.privateKey);
   }
 
-  Future<Web3APPAuthentication> getPermission(
-      {required Web3ClientInfo info, required HDWallet wallet}) async {
+  Future<Web3APPAuthentication> getPermission({
+    required Web3ClientInfo info,
+    required HDWallet wallet,
+  }) async {
     final applicationKey =
         BytesUtils.toHexString(MD4.hash(info.identifier.codeUnits));
     final permission =
@@ -145,17 +139,29 @@ class _JSBackgroundHandler {
     return Web3EncryptedMessage(message: encryptedKey, nonce: nonce);
   }
 
-  Future<Web3EncryptedMessage> _getOrCreateAppAuthenticated(
+  Future<WalletEvent> _getOrCreateAppAuthenticated(
       {required Web3ClientInfo info,
       required HDWallet wallet,
-      required String encryptionKey}) async {
-    Web3APPAuthentication? toPermission =
+      required WalletEvent event,
+      required int tabId}) async {
+    final List<int> peerKey = BytesUtils.fromHexString(event.clientId);
+    Web3APPAuthentication toPermission =
         await getPermission(info: info, wallet: wallet);
-    final sha256 = SHA256.hash(StringUtils.encode(encryptionKey));
+    final sharedKey = JsCryptoUtils.generateShareKey(
+        privateKey: toPermission.token.privateKey, peerKey: peerKey);
     final networks = await _readNetworks(wallet);
     final auth = toPermission.createAuth(networks);
     final message = Web3ChainMessage(authenticated: auth);
-    return toEncryptedMessage(message: message.toCbor().encode(), key: sha256);
+    final encryptMessage = await toEncryptedMessage(
+        message: message.toCbor().encode(), key: sharedKey);
+    return WalletEvent(
+        clientId: event.clientId,
+        data: encryptMessage.toCbor().encode(),
+        requestId: event.requestId,
+        type: WalletEventTypes.activation,
+        target: WalletEventTarget.background,
+        additional:
+            "$tabId:${BytesUtils.toHexString(toPermission.token.publicKey)}");
   }
 
   Future<void> send(WalletEvent? event, int? tabId) async {
@@ -286,25 +292,27 @@ class _JSBackgroundHandler {
       final networks = await _readNetworks(wallet);
       final auth = appAuthenticated.createAuth(networks, web3Networks: [type]);
       final response = Web3GlobalResponseMessage(authenticated: auth);
+      final sharedKey = JsCryptoUtils.generateShareKey(
+          privateKey: appAuthenticated.token.privateKey,
+          peerKey: BytesUtils.fromHexString(event.clientId));
       final message = await toEncryptedMessage(
-          key: appAuthenticated.token.symkey,
-          message: response.toCbor().encode());
+          key: sharedKey, message: response.toCbor().encode());
       return WalletEvent(
-          clientId: "${tab.id!}",
+          clientId: event.clientId,
           data: message.toCbor().encode(),
           requestId: event.requestId,
           type: WalletEventTypes.message,
           target: WalletEventTarget.background);
     } on Web3RequestException catch (e) {
       return WalletEvent(
-          clientId: "${tab.id ?? -1}",
+          clientId: event.clientId,
           data: e.toResponseMessage().toCbor().encode(),
           requestId: event.requestId,
           type: WalletEventTypes.exception,
           target: WalletEventTarget.background);
     } catch (e) {
       return WalletEvent(
-          clientId: "${tab.id ?? -1}",
+          clientId: event.clientId,
           data: Web3RequestExceptionConst.internalError
               .toResponseMessage()
               .toCbor()
@@ -320,23 +328,18 @@ class _JSBackgroundHandler {
       final wallet = await getWallet();
       final Web3ClientInfo client = buildClient(tab);
       final authenticated = await _getOrCreateAppAuthenticated(
-          info: client, wallet: wallet, encryptionKey: tab.id!.toString());
-      return WalletEvent(
-          clientId: "${tab.id!}",
-          data: authenticated.toCbor().encode(),
-          requestId: event.requestId,
-          type: WalletEventTypes.activation,
-          target: WalletEventTarget.background);
+          info: client, wallet: wallet, event: event, tabId: tab.id!);
+      return authenticated;
     } on Web3RequestException catch (e) {
       return WalletEvent(
-          clientId: "${tab.id ?? -1}",
+          clientId: event.clientId,
           data: e.toResponseMessage().toCbor().encode(),
           requestId: event.requestId,
           type: WalletEventTypes.exception,
           target: WalletEventTarget.background);
     } catch (e) {
       return WalletEvent(
-          clientId: "${tab.id ?? -1}",
+          clientId: event.clientId,
           data: Web3RequestExceptionConst.internalError
               .toResponseMessage()
               .toCbor()

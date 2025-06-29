@@ -33,7 +33,7 @@ class Web3SuiGlobalRequestController<RESPONSE,
     }
   }
 
-  LiveTransactionForm? _liveRequest;
+  LiveTransactionForm<SuiWeb3Form>? _liveRequest;
   SuiWeb3Form get form => _liveRequest!.value;
 
   Future<Web3SuiSignMessageResponse> _signMessage() async {
@@ -134,6 +134,6 @@ class Web3SuiGlobalRequestController<RESPONSE,
   void close() {
     super.close();
     _liveRequest?.removeListener(onChangeForm);
-    form.onCompleteForm = null;
+    _liveRequest?.value.onCompleteForm = null;
   }
 }

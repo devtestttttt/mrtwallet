@@ -3,6 +3,7 @@ import 'dart:js_interop';
 import 'package:on_chain_bridge/models/events/models/wallet_event.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/permission/models/authenticated.dart';
+import 'js_crypto_utils.dart';
 import 'js_wallet/js_wallet.dart';
 import 'package:on_chain_bridge/web/web.dart';
 
@@ -27,12 +28,21 @@ void main(List<String> args) async {
   if (applicationId == null) {
     throw Web3RequestExceptionConst.invalidHost;
   }
+  final key = JsCryptoUtils.generateKey();
+  final pubKey = key.publicKeyHex();
+  postToWallet(
+      data: JSWorkerWalletData(
+          clientId: pubKey,
+          requestId: "0",
+          data: pubKey,
+          type: WalletEventTypes.tabId.name),
+      target: JSWebviewTraget.macos);
 
   final workerCompleter = Completer<(JSWebviewWallet, JSWebviewTraget)>();
   bool onActivation(JSWalletEvent data) {
     try {
       final walletEvent = data.toEvent();
-      if (walletEvent == null || walletEvent.clientId != onChain.clientId) {
+      if (walletEvent == null || walletEvent.clientId != pubKey) {
         return false;
       }
       if (walletEvent.type == WalletEventTypes.exception) {
@@ -46,6 +56,7 @@ void main(List<String> args) async {
           request: walletEvent,
           clientId: walletEvent.clientId,
           isWorker: false,
+          keyPair: key,
           target: JSWebviewTraget.fromName(walletEvent.platform)!);
       workerCompleter.complete((wallet, target));
       return true;
@@ -57,7 +68,7 @@ void main(List<String> args) async {
   onChain.onWebViewMessage = onActivation.toJS;
   try {
     final activation = await workerCompleter.future;
-    pageController.initClients(onChain.clientId);
+    pageController.initClients(pubKey);
     activation.$1.initClients();
   } catch (e) {
     jsConsole.error("wallet initialize failed. ${e.toString()}");

@@ -5,6 +5,7 @@ import 'package:on_chain_wallet/app/serialization/cbor/cbor.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/constant/tags/constant.dart';
 import 'package:on_chain_wallet/wallet/models/chain/account.dart';
+import 'package:on_chain_wallet/wallet/models/networks/substrate/substrate.dart';
 import 'package:on_chain_wallet/wallet/web3/core/permission/types/account.dart';
 import 'package:polkadot_dart/polkadot_dart.dart';
 import 'package:on_chain_wallet/crypto/keys/access/crypto_keys/crypto_keys.dart';
@@ -83,12 +84,16 @@ class Web3SubstrateChainAccount extends Web3ChainAccount<BaseSubstrateAddress> {
 class Web3SubstrateChainIdnetifier extends Web3ChainIdnetifier {
   final String genesisHash;
   final int specVersion;
+  final SubstrateChainType type;
+  final int ss58Fromat;
   Web3SubstrateChainIdnetifier(
       {required String genesisHash,
       required this.specVersion,
       required super.id,
       required super.wsIdentifier,
-      required super.caip2})
+      required super.caip2,
+      required this.type,
+      required this.ss58Fromat})
       : genesisHash = StringUtils.add0x(genesisHash);
   factory Web3SubstrateChainIdnetifier.deserialize(
       {List<int>? bytes, CborObject? object, String? hex}) {
@@ -102,14 +107,23 @@ class Web3SubstrateChainIdnetifier extends Web3ChainIdnetifier {
         specVersion: values.elementAs(1),
         id: values.elementAs(2),
         wsIdentifier: values.elementAs(3),
-        caip2: values.elementAs(4));
+        caip2: values.elementAs(4),
+        type: SubstrateChainType.fromValue(values.elementAs(5)),
+        ss58Fromat: values.elementAs(6));
   }
 
   @override
   CborTagValue toCbor() {
     return CborTagValue(
-        CborListValue.fixedLength(
-            [genesisHash, specVersion, id, wsIdentifier, caip2]),
+        CborListValue.fixedLength([
+          genesisHash,
+          specVersion,
+          id,
+          wsIdentifier,
+          caip2,
+          type.value,
+          ss58Fromat
+        ]),
         CborTagsConst.web3SubstrateChainIdentifier);
   }
 }

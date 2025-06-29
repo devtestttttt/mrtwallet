@@ -81,7 +81,10 @@ class _DrawerViewState extends State<DrawerView> with SafeState<DrawerView> {
                       },
                       icon: const Icon(Icons.add))
                 ])
-        .then(wallet.wallet.switchWallet);
+        .then((e) {
+      if (e == null) return;
+      wallet.wallet.switchWallet(e);
+    });
   }
 
   late WalletProvider wallet;
@@ -143,13 +146,7 @@ class _DrawerViewState extends State<DrawerView> with SafeState<DrawerView> {
                 onTap: () {
                   context.to(PageRouter.walletConnect);
                 },
-                leading: Container(
-                  decoration: BoxDecoration(
-                      color: context.colors.inverseSurface,
-                      shape: BoxShape.circle),
-                  child: Icon(CustomIcons.wc,
-                      color: context.colors.onInverseSurface),
-                ),
+                leading: Icon(CustomIcons.wc2),
                 title: Text("wallet_connect_management".tr),
                 subtitle: Text("manage_and_pair".tr),
               ),

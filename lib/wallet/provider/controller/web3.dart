@@ -9,14 +9,21 @@ mixin Web3Impl on WalletManager {
           defaultAuth: _getDefaultAuth,
           storageKey: _wallet.wcStorageKey);
 
-  Future<Web3APPData?> _getWalletConnectAuth(
+  Future<Web3DappInfo?> _getWalletConnectAuth(
       Web3ClientInfo info, bool create) async {
     if (!create) {
-      final appAuth = await _getAuthenticated(info.identifier);
-      return appAuth?.createAuth(_appChains.getWeb3NetworkData());
+      final auth = await _getAuthenticated(info.identifier);
+      if (auth == null) return null;
+      final dappInfo = auth.createAuth(_appChains.getWeb3NetworkData());
+      return Web3DappInfo(
+          authentication: auth,
+          dappData: dappInfo,
+          clientInfo: auth.toClient());
     }
     final auth = await _getOrCreateDappAuthenticated(info);
-    return auth.createAuth(_appChains.getWeb3NetworkData());
+    final dappInfo = auth.createAuth(_appChains.getWeb3NetworkData());
+    return Web3DappInfo(
+        authentication: auth, dappData: dappInfo, clientInfo: auth.toClient());
   }
 
   @override
@@ -50,6 +57,12 @@ mixin Web3Impl on WalletManager {
         clientInfo: clientInfo);
   }
 
+  Future<Web3APPAuthenticationKey> _getDappAuthenticatedKey(
+      Web3ClientInfo clientInfo) async {
+    final authentication = await _getOrCreateDappAuthenticated(clientInfo);
+    return authentication.token;
+  }
+
   //  Future<Web3APPAuthentication?> _getAuthenticated(Web3ClientInfo info) async {
   //   final permission = await _core._readWeb3Permission(
   //       applicationId: info.identifier, wallet: _wallet);
@@ -65,8 +78,12 @@ mixin Web3Impl on WalletManager {
 
   Future<Web3APPAuthentication?> _getAuthenticated(String identifier,
       {Web3APPProtocol? protocol}) async {
-    final permission = await _core._readWeb3Permission(
-        applicationId: identifier, wallet: _wallet);
+    final key = await crypto.generateHashString(
+        type: CryptoRequestHashingType.md4,
+        dataBytes: identifier.codeUnits,
+        isolate: false);
+    final permission =
+        await _core._readWeb3Permission(key: key, wallet: _wallet);
 
     final appAuth = MethodUtils.nullOnException(() {
       return Web3APPAuthentication.deserialize(hex: permission);
@@ -85,15 +102,11 @@ mixin Web3Impl on WalletManager {
           type: CryptoRequestHashingType.md4,
           dataBytes: info.identifier.codeUnits,
           isolate: false);
-      final token = await crypto.cryptoIsolateRequest(
-          CryptoRequestGenerateWalletConnectSymKeyInfo(
-              publicKey: info.identifier,
-              hashKey: !info.protocol.isWalletConnect));
+      final token =
+          await crypto.cryptoIsolateRequest(CryptoRequestGenerateX25519Key());
       final permission = info.toAuhenticated(
           token: Web3APPAuthenticationKey(
-              topic: token.topic,
-              publicKey: token.publicKey,
-              symkey: token.symkey),
+              privateKey: token.privateKey, publicKey: token.publicKey),
           applicationKey: applicationKey);
 
       await _core._savePermission(permission: permission, wallet: _wallet);
@@ -214,7 +227,7 @@ mixin Web3Impl on WalletManager {
         default:
           throw Web3RequestExceptionConst.invalidRequest;
       }
-    } on Web3RejectException catch (_) {
+    } on Web3RequestClosed catch (_) {
       rethrow;
     } on Web3RequestException catch (e) {
       Web3APPData? auth;
@@ -254,35 +267,35 @@ mixin Web3Impl on WalletManager {
         walletRequest: walletRequest);
   }
 
-  Future<Web3EncryptedMessage> _web3Request(
+  Future<Web3MessageCore> _web3Request(
       Web3RequestApplicationInformation walletRequest) async {
     final authenticated = await _getAuthenticated(walletRequest.applicationId);
     if (authenticated == null) {
       throw Web3RequestExceptionConst.missingPermission;
     }
-    Web3MessageCore requestParams;
-    try {
-      final Web3EncryptedMessage encryotedMessage =
-          Web3EncryptedMessage.deserialize(bytes: walletRequest.data);
-      final CryptoDecryptChachaResponse decrypt =
-          await crypto.cryptoMainRequest(CryptoRequestDecryptChacha(
-              key: authenticated.token.symkey,
-              nonce: encryotedMessage.nonce,
-              message: encryotedMessage.message));
-      requestParams = Web3MessageCore.deserialize(bytes: decrypt.decrypted);
-    } catch (_) {
-      throw Web3RequestExceptionConst.invalidRequest;
-    }
-    Web3MessageCore response = await _web3GetResponse(
-        requestParams: requestParams,
+    // Web3MessageCore requestParams;
+    // try {
+    //   final Web3EncryptedMessage encryotedMessage =
+    //       Web3EncryptedMessage.deserialize(bytes: walletRequest.data);
+    //   final CryptoDecryptChachaResponse decrypt =
+    //       await crypto.cryptoMainRequest(CryptoRequestDecryptChacha(
+    //           key: authenticated.token.symkey,
+    //           nonce: encryotedMessage.nonce,
+    //           message: encryotedMessage.message));
+    //   requestParams = Web3MessageCore.deserialize(bytes: decrypt.decrypted);
+    // } catch (_) {
+    //   throw Web3RequestExceptionConst.invalidRequest;
+    // }
+    return _web3GetResponse(
+        requestParams: walletRequest.message,
         authenticated: authenticated,
         walletRequest: walletRequest);
-    final CryptoEncryptChachaResponse encryptResponse =
-        await crypto.cryptoMainRequest(CryptoRequestEncryptChacha(
-            key: authenticated.token.symkey,
-            message: response.toCbor().encode()));
-    return Web3EncryptedMessage(
-        message: encryptResponse.encrypted, nonce: encryptResponse.nonce);
+    // final CryptoEncryptChachaResponse encryptResponse =
+    //     await crypto.cryptoMainRequest(CryptoRequestEncryptChacha(
+    //         key: authenticated.token.symkey,
+    //         message: response.toCbor().encode()));
+    // return Web3EncryptedMessage(
+    //     message: encryptResponse.encrypted, nonce: encryptResponse.nonce);
   }
 
   Future<Web3DappInfo> _updateWeb3Application(Web3APPAuthentication application,

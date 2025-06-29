@@ -3,6 +3,7 @@ import 'dart:js_interop';
 import 'package:on_chain_bridge/models/models.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/messages/models/models/exception.dart';
+import 'js_crypto_utils.dart';
 import 'js_wallet/js_wallet.dart';
 import 'package:on_chain_bridge/web/web.dart';
 
@@ -13,7 +14,7 @@ external set onMessage(JSFunction _);
 
 void main(List<String> args) async {
   final walletCompleter = Completer<(JSWorkerEvent, JSWebviewWallet?)>();
-
+  final key = JsCryptoUtils.generateKey();
   void onData(MessageEvent event) {
     try {
       final data = event.data as JSWalletEvent;
@@ -31,6 +32,7 @@ void main(List<String> args) async {
           final wallet = JSWebviewWallet.initialize(
               request: walletEvent,
               clientId: walletEvent.clientId,
+              keyPair: key,
               target: JSWebviewTraget.fromName(walletEvent.platform)!);
           walletCompleter.complete((activeEvent, wallet));
           break;
@@ -41,14 +43,17 @@ void main(List<String> args) async {
       final error = JSWorkerEvent(
           data: Web3RequestExceptionConst.internalError
               .toResponseMessage()
-              .toWalletError(),
+              .toCbor()
+              .toCborHex()
+              .toJS,
           type: JSWorkerType.error);
       walletCompleter.complete((error, null));
     }
   }
 
   onMessage = onData.toJS;
-  postMessage(JSWorkerEvent(type: JSWorkerType.ready));
+  postMessage(
+      JSWorkerEvent(type: JSWorkerType.ready, clientId: key.publicKeyHex()));
   final event = await walletCompleter.future;
   postMessage(event.$1);
   final wallet = event.$2;

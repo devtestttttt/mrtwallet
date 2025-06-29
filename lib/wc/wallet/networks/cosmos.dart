@@ -101,7 +101,7 @@ class CosmosWeb3WalletConnectStateAccount extends Web3WalletConnectStateAccount<
     return CosmosWeb3WalletConnectStateAccount._(
         accounts:
             accounts.whereType<CosmosWeb3WalletConnectStateAddress>().toList(),
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null

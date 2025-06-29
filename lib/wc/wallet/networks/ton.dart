@@ -82,7 +82,7 @@ class TonWeb3WalletConnectStateAccount extends Web3WalletConnectStateAccount<
     return TonWeb3WalletConnectStateAccount._(
         accounts:
             accounts.whereType<TonWeb3WalletConnectStateAddress>().toList(),
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null

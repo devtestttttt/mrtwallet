@@ -1,11 +1,11 @@
-import 'package:blockchain_utils/helper/extensions/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:on_chain_wallet/app/core.dart';
+import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/future/future.dart';
 import 'package:on_chain_wallet/future/router/page_router.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
-import 'package:on_chain_wallet/future/wallet/controller/impl/web3_request_controller.dart';
 import 'package:on_chain_wallet/future/wallet/web3/types/types.dart';
+import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
 import 'package:on_chain_wallet/wallet/web3/core/permission/models/authenticated.dart';
 import 'package:on_chain_wallet/wc/core/types/exception.dart';
 import 'package:on_chain_wallet/wc/wallet/core/wallet.dart';
@@ -31,10 +31,11 @@ class _WalletConnectViewState extends State<WalletConnectView>
   late Web3WalletConnectHandler walletConnect;
   WcRpcSocketStatus get status => walletConnect.connectionStatus.value;
 
-  List<Web3ClientInfo> sessions = [];
+  List<ShimmerAction<Web3ClientInfo>> sessions = [];
   Future<void> loadSessions() async {
     final result = await walletConnect.getActiveSessions();
-    sessions = result.clone();
+    sessions =
+        result.map((e) => ShimmerAction<Web3ClientInfo>(object: e)).toList();
     progressKey.backToIdle();
   }
 
@@ -45,35 +46,81 @@ class _WalletConnectViewState extends State<WalletConnectView>
     context.backToCurrent();
   }
 
-  Future<void> onRemoveSession(Web3ClientInfo session) async {
+  Future<void> onRemoveSession(ShimmerAction<Web3ClientInfo> session) async {
+    session.setAction(true);
+    updateState();
     final accept = await context.openSliverDialog((context) {
       return DialogTextView(
           text: "remove_session_desc".tr,
           buttonWidget: DialogDoubleButtonView());
     }, "remove_session".tr);
     if (accept != true) return;
-    await walletConnect.removeSession(session);
+    await walletConnect.removeSession(session.object);
     sessions.remove(session);
+    session.setAction(false);
     updateState();
     context.showAlert('session_has_been_removed'.tr);
   }
 
+  Future<void> updateDappAuthenticated(Web3APPAuthentication authenticated,
+      {List<NetworkType>? web3Networks, bool remove = false}) async {
+    final updateResult = await wallet.wallet
+        .updateWeb3Application(authenticated, web3Networks: web3Networks);
+    if (!remove && authenticated.hasAnyPermission) {
+      await walletConnect.updateAuthenticated(updateResult.result);
+    } else {
+      await walletConnect.removeSession(updateResult.result.clientInfo);
+    }
+    context.showAlert("application_updated".tr);
+  }
+
+  // Future<void> updateApplicationAuthenticated(
+  //     Web3ClientInfo client, ONUPDATEWEB3PERMISSION onUpdate) async {
+  //   final auth = await wallet.wallet.getWeb3Dapp(client);
+  //   final request = auth.hasError
+  //       ? null
+  //       : Web3UpdatePermissionRequest(
+  //           lockedChains: [], authentication: auth.result.authentication);
+  //   onUpdate(
+  //     request,
+  //     (networks) async {
+  //       final updateResult =
+  //           await wallet.wallet.updateWeb3Application(request!.authentication);
+  //       await walletConnect.updateAuthenticated(updateResult.result);
+  //       return false;
+  //     },
+  //   );
+  // }
+
   Future<void> updateApplicationAuthenticated(
-      Web3ClientInfo client, ONUPDATEWEB3PERMISSION onUpdate) async {
-    final auth = await wallet.wallet.getWeb3Dapp(client);
-    final request = auth.hasError
-        ? null
-        : Web3UpdatePermissionRequest(
-            lockedChains: [], authentication: auth.result.authentication);
-    onUpdate(
-      request,
-      (networks) async {
-        final updateResult =
-            await wallet.wallet.updateWeb3Application(request!.authentication);
-        await walletConnect.updateAuthenticated(updateResult.result);
-        return false;
-      },
+      ShimmerAction<Web3ClientInfo> client) async {
+    client.setAction(true);
+    final app = (await wallet.wallet.getWeb3Dapp(client.object)).result;
+    updateState();
+    List<Chain> lockedChains = [];
+    final session =
+        walletConnect.getSession(peerKey: app.authentication.applicationId);
+    if (session != null) {
+      final walletChain = wallet.wallet.getChains();
+      final chainIds = await walletConnect.getSessionRequiredChainIds(
+          session: session, auth: app.dappData);
+      lockedChains =
+          walletChain.where((e) => chainIds.contains(e.network.value)).toList();
+    }
+    final request = Web3UpdatePermissionRequest(
+        lockedChains: lockedChains, authentication: app.authentication);
+    await context.openDialogPage(
+      "update_permission".tr,
+      fullWidget: (context) => Web3PermissionUpdateView(
+          authenticated: request,
+          onPermissionUpdate: (networks) async {
+            await updateDappAuthenticated(request.authentication,
+                remove: !request.haveRequiredPermissions());
+            return false;
+          }),
     );
+    client.setAction(false);
+    updateState();
   }
 
   Future<void> newPair() async {
@@ -115,7 +162,7 @@ class _WalletConnectViewState extends State<WalletConnectView>
             return CustomScrollView(
               slivers: [
                 SliverConstraintsBoxView(
-                    sliver: StreamWidget(
+                    sliver: APPStreamBuilder(
                   value: walletConnect.connectionStatus,
                   builder: (context, value) => MultiSliver(children: [
                     SliverToBoxAdapter(
@@ -167,72 +214,65 @@ class _WalletConnectViewState extends State<WalletConnectView>
                           ),
                           SliverList.separated(
                               itemBuilder: (context, index) {
-                                final client = sessions[index];
-                                return ContainerWithBorder(
-                                  onRemove: () {},
-                                  enableTap: false,
-                                  onRemoveWidget: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                            tooltip: "remove_session".tr,
-                                            onPressed: () =>
-                                                onRemoveSession(client),
-                                            icon: Icon(Icons.remove_circle,
-                                                color: context
-                                                    .onPrimaryContainer)),
-                                        IconButton(
-                                            tooltip: "update_permission".tr,
-                                            onPressed: () {
-                                              updateApplicationAuthenticated(
-                                                client,
-                                                (authenticated,
-                                                    onPermissionUpdate) {
-                                                  if (authenticated == null) {
-                                                    return;
-                                                  }
-                                                  context.openDialogPage(
-                                                    "update_permission".tr,
-                                                    fullWidget: (context) =>
-                                                        Web3PermissionUpdateView(
-                                                            authenticated:
-                                                                authenticated,
-                                                            onPermissionUpdate:
-                                                                onPermissionUpdate),
-                                                  );
-                                                },
-                                              );
-                                            },
-                                            icon: Icon(Icons.security,
-                                                color: context
-                                                    .onPrimaryContainer)),
-                                      ]),
-                                  child: Row(
-                                    children: [
-                                      CircleAPPImageView(
-                                        client.image,
-                                        radius: APPConst.circleRadius25,
-                                        onError: (c) => const Icon(
-                                            Icons.broken_image,
-                                            size: APPConst.double40),
-                                      ),
-                                      WidgetConstant.width8,
-                                      Flexible(
-                                          child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          OneLineTextWidget(client.name,
-                                              style: context.onPrimaryTextTheme
-                                                  .labelLarge),
-                                          OneLineTextWidget(client.url,
-                                              style: context.onPrimaryTextTheme
-                                                  .bodyMedium),
-                                        ],
-                                      )),
-                                    ],
-                                  ),
-                                );
+                                final obj = sessions[index];
+                                final client = sessions[index].object;
+                                return Shimmer(
+                                    onActive: (enable, context) {
+                                      return ContainerWithBorder(
+                                        onRemove: () {},
+                                        enableTap: false,
+                                        onRemoveWidget: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                  tooltip: "remove_session".tr,
+                                                  onPressed: () =>
+                                                      onRemoveSession(obj),
+                                                  icon: Icon(
+                                                      Icons.remove_circle,
+                                                      color: context
+                                                          .onPrimaryContainer)),
+                                              IconButton(
+                                                  tooltip:
+                                                      "update_permission".tr,
+                                                  onPressed: () {
+                                                    updateApplicationAuthenticated(
+                                                        obj);
+                                                  },
+                                                  icon: Icon(Icons.security,
+                                                      color: context
+                                                          .onPrimaryContainer)),
+                                            ]),
+                                        child: Row(
+                                          children: [
+                                            CircleAPPImageView(
+                                              client.image,
+                                              radius: APPConst.circleRadius25,
+                                              onError: (c) => const Icon(
+                                                  Icons.broken_image,
+                                                  size: APPConst.double40),
+                                            ),
+                                            WidgetConstant.width8,
+                                            Flexible(
+                                                child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                OneLineTextWidget(client.name,
+                                                    style: context
+                                                        .onPrimaryTextTheme
+                                                        .labelLarge),
+                                                OneLineTextWidget(client.url,
+                                                    style: context
+                                                        .onPrimaryTextTheme
+                                                        .bodyMedium),
+                                              ],
+                                            )),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    enable: !obj.action);
                               },
                               itemCount: sessions.length,
                               separatorBuilder: (context, index) =>
@@ -335,7 +375,7 @@ class _ConnectPairingViewState extends State<_ConnectPairingView>
             title: Text("pair_with_new_client".tr),
             centerTitle: false,
             actions: [
-              StreamWidget(
+              APPStreamBuilder(
                 value: status,
                 builder: (context, value) => TappedTooltipView(
                   tooltipWidget: ToolTipView(
@@ -369,7 +409,7 @@ class _ConnectPairingViewState extends State<_ConnectPairingView>
               padding: WidgetConstant.paddingHorizontal20,
               sliver: MultiSliver(children: [
                 SliverToBoxAdapter(
-                  child: StreamWidget(
+                  child: APPStreamBuilder(
                     value: status,
                     builder: (context, value) {
                       return Shimmer(

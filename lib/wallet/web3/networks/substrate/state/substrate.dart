@@ -29,6 +29,20 @@ mixin SubstrateWeb3StateHandler<
         REQUEST,
         EVENT> {
   @override
+  BaseSubstrateAddress toAddress(String v,
+      {Web3SubstrateChainIdnetifier? network}) {
+    try {
+      if (network == null) return BaseSubstrateAddress(v);
+      if (network.type.isEthereum) {
+        return SubstrateEthereumAddress(v);
+      }
+      return SubstrateAddress(v, ss58Format: network.ss58Fromat);
+    } catch (_) {}
+    throw Web3RequestExceptionConst.invalidAddress(
+        key: v, network: networkType.name);
+  }
+
+  @override
   NetworkType get networkType => NetworkType.substrate;
   @override
   List<Web3SubstrateRequestMethods> get methods =>
@@ -42,13 +56,14 @@ mixin SubstrateWeb3StateHandler<
       // const List<String> keys = ["address", "message"];
       final data = params.paramsAsMap(method: method, keys: ["message"]);
       final account = Web3ValidatorUtils.parseParams2(() {
-        final address =
-            DefaultStateAddress.parse(data["address"] ?? data["account"]);
+        final address = tryParseStateAddress(
+            addr: data["address"] ?? data["account"],
+            params: params,
+            state: state,
+            network: network);
         if (address == null) return null;
         return state.findAddressOrDefault(
-            address: BaseSubstrateAddress(address.address),
-            network: network,
-            networkStr: address.chain);
+            address: address.address, network: network ?? address.chain);
       });
       final message = params.objectAsBytes(
           object: data["message"] ?? data["data"],
@@ -126,14 +141,14 @@ mixin SubstrateWeb3StateHandler<
       );
 
       final account = Web3ValidatorUtils.parseParams2(() {
-        final address = DefaultStateAddress.parse(param["address"] ??
+        final addr = param["address"] ??
             param["account"] ??
-            transactionPayload["address"]);
+            transactionPayload["address"];
+        final address = tryParseStateAddress(
+            addr: addr, params: params, state: state, network: txChain);
         if (address == null) return null;
         return state.findAddressOrDefault(
-            address: BaseSubstrateAddress(address.address),
-            network: txChain,
-            networkStr: address.chain);
+            address: address.address, network: txChain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: 'address', network: networkType.name));

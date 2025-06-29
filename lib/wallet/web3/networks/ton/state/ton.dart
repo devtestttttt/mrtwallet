@@ -24,6 +24,15 @@ mixin TonWeb3StateHandler<
     on Web3StateHandler<TonAddress, Web3TonChainAccount, STATEADDRESS,
         Web3ChainDefaultIdnetifier, STATEACCOUNT, RESPONSE, REQUEST, EVENT> {
   @override
+  TonAddress toAddress(String v, {Web3ChainDefaultIdnetifier? network}) {
+    try {
+      return TonAddress(v);
+    } catch (_) {}
+    throw Web3RequestExceptionConst.invalidAddress(
+        key: v, network: networkType.name);
+  }
+
+  @override
   NetworkType get networkType => NetworkType.ton;
   @override
   List<Web3TonRequestMethods> get methods => Web3TonRequestMethods.values;
@@ -36,14 +45,15 @@ mixin TonWeb3StateHandler<
       const List<String> keys = ["message"];
       final data = params.paramsAsMap(keys: keys, method: method);
       final account = Web3ValidatorUtils.parseParams2(() {
-        final account =
-            DefaultStateAddress.parse(data["address"] ?? data["account"]);
+        final account = tryParseStateAddress(
+            addr: data["address"] ?? data["account"],
+            params: params,
+            state: state,
+            network: network);
         if (account == null) return null;
 
         return state.findAddressOrDefault(
-            address: TonAddress(account.address),
-            network: network,
-            networkStr: account.chain);
+            address: account.address, network: network ?? account.chain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: "address", network: networkType.name));
@@ -71,14 +81,15 @@ mixin TonWeb3StateHandler<
       const List<String> keys = ["messages", "validUntil"];
       final data = params.paramsAsMap(keys: keys, method: method);
       final account = Web3ValidatorUtils.parseParams2(() {
-        final account =
-            DefaultStateAddress.parse(data["address"] ?? data["account"]);
+        final account = tryParseStateAddress(
+            addr: data["address"] ?? data["account"],
+            params: params,
+            state: state,
+            network: network);
         if (account == null) return null;
 
         return state.findAddressOrDefault(
-            address: TonAddress(account.address),
-            network: network,
-            networkStr: account.chain);
+            address: account.address, network: network ?? account.chain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: "address", network: networkType.name));

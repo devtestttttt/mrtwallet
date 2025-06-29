@@ -8,13 +8,12 @@ import 'package:on_chain_bridge/platform_interface.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/router/page_router.dart';
 import 'package:on_chain_wallet/future/state_managment/core/observer.dart';
+import 'package:on_chain_wallet/future/wallet/web3/controller/web3_request_controller.dart';
 import 'package:on_chain_wallet/future/wallet/webview/controller/controller/tab_controller.dart';
 import 'package:on_chain_wallet/future/wallet/webview/view/native_view.dart';
 import 'package:on_chain_wallet/repository/models/models/webview_repository.dart';
 import 'package:on_chain_wallet/crypto/impl/worker_impl.dart';
 import 'package:on_chain_wallet/wallet/web3/core/core.dart';
-
-import 'controller.dart';
 
 class WebViewStateControllerConst {
   static const int viewIdLength = 12;
@@ -33,17 +32,28 @@ enum WebViewTabPage {
   hide;
 }
 
-class WebviewLastPageEvent {
-  final WebViewEvent evnet;
-  final Web3ClientInfo? client;
-  WebviewLastPageEvent({required this.evnet, required this.client});
-  WebViewScriptStatus _web3Status = WebViewScriptStatus.progress;
-  WebViewScriptStatus get web3Status => _web3Status;
-  void updateStatus(WebViewScriptStatus status) {
-    if (_web3Status != WebViewScriptStatus.progress) return;
-    _web3Status = status;
-  }
-}
+// class LastWeb3ActiveClient {
+//   final WebViewEvent evnet;
+//   Web3ActiveClient? _client;
+//   Web3ActiveClient? get client => _client;
+
+//   LastWeb3ActiveClient({required this.evnet});
+//   WalletJSScriptStatus _web3Status = WalletJSScriptStatus.progress;
+//   WalletJSScriptStatus get web3Status => _web3Status;
+//   void updateStatus(WalletJSScriptStatus status) {
+//     assert(_web3Status == WalletJSScriptStatus.progress,
+//         "client status already updated.");
+//     if (_web3Status != WalletJSScriptStatus.progress) return;
+//     _web3Status = status;
+//   }
+
+//   void setClient(Web3ActiveClient? client) {
+//     assert(_web3Status == WalletJSScriptStatus.progress,
+//         "client status already updated.");
+//     if (_web3Status != WalletJSScriptStatus.progress) return;
+//     _client = client;
+//   }
+// }
 
 mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
   WalletRouteObserver get observer;
@@ -72,7 +82,6 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
   final WebViewRepository _storage = WebViewRepository();
   final Map<String, WebViewTabController> tabsAuthenticated = {};
   final GlobalKey searchBarKey = GlobalKey();
-  // final GlobalKey<AppTextFieldState> textField = GlobalKey();
   List<WebViewTab> get histories => _storage.histories;
   List<WebViewTab> get bookmarks => _storage.bookmarks;
 
@@ -82,8 +91,8 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
   int get tabsLength => tabsAuthenticated.length;
   List<WebViewTabController> get controllers =>
       tabsAuthenticated.values.toList();
-  StreamValue<WebviewLastPageEvent?> get lastEvent => _event;
-  final StreamValue<WebviewLastPageEvent?> _event = StreamValue(null);
+  StreamValue<LastWeb3ActiveClient> get latestClient;
+
   final StreamValue<double?> _progress = StreamValue<double?>(null);
   final StreamValue<PageNavigatorStatus> navigatorStatus =
       StreamValue(PageNavigatorStatus(false, false));
@@ -94,18 +103,7 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
   WebViewTabPage _page = WebViewTabPage.init;
   WebViewTabPage get page => _page;
   bool get inBrowser => _page == WebViewTabPage.browser;
-  // bool _inBokmark = false;
-  // bool get inBokmark => _inBokmark;
   bool get isHide => _page == WebViewTabPage.hide;
-
-  void updatePageScriptStatus(
-      {required WebViewScriptStatus status, required String clientId}) {
-    final event = _event.value;
-    if (event?.evnet.viewId == clientId) {
-      event!.updateStatus(status);
-      _event.notify();
-    }
-  }
 
   void removeHistory(WebViewTab tab) async {
     _tabLocker.synchronized(() async {
@@ -262,7 +260,6 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
           length: WebViewStateControllerConst.viewIdLength,
           existsKeys:
               tabsAuthenticated.values.map((e) => e.viewTypeBytes).toList());
-      // await Future.delayed(const Duration(seconds: 3));
       final controller = await _initContiller(tabId, url: i.url);
       final auth = WebViewTabController(
           controller: controller, viewId: tabId, key: key, tab: i);
@@ -349,14 +346,9 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
   void onPageStart(WebViewEvent event) {
     _navigatorStatus();
     final String? url = event.url;
-    final lastUrl = lastEvent.value?.evnet.url;
-    _event.value = WebviewLastPageEvent(
-        evnet: event,
-        client: createClientInfos(
-            clientId: event.viewId,
-            url: event.url,
-            faviIcon: event.favicon,
-            title: event.title));
+    final lastUrl = latestClient.value.url;
+    latestClient.value =
+        LastWeb3ActiveClient(identifier: event.viewId, url: event.url);
     if (url == null) return;
     textController.text = url;
     _tabLocker.synchronized(() async {
@@ -394,8 +386,11 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
   void _onPushListener(Route route, Route? previousRoute) {
     if (isHide) return;
     final name = route.settings.name;
-    if (name == null) return;
-    if (name.startsWith(PageRouter.web3)) {
+    final current = previousRoute?.settings.name;
+    if (name == PageRouter.settingMenu || name == PageRouter.webviewMenu) {
+      return;
+    }
+    if (current == '/') {
       _page = WebViewTabPage.hide;
       MethodUtils.after(() async => notifier.notify(),
           duration: APPConst.animationDuraion);
@@ -403,10 +398,8 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
   }
 
   void _onPopListener(Route route, Route? previousRoute) {
-    final name = route.settings.name;
     final current = previousRoute?.settings.name;
     if (!isHide) return;
-    if (name == null || current == null) return;
     if (current == '/') {
       _page = WebViewTabPage.browser;
       notifier.notify();
@@ -416,7 +409,7 @@ mixin WebViewTabImpl on CryptoWokerImpl, WebViewListener {
   Future<void> dispose() async {
     observer.removePopListener(_onPopListener);
     observer.removePushListener(_onPushListener);
-    _event.dispose();
+    latestClient.dispose();
     navigatorStatus.dispose();
     _progress.dispose();
     notifier.dispose();

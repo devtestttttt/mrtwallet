@@ -178,7 +178,7 @@ class _SetupNetworkAmountState extends State<SetupNetworkAmount>
                         Positioned(
                           bottom: 25,
                           left: 10,
-                          child: StreamWidget(
+                          child: APPStreamBuilder(
                               value: balance,
                               builder: (context, value) =>
                                   MarketPriceView(balance: value)),

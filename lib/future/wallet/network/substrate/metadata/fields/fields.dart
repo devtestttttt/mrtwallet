@@ -94,7 +94,7 @@ class _BooleanFieldValidatorView extends StatelessWidget {
   final MetadataFormValidatorBoolean validator;
   @override
   Widget build(BuildContext context) {
-    return StreamWidget(
+    return APPStreamBuilder(
       value: validator.value,
       builder: (context, value) {
         return MultiSliver(
@@ -176,7 +176,7 @@ class _NumericFieldValidatorView extends StatelessWidget {
   final MetadataFormValidatorNumeric validator;
   @override
   Widget build(BuildContext context) {
-    return StreamWidget(
+    return APPStreamBuilder(
         value: validator.value,
         builder: (context, value) {
           return MultiSliver(
@@ -258,7 +258,7 @@ class _StringFieldValidatorView extends StatelessWidget {
   final MetadataFormValidatorString validator;
   @override
   Widget build(BuildContext context) {
-    return StreamWidget(
+    return APPStreamBuilder(
         value: validator.value,
         builder: (context, value) {
           return MultiSliver(
@@ -297,7 +297,7 @@ class _BytesFieldValidatorView extends StatelessWidget {
   final MetadataFormValidatorBytes validator;
   @override
   Widget build(BuildContext context) {
-    return StreamWidget(
+    return APPStreamBuilder(
         value: validator.value,
         builder: (context, value) {
           return MultiSliver(
@@ -383,7 +383,7 @@ class _SequenceFieldValidatorView extends StatelessWidget {
   final MetadataFormValidatorSequence validator;
   @override
   Widget build(BuildContext context) {
-    return StreamWidget(
+    return APPStreamBuilder(
         value: validator.streamValidators,
         builder: (context, validators) {
           return MultiSliver(children: [
@@ -457,7 +457,7 @@ class _VariantFieldValidatorView extends StatelessWidget {
       for (final i in validator.info.variants)
         i: Text(i.name.camelCase, style: context.textTheme.titleMedium),
     };
-    return StreamWidget(
+    return APPStreamBuilder(
         value: validator.validator,
         builder: (context, value) {
           return MultiSliver(

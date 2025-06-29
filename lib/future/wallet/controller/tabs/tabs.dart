@@ -6,6 +6,7 @@ import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 import 'package:on_chain_wallet/future/wallet/controller/wallet/ui_wallet.dart';
 import 'package:on_chain_wallet/future/wallet/swap/controller/controller/controller.dart';
 import 'package:on_chain_wallet/future/wallet/webview/controller/controller/controller.dart';
+import 'package:on_chain_wallet/marketcap/prices/live_currency.dart';
 import 'package:on_chain_wallet/wallet/api/provider/core/provider.dart';
 import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
 import 'package:on_chain_wallet/wallet/models/others/models/status.dart';
@@ -29,6 +30,7 @@ enum WalletPage {
 
 mixin WalletProviderTabController on StateController {
   final _lock = SynchronizedLock();
+  final LiveCurrencies currency = LiveCurrencies();
   WebViewController? _webviewController;
   SwapStateController? _swap;
   APPSetting get appSetting;
@@ -135,7 +137,7 @@ mixin WalletProviderTabController on StateController {
   Future<bool> _initSwap() async {
     if (_swap == null && appSetting.walletSetting.enableSwap) {
       _swap = SwapStateController(
-          chains: wallet.getChains(), liveCurrencies: wallet.currency);
+          chains: wallet.getChains(), liveCurrencies: currency);
       _swap?.initSwap();
       _enableSwap = true;
       return true;
@@ -179,8 +181,8 @@ mixin WalletProviderTabController on StateController {
     });
   }
 
-  Future<void> _onWalletStatus(WStatus status) async {
-    switch (status) {
+  Future<void> onWalletEvent(WalletActionEvent event) async {
+    switch (event.walletStatus) {
       case WStatus.lock:
         await _dispose();
         onChangeIndex(0);
@@ -191,6 +193,7 @@ mixin WalletProviderTabController on StateController {
         break;
       default:
     }
+    await _webviewController?.onWalletEvent(event);
   }
 
   final Cancelable _cancelable = Cancelable();
@@ -221,11 +224,5 @@ mixin WalletProviderTabController on StateController {
     if (provider == null) return;
     _cancelable.cancel();
     await account.setProvider(provider);
-  }
-
-  @override
-  void ready() {
-    super.ready();
-    wallet.status.stream.listen(_onWalletStatus);
   }
 }

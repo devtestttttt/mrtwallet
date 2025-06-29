@@ -7,7 +7,6 @@ import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/messages/types/message.dart';
 import 'package:on_chain_wallet/wallet/web3/state/core/network.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/tron/tron.dart';
-import 'package:on_chain_wallet/wallet/web3/state/core/types.dart';
 import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 
 mixin TronWeb3StateHandler<
@@ -24,6 +23,15 @@ mixin TronWeb3StateHandler<
         EVENT>
     on Web3StateHandler<TronAddress, Web3TronChainAccount, STATEADDRESS,
         Web3TronChainIdnetifier, STATEACCOUNT, RESPONSE, REQUEST, EVENT> {
+  @override
+  TronAddress toAddress(String v, {Web3TronChainIdnetifier? network}) {
+    try {
+      return TronAddress(v);
+    } catch (_) {}
+    throw Web3RequestExceptionConst.invalidAddress(
+        key: v, network: networkType.name);
+  }
+
   @override
   NetworkType get networkType => NetworkType.tron;
   @override
@@ -52,14 +60,15 @@ mixin TronWeb3StateHandler<
 
       final data = params.paramsAsMap(keys: keys, method: method);
       final account = Web3ValidatorUtils.parseParams2(() {
-        final account =
-            DefaultStateAddress.parse(data["address"] ?? data["account"]);
+        final account = tryParseStateAddress(
+            addr: data["address"] ?? data["account"],
+            params: params,
+            state: state,
+            network: network);
         if (account == null) return null;
 
         return state.findAddressOrDefault(
-            address: TronAddress(account.address),
-            network: network,
-            networkStr: account.chain);
+            address: account.address, network: network ?? account.chain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: "address", network: networkType.name));
@@ -84,13 +93,16 @@ mixin TronWeb3StateHandler<
             !data.containsKey("account")) {
           return state.defaultNetworkChainAccountOrThrow;
         }
-        final account =
-            DefaultStateAddress.parse(data["address"] ?? data["account"]);
+        final account = tryParseStateAddress(
+            addr: data["address"] ?? data["account"],
+            params: params,
+            state: state,
+            network: network);
         if (account == null) return null;
         return state.findAddressOrDefault(
-            address: TronAddress(account.address),
-            network: network,
-            networkStr: account.chain);
+          address: account.address,
+          network: network ?? account.chain,
+        );
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: "address", network: networkType.name));

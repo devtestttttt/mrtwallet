@@ -257,7 +257,7 @@ class CborTagsConst {
   static const List<int> web3EthereumChainIdentifier = [161, 0, 2];
   static const List<int> web3TronChainIdentifier = [161, 0, 4];
   static const List<int> web3AptosChainIdentifier = [161, 0, 5];
-  static const List<int> web3AppAuthKey = [162, 0, 0];
+  static const List<int> web3AppAuthKey = [162, 0, 1];
   static const List<int> web3SubstrateChainIdentifier = [161, 0, 3];
   static const List<int> web3CosmosChainIdentifier = [161, 0, 6];
   static const List<int> web3BitcoinChainIdentifier = [161, 0, 7];

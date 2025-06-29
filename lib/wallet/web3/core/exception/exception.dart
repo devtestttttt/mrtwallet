@@ -43,9 +43,9 @@ class Web3RequestException with Equatable implements Exception {
   List get variabels => [code, message];
 }
 
-class Web3RejectException implements AppException {
-  const Web3RejectException._();
-  static const Web3RejectException instance = Web3RejectException._();
+class Web3RequestClosed implements AppException {
+  const Web3RequestClosed._();
+  static const Web3RequestClosed instance = Web3RequestClosed._();
 
   @override
   final String message = "web3_request_rejected_desc";

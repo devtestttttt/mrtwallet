@@ -217,30 +217,31 @@ class _TronTransactionFields extends StatelessWidget {
     switch (field.type) {
       case TransactionContractType.accountPermissionUpdateContract:
         return TronAccountUpdatePermissionFieldsView(
-            account: account, address: address, validator: field);
+            account: account, address: address, validator: field.cast());
       case TransactionContractType.transferContract:
       case TransactionContractType.transferAssetContract:
       case TransactionContractType.triggerSmartContract:
-        return _TronTransactionTransferFields(field: field, account: account);
+        return _TronTransactionTransferFields(
+            field: field.cast(), account: account);
       case TransactionContractType.freezeBalanceV2Contract:
         return TronFreezBalanceV2FieldsView(
-            account: account, address: address, validator: field);
+            account: account, address: address, validator: field.cast());
       case TransactionContractType.unfreezeBalanceV2Contract:
         return TronUnFreezBalanceV2FieldsView(
-            account: account, address: address, validator: field);
+            account: account, address: address, validator: field.cast());
       case TransactionContractType.delegateResourceContract:
         return TronDelegatedResourceFieldsView(
-            account: account, address: address, validator: field);
+            account: account, address: address, validator: field.cast());
       case TransactionContractType.unDelegateResourceContract:
         return TronUnDelegatedResourceFieldsView(
-            account: account, address: address, validator: field);
+            account: account, address: address, validator: field.cast());
       case TransactionContractType.witnessCreateContract:
       case TransactionContractType.witnessUpdateContract:
         return TronCreateWitnessFieldsView(
-            account: account, address: address, validator: field);
+            account: account, address: address, validator: field.cast());
       case TransactionContractType.accountUpdateContract:
         return TronUpdateAccountFieldsView(
-            account: account, address: address, validator: field);
+            account: account, address: address, validator: field.cast());
       default:
         return WidgetConstant.sizedBox;
     }

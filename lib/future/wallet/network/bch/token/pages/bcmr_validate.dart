@@ -67,7 +67,7 @@ class __MetadataContentState extends State<BCMRUriValidateView> with SafeState {
 
   Future<CashTokenBCMR> getBCMR(WalletProvider wallet, String uri) async {
     final MethodResult<String> result =
-        await wallet.wallet.currency.httpGet<String>(uri);
+        await wallet.currency.httpGet<String>(uri);
     final Map<String, dynamic>? inJson =
         MethodUtils.nullOnException(() => StringUtils.toJson(result.result));
     if (inJson == null) {

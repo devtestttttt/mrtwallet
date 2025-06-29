@@ -9,7 +9,6 @@ import 'package:on_chain_wallet/wallet/web3/core/messages/types/message.dart';
 import 'package:on_chain_wallet/wallet/web3/core/permission/types/account.dart';
 import 'package:on_chain_wallet/wallet/web3/state/core/network.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/sui/sui.dart';
-import 'package:on_chain_wallet/wallet/web3/state/core/types.dart';
 import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 
 mixin SuiWeb3StateHandler<
@@ -26,6 +25,15 @@ mixin SuiWeb3StateHandler<
         EVENT>
     on Web3StateHandler<SuiAddress, Web3SuiChainAccount, STATEADDRESS,
         Web3ChainDefaultIdnetifier, STATEACCOUNT, RESPONSE, REQUEST, EVENT> {
+  @override
+  SuiAddress toAddress(String v, {Web3ChainDefaultIdnetifier? network}) {
+    try {
+      return SuiAddress(v);
+    } catch (_) {}
+    throw Web3RequestExceptionConst.invalidAddress(
+        key: v, network: networkType.name);
+  }
+
   @override
   NetworkType get networkType => NetworkType.sui;
   @override
@@ -47,14 +55,16 @@ mixin SuiWeb3StateHandler<
           errorOnNull: false,
           error: Web3RequestExceptionConst.invalidStringArgrument('chain'));
       final account = Web3ValidatorUtils.parseParams2(() {
-        final account =
-            DefaultStateAddress.parse(data["address"] ?? data["account"]);
+        final account = tryParseStateAddress(
+            addr: data["address"] ?? data["account"],
+            params: params,
+            state: state,
+            network: network);
         if (account == null) return null;
 
         return state.findAddressOrDefault(
-            address: SuiAddress(account.address),
-            network: network ?? chain,
-            networkStr: account.chain);
+            address: account.address,
+            network: network ?? chain ?? account.chain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: "address", network: networkType.name));
@@ -96,14 +106,15 @@ mixin SuiWeb3StateHandler<
       const List<String> keys = ["message"];
       final data = params.paramsAsMap(keys: keys, method: method);
       final account = Web3ValidatorUtils.parseParams2(() {
-        final account =
-            DefaultStateAddress.parse(data["address"] ?? data["account"]);
+        final account = tryParseStateAddress(
+            addr: data["address"] ?? data["account"],
+            params: params,
+            state: state,
+            network: network);
         if (account == null) return null;
 
         return state.findAddressOrDefault(
-            address: SuiAddress(account.address),
-            network: network,
-            networkStr: account.chain);
+            address: account.address, network: network ?? account.chain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: "address", network: networkType.name));

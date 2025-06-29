@@ -30,7 +30,7 @@ class Web3BitcoinGlobalRequestController<RESPONSE,
     }
   }
 
-  LiveTransactionForm? _liveRequest;
+  LiveTransactionForm<BitcoinWeb3Form>? _liveRequest;
   BitcoinWeb3Form get form => _liveRequest!.value;
 
   void onCompleteForm(Object? obj) async {
@@ -90,6 +90,6 @@ class Web3BitcoinGlobalRequestController<RESPONSE,
   void close() {
     super.close();
     _liveRequest?.removeListener(onChangeForm);
-    form.onCompleteForm = null;
+    _liveRequest?.value.onCompleteForm = null;
   }
 }

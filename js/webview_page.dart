@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:js_interop';
 import 'package:on_chain_bridge/models/events/models/wallet_event.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
+import 'package:on_chain_wallet/wallet/web3/core/messages/models/models/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/permission/models/authenticated.dart';
 import 'js_wallet/js_wallet.dart';
 import 'package:on_chain_bridge/web/web.dart';
@@ -47,8 +48,8 @@ void main(List<String> args) async {
       return false;
     }
     if (walletEvent.type == WalletEventTypes.exception) {
-      workerCompleter.completeError(
-          JSWalletError(message: String.fromCharCodes(walletEvent.data)));
+      final error = Web3ExceptionMessage.deserialize(bytes: walletEvent.data);
+      workerCompleter.completeError(error.toWalletError());
       return false;
     }
     final target = JSWebviewTraget.fromName(walletEvent.platform);
@@ -64,8 +65,35 @@ void main(List<String> args) async {
       final workerEvent = event.data as JSWorkerEvent;
       switch (workerEvent.eventType) {
         case JSWorkerType.ready:
-          data.additional = null;
-          worker.postMessage(data);
+          if (workerEvent.clientId == null) {
+            throw JSWalletError(message: "Invalid request. missing client ID");
+          }
+          postToWallet(
+              data: JSWorkerWalletData(
+                  clientId: workerEvent.clientId!,
+                  requestId: "",
+                  data: workerEvent.clientId!,
+                  type: WalletEventTypes.tabId.name),
+              target: JSWebviewTraget.macos);
+          onChain.onWebViewMessage = (JSWalletEvent event) {
+            if (walletEvent.type == WalletEventTypes.exception) {
+              final error =
+                  Web3ExceptionMessage.deserialize(bytes: walletEvent.data)
+                      .toWalletError();
+              workerCompleter.completeError(error);
+              worker.terminate();
+              pageController.disable(error);
+              return false.toJS;
+            }
+            if (walletEvent.type != WalletEventTypes.activation) {
+              return false.toJS;
+            }
+            data.additional = null;
+            worker.postMessage(event);
+            onChain.onWebViewMessage = null;
+            return true.toJS;
+          }.toJS;
+
           break;
         case JSWorkerType.active:
           workerCompleter.complete((worker, target));
@@ -82,15 +110,16 @@ void main(List<String> args) async {
               target: target);
           break;
         case JSWorkerType.error:
-          final error = workerEvent.data as JSWalletError;
+          final error = (workerEvent.data as JSString).toDart;
+          final message = Web3ExceptionMessage.deserialize(hex: error);
           worker.terminate();
-          pageController.disable(error);
+          pageController.disable(message.toWalletError());
           workerCompleter.completeError(error);
           postToWallet(
               data: JSWorkerWalletData(
                   clientId: onChain.clientId,
                   requestId: data.requestId!,
-                  data: error.message ?? '',
+                  data: error,
                   type: WalletEventTypes.exception.name),
               target: target);
           break;
@@ -109,8 +138,6 @@ void main(List<String> args) async {
 
   onChain.onWebViewMessage = onActivation.toJS;
   final activation = await workerCompleter.future;
-  // pageController.initClients('', worker: activation.$1);
-
   final worker = activation.$1;
   final target = activation.$2;
 

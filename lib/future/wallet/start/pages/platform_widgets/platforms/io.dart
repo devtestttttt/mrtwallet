@@ -21,6 +21,7 @@ class _AppbarExtentionWidget extends StatelessWidget {
     return PopupMenuButton(
         iconColor: context.colors.onSurface,
         icon: Icon(Icons.more_vert),
+        routeSettings: RouteSettings(name: PageRouter.settingMenu),
         constraints: WidgetConstant.constraintsMinWidth200,
         itemBuilder: (c) {
           return [

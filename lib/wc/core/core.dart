@@ -131,10 +131,10 @@ class WalletConnect extends WalletConnectCore with WalletConnectRelayClient {
     for (final i in events) {
       for (final event in i) {
         if (session.namespaces.chainApproved(event.chainId)) {
-          _sendRequest(
-              SendSessionRequestParams(
-                  params: event, topic: topic, session: session),
-              waitForResult: false);
+          // _sendRequest(
+          //     SendSessionRequestParams(
+          //         params: event, topic: topic, session: session),
+          //     waitForResult: false);
         }
       }
     }

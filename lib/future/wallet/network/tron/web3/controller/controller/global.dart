@@ -16,7 +16,7 @@ class Web3TronGlobalRequestController<RESPONSE,
 
   @override
   bool get clientRequired => false;
-  LiveTransactionForm? _liveRequest;
+  LiveTransactionForm<TronWeb3Form>? _liveRequest;
 
   TronWeb3Form get form => _liveRequest!.value;
 
@@ -78,6 +78,6 @@ class Web3TronGlobalRequestController<RESPONSE,
   void close() {
     super.close();
     _liveRequest?.removeListener(onChangeForm);
-    form.onCompleteForm = null;
+    _liveRequest?.value.onCompleteForm = null;
   }
 }

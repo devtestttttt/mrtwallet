@@ -7,124 +7,57 @@ import 'package:on_chain_bridge/web/web.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/future.dart';
 import 'package:on_chain_wallet/future/state_managment/extension/extension.dart';
-import 'package:on_chain_wallet/future/wallet/controller/models/key.dart';
-import 'package:on_chain_wallet/future/wallet/controller/models/login_history.dart';
-import 'package:on_chain_wallet/future/wallet/controller/impl/web3_request_controller.dart';
+import 'package:on_chain_wallet/future/wallet/controller/extension/models/models.dart';
+import 'package:on_chain_wallet/future/wallet/web3/controller/web3_request_controller.dart';
 import 'package:on_chain_wallet/wallet/web3/web3.dart';
 import 'package:on_chain_wallet/crypto/requets/messages/crypto/requests/chacha.dart';
 
-class ExtentionSessionStorageConst {
-  static const String key = "extention_setting";
-  static const String history = "extention_history";
-  static const String expireKey = "extention_expire";
-  static const String extentionType = "popup";
-  static const String normalTabType = "normal";
-  static const List<int> keyTag = [23, 123, 21, 10];
-  static const List<int> historyTag = [123, 21, 10, 21];
-  static const String iframeName = "iframe";
-  static const String viewQueryParameters = "view";
-  static const String contextQueryParameters = "context";
-  static const Map<String, dynamic> closeEvent = {
-    "message": "close_iframe",
-    "source": "wallet",
-  };
-}
-
-enum ExtensionWalletContextType {
-  action(0),
-  sidePanel(1),
-  popup(2),
-  tab(3),
-  sidebarAction(4);
-
-  bool get isAction => this == action;
-  bool get isSidePanel => this == sidePanel;
-  bool get isSidebarAction => this == sidebarAction;
-  bool get isTab => this == tab;
-  final int value;
-  const ExtensionWalletContextType(this.value);
-
-  static ExtensionWalletContextType? fromName(String? name) {
-    return values.firstWhereOrNull((e) => e.name == name);
-  }
-
-  static ExtensionWalletContextType fromValue(int? value) {
-    return values.firstWhere((e) => e.value == value,
-        orElse: () => throw WalletExceptionConst.invalidData(
-            messsage: 'invalid extension context type tag'));
-  }
-}
-
-class ExtensionWalletContext {
-  final ExtensionWalletContextType context;
-  final int windowId;
-  final String instanceId;
-  final int? tabId;
-  final bool iframe;
-  const ExtensionWalletContext(
-      {required this.context,
-      required this.windowId,
-      required this.instanceId,
-      required this.tabId,
-      required this.iframe});
-  static const ExtensionWalletContext init = ExtensionWalletContext(
-      context: ExtensionWalletContextType.action,
-      windowId: 0,
-      instanceId: '',
-      tabId: null,
-      iframe: false);
-}
-
 mixin ExtentionWalletHandler on Web3RequestControllerImpl {
   ExtensionWalletContext _context = ExtensionWalletContext.init;
+  final Cancelable _cancelable = Cancelable();
   ExtensionWalletContext get context => _context;
-  final StreamValue<Web3ClientInfo?> latestClient = StreamValue(null);
+
   final sessionStorage = extension.storage.session;
   GlobalKey<NavigatorState> get navigatorKey;
   StreamSubscription<int>? _onWalletExpireTime;
   List<ExtensionWalletContextType> _supportedActions = [];
   List<ExtensionWalletContextType> get supportedActions => _supportedActions;
   final _lock = SynchronizedLock();
+  final Map<String, String> _clientsIds = {};
 
-  @override
-  Future<Web3ClientInfo?> currentApllicationId() async {
-    if (jsWindow.navigator.isFirefox && isMozila) {
-      List<ChromeWindow> windows = await extension.windows.getAll_(
+  Future<ChromeTab?> _getInitializeTab() async {
+    if (!context.context.isPopup) {
+      ChromeWindow windows = await extension.windows.get_(
+        context.windowId,
         populate: true,
         windowTypes: [ExtentionSessionStorageConst.normalTabType],
       );
-      for (final w in windows) {
-        final tabs = w.tabs?.toDart ?? [];
-        for (final i in tabs) {
-          if (!i.active) continue;
-          final client = createClientInfos(
-              clientId: i.id?.toString(),
-              url: i.url,
-              title: i.title,
-              faviIcon: i.favIconUrl);
-          if (client == null) continue;
-          return client;
-        }
-      }
-      return null;
-      // final window
+      return (windows.tabs?.toDart ?? <ChromeTab>[])
+          .firstWhereOrNull((e) => e.active);
     }
-    ChromeWindow window = await extension.windows.getLastFocused_(
-      populate: true,
-      windowTypes: [ExtentionSessionStorageConst.normalTabType],
-    );
-    final tabs = window.tabs?.toDart ?? [];
-    for (final i in tabs) {
-      if (!i.active) continue;
-      final client = createClientInfos(
-          clientId: i.id?.toString(),
-          url: i.url,
-          title: i.title,
-          faviIcon: i.favIconUrl);
-      if (client == null) continue;
-      return client;
+    List<ChromeWindow> windows =
+        await extension.windows.getAll_(populate: true);
+
+    final validWindowses = windows.where((e) => e.id != context.windowId);
+    final focusedWindows =
+        validWindowses.firstWhereOrNull((e) => e.focused == true);
+    final tabs = validWindowses.expand((e) => e.tabs?.toDart ?? <ChromeTab>[]);
+    if (focusedWindows != null) {
+      return tabs
+          .firstWhereOrNull((e) => e.active && e.id == focusedWindows.id);
     }
-    return null;
+    return tabs.firstWhereOrNull((e) => e.active);
+  }
+
+  @override
+  Future<void> sendMessageToClient(
+      {required Web3ActiveClient client,
+      required Web3EncryptedMessage message}) async {
+    final event = toResponseEvent(
+        id: client.clientId,
+        type: WalletEventTypes.message,
+        data: message.toCbor().encode());
+    _sendToClient(event, client);
   }
 
   void _onTick(int _) {
@@ -256,7 +189,9 @@ mixin ExtentionWalletHandler on Web3RequestControllerImpl {
                 .toJsEvent());
         return true;
       case WalletEventTypes.tabId:
-        _onAuthTabMessage(sender.tab)
+        final tab = sender.tab;
+        if (tab == null) return false;
+        _onAuthTabMessage(tab: tab, event: event)
             .then((e) => sendResponse.callAsFunction(null, e.toJsEvent()));
         return true;
       default:
@@ -265,106 +200,60 @@ mixin ExtentionWalletHandler on Web3RequestControllerImpl {
     return false;
   }
 
-  Future<WalletEvent> _onAuthTabMessage(ChromeTab? tab) async {
-    final client = createClientInfos(
-        clientId: tab?.id.toString(),
-        url: tab?.url,
-        faviIcon: tab?.favIconUrl,
-        title: tab?.title);
-    if (client == null) {
-      return WalletEvent(
-          clientId: "${tab?.id ?? -1}",
-          data: Web3RequestExceptionConst.invalidHost
-              .toResponseMessage()
-              .toCbor()
-              .encode(),
-          requestId: "",
-          type: WalletEventTypes.exception,
-          target: WalletEventTarget.wallet);
-    }
-    final auth = await getWeb3EncryptedDappData(client,
-        encryptionKey: tab!.id.toString());
-    return WalletEvent(
-        clientId: tab.id.toString(),
-        data: auth.toCbor().encode(),
-        requestId: "",
-        type: WalletEventTypes.activation,
-        target: WalletEventTarget.wallet);
+  Future<WalletEvent> _onAuthTabMessage(
+      {required ChromeTab tab, required WalletEvent event}) async {
+    _onTabRemoved(tab.id);
+
+    final client = await _getTabInfo(tab, clientId: event.clientId);
+    final auth = await createPageAuthenticated(
+        peerKey: event.clientId,
+        identifier: tab.id.toString(),
+        info: client.client?.client);
+    _lock.synchronized(() {
+      if (client.identifier == latestClient.value.identifier) {
+        _updateLatestClient(tab);
+      }
+    });
+    return auth.event
+        .copyWith(additional: "${tab.id}:${auth.event.additional}");
   }
 
   void _onMessage(JSWalletEvent message, RuntimePort port) async {
-    try {
-      final event = message.toEvent();
-      if (event == null || event.target != WalletEventTarget.external) return;
-      if (event.type == WalletEventTypes.ping) {
-        port.postMessage(message);
-        return;
-      }
-      final tab = await _getTab(idStr: event.clientId);
+    final event = message.toEvent();
+    if (event == null || event.target != WalletEventTarget.external) return;
+    if (event.type == WalletEventTypes.ping) {
+      port.postMessage(message);
+      return;
+    }
+    final tabId = int.tryParse(event.additional ?? '');
+    final tab = await _getTab(id: tabId);
+    final client = await _getTabInfo(tab);
+    _focusCurrent();
+    final Completer<WalletEvent?> completer = Completer();
+    onRequest(
+        request: event,
+        identifier: event.additional!,
+        url: tab?.url,
+        title: tab?.title,
+        image: tab?.favIconUrl,
+        completer: completer);
+    void onDisconnect(RuntimePort port) {
+      onWeb3ClinetDisconnected(client.client);
+    }
 
-      final Web3ClientInfo? client = createClientInfos(
-          clientId: tab?.id?.toString(),
-          url: tab?.url,
-          faviIcon: tab?.favIconUrl,
-          title: tab?.title);
-      if (client == null) {
-        port.postMessage(toResponseEvent(
-                id: "${tab?.id ?? -1}",
-                type: WalletEventTypes.exception,
-                data: Web3RequestExceptionConst.invalidHost
-                    .toResponseMessage()
-                    .toCbor()
-                    .encode(),
-                requestId: event.requestId)
-            .toJsEvent());
-
-        return;
-      }
-      _focusCurrent();
-      final request = Web3RequestApplicationInformation(
-          info: client,
-          data: event.data,
-          requestId: event.requestId,
-          applicationId: client.identifier);
-      onWalletEvent(request, event.clientId);
-      void onDisconnect(RuntimePort port) {
-        if (request.isClosed) return;
-        request.completeError();
-      }
-
-      port.onDisconnect.addListener(onDisconnect.toJS);
-      final responseEvent = await request.onCompleteRequest;
+    port.onDisconnect.addListener(onDisconnect.toJS);
+    final responseEvent = await completer.future;
+    bool result = responseEvent != null;
+    if (responseEvent != null) {
       port.postMessage(responseEvent.toJsEvent());
-      request.completeSuccess();
-      port.onDisconnect.removeListener(onDisconnect.toJS);
-      await extension.tabs.update_(int.parse(event.clientId), active: true);
-    } catch (_) {}
+    }
+    completeRequest(
+        requestId: event.requestId, clientId: event.clientId, result: result);
+    if (tabId != null) await extension.tabs.update_(tabId, active: true);
   }
 
   void _onConnet(RuntimePort port) {
     port.onMessage.addListener(_onMessage.toJS);
-  }
-
-  void _onActivateChain(ActiveInfo info) {
-    // info.tabId
-    final tabInfo = extension.tabs.get_(info.tabId);
-    tabInfo.then(_updateTabs);
-  }
-
-  Future<void> _updateTabs(ChromeTab tab) async {
-    final client = createClientInfos(
-        clientId: tab.id?.toString(),
-        url: tab.url,
-        title: tab.title,
-        faviIcon: tab.favIconUrl);
-    if (client == null) return;
-    final permission =
-        await getWeb3EncryptedDappData(client, encryptionKey: null);
-    final event = toResponseEvent(
-        id: "${tab.id}",
-        type: WalletEventTypes.message,
-        data: permission.toCbor().encode());
-    sendToClient(event);
   }
 
   Future<void> initContext() async {
@@ -425,6 +314,71 @@ mixin ExtentionWalletHandler on Web3RequestControllerImpl {
         faviIcon: tab.favIconUrl);
   }
 
+  String _createClientIdentifier(Web3ClientInfo client, int? tabId) {
+    assert(tabId != null, "invalid tabId");
+    return "$tabId:${client.identifier}";
+  }
+
+  Future<LastWeb3ActiveClient> _getTabInfo(ChromeTab? tab,
+      {String? clientId}) async {
+    if (tab == null || tab.id == null) {
+      return LastWeb3ActiveClient(web3Status: WalletJSScriptStatus.unknownHost);
+    }
+    final client = _createClientInfosFromTab(tab);
+    if (client == null) {
+      return LastWeb3ActiveClient(
+          web3Status: WalletJSScriptStatus.unknownHost,
+          identifier: tab.id.toString(),
+          url: tab.url);
+    }
+    final identifier = _createClientIdentifier(client, tab.id);
+    if (clientId != null && !_clientsIds.containsKey(identifier)) {
+      _clientsIds[identifier] = clientId;
+    }
+    clientId ??= _clientsIds[identifier];
+    if (clientId == null) {
+      final r = await extension.tabs
+          .sendMessage_(
+              tabId: tab.id!,
+              message: WalletEvent(
+                target: WalletEventTarget.external,
+                type: WalletEventTypes.tabId,
+              ).toJsEvent())
+          .timeout(const Duration(seconds: 5))
+          .catchError((_) {
+        return null;
+      });
+      clientId = r?.clientId;
+      if (clientId != null) {
+        _clientsIds[identifier] = clientId;
+      }
+    }
+    if (clientId == null) {
+      return LastWeb3ActiveClient(
+          web3Status: WalletJSScriptStatus.failed,
+          identifier: tab.id.toString(),
+          url: tab.url);
+    }
+    final key = await getEncryptionKey(
+        clientId: clientId, identifier: tab.id.toString(), client: client);
+    return LastWeb3ActiveClient(
+        web3Status: WalletJSScriptStatus.active,
+        client: key,
+        identifier: tab.id.toString(),
+        url: tab.url);
+  }
+
+  Future<void> _updateLatestClient(ChromeTab? tab) async {
+    _cancelable.cancel();
+    await _lock.synchronized(() async {
+      latestClient.value = LastWeb3ActiveClient();
+      final result = await MethodUtils.call(() => _getTabInfo(tab),
+          cancelable: _cancelable);
+      if (result.hasError) return;
+      latestClient.value = result.result;
+    });
+  }
+
   void _onTabActive(ActiveInfo info) async {
     if (context.context == ExtensionWalletContextType.popup &&
         info.windowId == context.windowId) {
@@ -436,10 +390,13 @@ mixin ExtentionWalletHandler on Web3RequestControllerImpl {
     }
 
     final tab = await _getTab(id: info.tabId);
-    latestClient.value = _createClientInfosFromTab(tab);
+    _updateLatestClient(tab);
   }
 
   void _onTabUpdate(int id, ChangeInfo info, ChromeTab tab) async {
+    if (info.status != ExtentionSessionStorageConst.updateTabCompleteStatus) {
+      return;
+    }
     if (context.context == ExtensionWalletContextType.popup &&
         tab.windowId == context.windowId) {
       return;
@@ -448,7 +405,14 @@ mixin ExtentionWalletHandler on Web3RequestControllerImpl {
         id == context.tabId) {
       return;
     }
-    latestClient.value = _createClientInfosFromTab(tab);
+    _onTabRemoved(tab.id);
+    _updateLatestClient(tab);
+  }
+
+  void _onTabRemoved(int? tabId) async {
+    if (tabId == null) return;
+    _clientsIds.removeWhere((k, v) => k.startsWith("$tabId:"));
+    onWeb3ClientRemoved(tabId.toString());
   }
 
   void _onWindowFocusChanged(int windowId) async {
@@ -461,55 +425,22 @@ mixin ExtentionWalletHandler on Web3RequestControllerImpl {
         tab?.id == context.tabId) {
       return;
     }
-    latestClient.value = _createClientInfosFromTab(tab);
+    _updateLatestClient(tab);
   }
 
   Future<void> initExtension() async {
     extension.runtime.onMessage.addListener(_onRuntimeMessage.toJS);
     extension.runtime.onConnect.addListener(_onConnet.toJS);
-    extension.tabs.onActivated.addListener(_onActivateChain.toJS);
     extension.runtime.sendMessage_(
         message: WalletEvent(
             target: WalletEventTarget.wallet,
             type: WalletEventTypes.ping,
             requestId: 'initExtension'));
+    await _getInitializeTab().then((e) => _updateLatestClient(e));
     extension.tabs.onActivated.addListener(_onTabActive.toJS);
     extension.tabs.onUpdated.addListener(_onTabUpdate.toJS);
     extension.windows.onFocusChanged.addListener(_onWindowFocusChanged.toJS);
-  }
-
-  @override
-  Future<void> sendMessageToClient(
-      Web3EncryptedMessage message, String applicationId) async {
-    List<ChromeWindow> windows = await extension.windows.getAll_(
-        populate: true,
-        windowTypes: [ExtentionSessionStorageConst.normalTabType]);
-    for (final w in windows) {
-      final tabs = w.tabs?.toDart ?? [];
-      for (final i in tabs) {
-        if (!i.active) continue;
-        if (i.id == null) continue;
-        final id = Web3APPAuthentication.toApplicationId(i.url);
-        if (id == applicationId) {
-          final event = toResponseEvent(
-              id: "${i.id}",
-              type: WalletEventTypes.message,
-              data: message.toCbor().encode());
-          sendToClient(event);
-        }
-      }
-    }
-  }
-
-  @override
-  Future<void> sendToClient(WalletEvent event) async {
-    await extension.tabs
-        .sendMessage_(
-            tabId: int.parse(event.clientId), message: event.toJsEvent())
-        .timeout(APPConst.tenSecoundDuration, onTimeout: () => null)
-        .catchError((e) {
-      return null;
-    });
+    extension.tabs.onRemoved.addListener(_onTabRemoved.toJS);
   }
 
   Future<ChromeWindow> _getWindow() async {
@@ -604,6 +535,16 @@ mixin ExtentionWalletHandler on Web3RequestControllerImpl {
           break;
       }
       _closeSelf();
+    });
+  }
+
+  Future<void> _sendToClient(WalletEvent event, Web3ActiveClient client) async {
+    await extension.tabs
+        .sendMessage_(
+            tabId: int.parse(client.identifier), message: event.toJsEvent())
+        .timeout(APPConst.tenSecoundDuration)
+        .catchError((e) {
+      return null;
     });
   }
 }

@@ -45,7 +45,6 @@ class CircleAPPImageView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = onNull ?? "U";
-
     if (image == null) {
       return _CircleAPPImageView(
           radius: radius, onNull: name, child: onError?.call(context));

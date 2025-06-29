@@ -9,28 +9,9 @@ import 'package:on_chain_wallet/future/state_managment/core/observer.dart';
 import 'package:on_chain_wallet/future/wallet/controller/wallet/ui_wallet.dart';
 import 'package:on_chain_wallet/future/wallet/webview/controller/controller/tab_controller.dart';
 import 'package:on_chain_wallet/future/wallet/webview/controller/controller/tab_handler.dart';
-import 'package:on_chain_wallet/future/wallet/controller/impl/web3_request_controller.dart';
+import 'package:on_chain_wallet/future/wallet/web3/controller/web3_request_controller.dart';
 import 'package:on_chain_wallet/wallet/web3/web3.dart';
 import 'package:on_chain_wallet/crypto/impl/worker_impl.dart';
-
-enum WebViewScriptStatus {
-  progress,
-  active,
-  failed,
-  block;
-
-  bool get inProgress => this == progress;
-  static WebViewScriptStatus? fromJSWalletEvent(WalletEventTypes? event) {
-    switch (event) {
-      case WalletEventTypes.exception:
-        return WebViewScriptStatus.failed;
-      case WalletEventTypes.activation:
-        return WebViewScriptStatus.active;
-      default:
-        return null;
-    }
-  }
-}
 
 class WebViewController
     with
@@ -94,85 +75,100 @@ class WebViewController
     await _loadScript(viewType: viewId, script: script);
   }
 
-  Future<bool> _postEvent(WalletEvent event) async {
+  Future<bool> _postEvent(WalletEvent event, {String? viewType}) async {
     try {
+      assert(tabsAuthenticated.containsKey(viewType ?? event.clientId),
+          "clinet does not exists.");
+      if (!tabsAuthenticated.containsKey(viewType ?? event.clientId)) {
+        return false;
+      }
       final result = await _loadScript<bool>(
           script:
               "onChain.onWebViewMessage(${StringUtils.fromJson(event.toJson())})",
-          viewType: event.clientId);
+          viewType: viewType ?? event.clientId);
       return result!;
     } catch (e) {
       return false;
     }
   }
 
-  @override
-  Future<Web3ClientInfo?> currentApllicationId() async {
-    return lastEvent.value?.client;
+  void updatePageScriptStatus(
+      {required WalletJSScriptStatus status, required String identifier}) {
+    final event = latestClient.value;
+    if (event.identifier == identifier && event.web3Status.inProgress) {
+      latestClient.value = LastWeb3ActiveClient(
+          client: event.client,
+          web3Status: status,
+          url: event.url,
+          identifier: identifier);
+    }
   }
 
-  @override
-  Future<void> sendMessageToClient(
-      Web3EncryptedMessage message, String applicationId) async {
-    await _lock.synchronized(() async {
-      final lastEvent = this.lastEvent.value;
-      final lastEventUri = lastEvent?.evnet.url;
-      if (lastEventUri != null) {
-        final id = Web3APPAuthentication.toApplicationId(lastEventUri);
-        if (id == applicationId) {
-          final event = toResponseEvent(
-              id: lastEvent!.evnet.viewId,
-              type: WalletEventTypes.message,
-              data: message.toCbor().encode());
-          await _postEvent(event);
-        }
-      }
-    });
+  void updatePageScriptClient(
+      {required Web3ActiveClient client, required String identifier}) {
+    final event = latestClient.value;
+    if (event.identifier == identifier && event.web3Status.inProgress) {
+      latestClient.value = LastWeb3ActiveClient(
+          client: client,
+          web3Status: WalletJSScriptStatus.progress,
+          url: event.url,
+          identifier: identifier);
+    }
   }
 
   Future<bool> _scriptInitialized(String viewType) async {
-    final result =
-        await _loadScript(script: "onChain.ethereum", viewType: viewType);
-    return result != null;
+    try {
+      final event = WalletEvent(
+              target: WalletEventTarget.wallet,
+              type: WalletEventTypes.message,
+              clientId: "-1")
+          .toJson();
+      final result = await _loadScript(
+          script: "onChain.onWebViewMessage(${StringUtils.fromJson(event)})",
+          viewType: viewType);
+      return result != null;
+    } catch (_) {
+      return false;
+    }
   }
 
-  static const bool isWorker = false;
-  Future<WebViewScriptStatus?> _activeScript(WebViewEvent event) async {
-    final applicationId =
-        Web3APPAuthentication.toApplicationId(lastEvent.value?.evnet.url);
-    onCloseClinet(applicationId);
-    final auth = tabsAuthenticated[event.viewId];
-    if (auth == null) return WebViewScriptStatus.failed;
-    final client = createClientInfos(
-        clientId: event.viewId,
-        url: event.url,
-        title: event.title,
-        faviIcon: event.favicon);
+  static const bool isWorker = true;
 
+  Future<void> _activeScript(WebViewEvent event) async {
+    final auth = tabsAuthenticated[event.viewId];
+    if (auth == null) return;
     await _runPageScripts(event.viewId);
-    bool result;
     if (isWorker) {
       final script = await _loadWebViewScript();
-      final responseEvent = await getPageAuthenticated(
-          clientId: auth.viewId, info: client, additional: script);
-      result = await _postEvent(responseEvent);
-    } else {
-      final responseEvent = await getPageAuthenticated(
-          clientId: auth.viewId, info: client, additional: null);
-      result = await _postEvent(responseEvent);
-      if (result) {
-        updatePageScriptStatus(
-            status: result
-                ? WebViewScriptStatus.active
-                : WebViewScriptStatus.failed,
-            clientId: event.viewId);
-      }
+      final responseEvent = toResponseEvent(
+          id: auth.viewId,
+          type: WalletEventTypes.activation,
+          additional: script,
+          platform: PlatformInterface.appPlatform.name);
+      await _postEvent(responseEvent, viewType: event.viewId);
     }
-    // final
+  }
+
+  Future<void> _activeClient(
+      {required String viewId,
+      required WalletEvent event,
+      Web3ClientInfo? client}) async {
+    final authenticated = await createPageAuthenticated(
+        peerKey: event.clientId, info: client, identifier: viewId);
+    final activeClient = authenticated.client;
+    if (activeClient != null) {
+      updatePageScriptClient(client: activeClient, identifier: viewId);
+    }
+    final result = await _postEvent(authenticated.event, viewType: viewId);
     if (!result) {
-      return WebViewScriptStatus.failed;
+      updatePageScriptStatus(
+          status: WalletJSScriptStatus.failed, identifier: viewId);
+      return;
     }
-    return null;
+    if (!isWorker) {
+      updatePageScriptStatus(
+          status: WalletJSScriptStatus.active, identifier: viewId);
+    }
   }
 
   @override
@@ -189,74 +185,77 @@ class WebViewController
     _cancelable.cancel();
 
     await _lock.synchronized(() async {
+      onWeb3ClinetDisconnected(latestClient.value.client);
       super.onPageStart(event);
-      final r = await MethodUtils.call(() async => await _activeScript(event),
+      await MethodUtils.call(() async => await _activeScript(event),
           cancelable: _cancelable);
-      if (r.hasError) {
-        return;
-      }
-      if (r.result != null) {
-        lastEvent.value?.updateStatus(r.result!);
-        lastEvent.notify();
-      }
     });
   }
 
   @override
   void onPageRequest(WebViewEvent event) async {
-    if (event.request == null) return;
+    final request = event.request;
+    if (request == null) return;
+
+    if (request.type == WalletEventTypes.tabId) {
+      final client = createClientInfos(
+          clientId: event.viewId,
+          url: event.url,
+          faviIcon: event.favicon,
+          title: event.title);
+      _activeClient(viewId: event.viewId, event: request, client: client);
+      return;
+    }
     if (isWorker) {
       final bool isWalletRequest = await _lock.synchronized(() async {
         final requestType =
-            WebViewScriptStatus.fromJSWalletEvent(event.request?.type);
+            WalletJSScriptStatus.fromJSWalletEvent(request.type);
         if (requestType != null) {
           updatePageScriptStatus(
-              status: requestType, clientId: event.request!.clientId);
-          assert(requestType != WebViewScriptStatus.failed,
-              'page script activation failed: ${StringUtils.tryDecode(event.request?.data)}');
+              status: requestType, identifier: request.clientId);
+          assert(requestType != WalletJSScriptStatus.failed,
+              'page script activation failed: ${StringUtils.tryDecode(request.data)}');
           return false;
         }
         return true;
       });
       if (!isWalletRequest) return;
     }
-    final client = createClientInfos(
-        clientId: event.viewId,
+    final Completer<WalletEvent?> completer = Completer();
+    onRequest(
+        request: request,
+        identifier: event.viewId,
         url: event.url,
-        faviIcon: event.favicon,
-        title: event.title);
-    if (client == null) {
-      await _postEvent(toResponseEvent(
-          id: event.viewId,
-          type: WalletEventTypes.exception,
-          data: Web3RequestExceptionConst.invalidHost
-              .toResponseMessage()
-              .toCbor()
-              .encode(),
-          requestId: event.request!.requestId));
-      return;
+        image: event.favicon,
+        title: event.title,
+        completer: completer);
+    final response = await completer.future;
+    bool result = false;
+    if (response != null) {
+      result = await _postEvent(response, viewType: event.viewId);
     }
-
-    final request = Web3RequestApplicationInformation(
-        info: client,
-        requestId: event.request!.requestId,
-        data: event.request!.data,
-        applicationId: client.identifier);
-    onWalletEvent(request, event.request!.clientId);
-    try {
-      final responseEvent = await request.onCompleteRequest;
-      final bool result = await _postEvent(responseEvent);
-      if (result) {
-        request.completeSuccess();
-      } else {
-        request.completeError();
-      }
-    } on Web3RejectException {
-      return;
-    }
+    completeRequest(
+        requestId: request.requestId,
+        clientId: request.clientId,
+        result: result);
   }
 
   @override
+  Future<void> sendMessageToClient(
+      {required Web3ActiveClient client,
+      required Web3EncryptedMessage message}) async {
+    final tab = tabsAuthenticated.values.firstWhereOrNull((e) =>
+        Web3APPAuthentication.toApplicationId(e.url) ==
+            client.client.identifier &&
+        e.viewId == client.identifier);
+    if (tab == null) return;
+    final event = toResponseEvent(
+        id: client.clientId,
+        type: WalletEventTypes.message,
+        data: message.toCbor().encode());
+    await _postEvent(event, viewType: tab.viewId);
+  }
+
   Future<void> sendToClient(WalletEvent event) async {
     await _postEvent(event);
   }

@@ -3250,7 +3250,12 @@ class Localization {
           "generate_backup_desc2":
               "Warning: Only a backup of the currently active wallet will be generated. If you have multiple wallets, make sure to switch to each wallet individually and generate a backup for each one.",
           "web3_dapp_update_permission_alert":
-              "This application requires at least one authorized account on the following network(s): ___1__. If you update the permissions without providing the required accounts, the request will be rejected. Do you want to update permissions and reject the request?"
+              "This application requires at least one authorized account on the following network(s): ___1__. If you update the permissions without providing the required accounts, the request will be rejected. Do you want to update permissions and reject the request?",
+          "unable_to_verify_page_origin": "Unable to verify the page's origin.",
+          "page_didnot_work_as_expected":
+              "The page didn’t work as expected. Please reload.",
+          "client_disabled_desc":
+              "Client is disabled. All requests will be blocked."
         }
       };
 }

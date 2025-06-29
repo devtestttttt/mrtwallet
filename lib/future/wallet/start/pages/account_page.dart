@@ -55,7 +55,7 @@ class NetworkAccountPageView extends StatelessWidget {
                             WalletPage.swap: (context) =>
                                 SwitchNetworkIcon(account: account),
                             WalletPage.webview: (context) =>
-                                SwitchNetworkIcon(account: account),
+                                WebViewAppBar(wallet.webviewContoller),
                           }),
                       WalletConnectIcon(),
                       appbarWidgets(true),
@@ -86,14 +86,16 @@ class NetworkAccountPageView extends StatelessWidget {
                         },
                         enable: isReady),
                   ),
-                  floatingActionButton: APPAnimatedSwitcher<
-                      WalletPage>(enable: wallet.walletPage, widgets: {
-                    WalletPage.webview: (context) =>
-                        WebViewFloatingActionButton(wallet.webviewContoller),
-                    WalletPage.wallet: (context) =>
-                        WalletPageFloatingActionButton(
-                            account: account, wallet: wallet),
-                  }),
+                  floatingActionButton: APPAnimatedSwitcher<WalletPage>(
+                      enable: wallet.walletPage,
+                      widgets: {
+                        WalletPage.webview: (context) =>
+                            WalletPageFloatingActionButton(
+                                account: account, wallet: wallet),
+                        WalletPage.wallet: (context) =>
+                            WalletPageFloatingActionButton(
+                                account: account, wallet: wallet),
+                      }),
                   bottomNavigationBar: ConditionalWidget(
                     enable: wallet.multipleTab,
                     onActive: (context) => BottomNavigationBar(

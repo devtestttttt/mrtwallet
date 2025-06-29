@@ -9,7 +9,6 @@ import 'package:on_chain_wallet/wallet/web3/core/messages/types/message.dart';
 import 'package:on_chain_wallet/wallet/web3/core/permission/types/account.dart';
 import 'package:on_chain_wallet/wallet/web3/state/core/network.dart';
 import 'package:on_chain_wallet/wallet/web3/networks/solana/solana.dart';
-import 'package:on_chain_wallet/wallet/web3/state/core/types.dart';
 import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 
 mixin SolanaWeb3StateHandler<
@@ -26,6 +25,15 @@ mixin SolanaWeb3StateHandler<
         EVENT>
     on Web3StateHandler<SolAddress, Web3SolanaChainAccount, STATEADDRESS,
         Web3ChainDefaultIdnetifier, STATEACCOUNT, RESPONSE, REQUEST, EVENT> {
+  @override
+  SolAddress toAddress(String v, {Web3ChainDefaultIdnetifier? network}) {
+    try {
+      return SolAddress(v);
+    } catch (_) {}
+    throw Web3RequestExceptionConst.invalidAddress(
+        key: v, network: networkType.name);
+  }
+
   @override
   NetworkType get networkType => NetworkType.solana;
   @override
@@ -48,12 +56,11 @@ mixin SolanaWeb3StateHandler<
       final hasAccount = data["account"] ?? data["address"];
       if (hasAccount != null) {
         account = Web3ValidatorUtils.parseParams2(() {
-          final account = DefaultStateAddress.parse(hasAccount);
+          final account = tryParseStateAddress(
+              addr: hasAccount, params: params, state: state, network: network);
           if (account == null) return null;
           return state.findAddressOrDefault(
-              address: SolAddress(account.address),
-              network: network,
-              networkStr: account.chain);
+              address: account.address, network: network ?? account.chain);
         },
             error: Web3RequestExceptionConst.invalidAddressArgrument(
                 key: "address", network: networkType.name));
@@ -125,10 +132,11 @@ mixin SolanaWeb3StateHandler<
     return Web3ValidatorUtils.parseParams2(() {
       final account = Web3ValidatorUtils.parseParams2(() {
         final addr = data['pubkey'] ?? data['account'] ?? data['address'];
-        final address = DefaultStateAddress.parse(addr);
+        final address = tryParseStateAddress(
+            addr: addr, params: params, state: state, network: network);
         if (address == null) return null;
         return state.findAddressOrDefault(
-            address: SolAddress(address.address), network: network);
+            address: address.address, network: network ?? address.chain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: 'pubkey', network: networkType.name));
@@ -165,6 +173,7 @@ mixin SolanaWeb3StateHandler<
 
   Web3SolanaSignInParams parseSignInRequest(
       {required Map<String, dynamic> data,
+      required REQUEST params,
       required STATEACCOUNT state,
       required Web3SolanaRequestMethods method,
       Web3ChainDefaultIdnetifier? network}) {
@@ -172,12 +181,14 @@ mixin SolanaWeb3StateHandler<
       Web3SolanaChainAccount account;
       if (data["address"] != null) {
         account = Web3ValidatorUtils.parseParams2(() {
-          final address = DefaultStateAddress.parse(data["address"]);
+          final address = tryParseStateAddress(
+              addr: data["address"],
+              params: params,
+              state: state,
+              network: network);
           if (address == null) return null;
           return state.findAddressOrDefault(
-              address: SolAddress(address.address),
-              network: network,
-              networkStr: address.chain);
+              address: address.address, network: network ?? address.chain);
         }, error: Web3RequestExceptionConst.missingPermission);
       } else {
         account = state.findAddressOrDefault(network: network);
@@ -202,7 +213,11 @@ mixin SolanaWeb3StateHandler<
       for (int i = 0; i < data.length; i++) {
         final elem = params.elementAsMap(i, method: method);
         final message = parseSignInRequest(
-            data: elem, state: state!, network: network, method: method);
+            data: elem,
+            state: state!,
+            network: network,
+            method: method,
+            params: params);
         messages.add(message);
       }
       return Web3SolanaSignMessage(messages: messages, method: method);

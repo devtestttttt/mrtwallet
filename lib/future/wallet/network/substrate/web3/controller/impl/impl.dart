@@ -38,7 +38,7 @@ abstract class Web3SubstrateImpl<RESPONSE,
     }
   }
 
-  late final LiveTransactionForm liveRequest =
+  late final LiveTransactionForm<SubstrateWeb3Form> liveRequest =
       LiveTransactionForm(validator: _buildForm());
   SubstrateWeb3Form get form => liveRequest.value;
 }

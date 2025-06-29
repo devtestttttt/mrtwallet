@@ -54,7 +54,8 @@ class _SelectRecipientAccountViewState<NETWORKADDRESS>
   late final bool isRippleNetwork = network.type == NetworkType.xrpl;
   String _address = "";
   bool allowAddAddress = true;
-  ContactCore<NETWORKADDRESS>? newContact;
+  final StreamValue<ContactCore<NETWORKADDRESS>?> newContact =
+      StreamValue(null);
   bool useRippleTag = false;
   int? rippleAddressTag;
 
@@ -152,17 +153,17 @@ class _SelectRecipientAccountViewState<NETWORKADDRESS>
 
   void _setValidate(ContactCore<NETWORKADDRESS>? contact) {
     if (contact == null) {
-      newContact = null;
+      newContact.value = null;
     } else {
       final inContact = widget.account.getReceiptAddress(contact.address);
 
       if (inContact != null) {
-        newContact = null;
+        newContact.value = null;
       } else {
-        newContact = contact;
+        newContact.value = contact;
       }
       if (isDebug) {
-        newContact = contact;
+        newContact.value = contact;
       }
     }
     // MethodUtils.after(() async => updateState());
@@ -233,7 +234,7 @@ class _SelectRecipientAccountViewState<NETWORKADDRESS>
   }
 
   void onTapContact() {
-    final contact = newContact;
+    final contact = newContact.value;
     if (contact == null) return;
     context.openSliverBottomSheet(
       "new_contact".tr,
@@ -283,6 +284,12 @@ class _SelectRecipientAccountViewState<NETWORKADDRESS>
     }
     filteredAccounts = existsAccounts.clone();
     checkAllowAddAddress();
+  }
+
+  @override
+  void safeDispose() {
+    super.safeDispose();
+    newContact.dispose();
   }
 
   @override
@@ -375,20 +382,25 @@ class _WriteAddress extends StatelessWidget {
                           suffixIcon: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              APPAnimatedSwitcher(
-                                widgets: {
-                                  true: (c) => IconButton(
-                                        onPressed: () {
-                                          state.onTapContact();
-                                        },
-                                        icon: const Icon(Icons.account_circle),
-                                      ),
-                                  false: (c) => PasteTextIcon(
-                                        onPaste: state.onPaste,
-                                        isSensitive: false,
-                                      )
-                                },
-                                enable: state.newContact != null,
+                              APPStreamBuilder(
+                                value: state.newContact,
+                                builder: (context, value) =>
+                                    APPAnimatedSwitcher(
+                                  widgets: {
+                                    true: (c) => IconButton(
+                                          onPressed: () {
+                                            state.onTapContact();
+                                          },
+                                          icon:
+                                              const Icon(Icons.account_circle),
+                                        ),
+                                    false: (c) => PasteTextIcon(
+                                          onPaste: state.onPaste,
+                                          isSensitive: false,
+                                        )
+                                  },
+                                  enable: value != null,
+                                ),
                               ),
                               BarcodeScannerIconView(state.onPaste),
                             ],
@@ -449,20 +461,26 @@ class _WriteRippleAddress extends StatelessWidget {
                           suffixIcon: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              APPAnimatedSwitcher(
-                                widgets: {
-                                  true: (c) => IconButton(
-                                        onPressed: () {
-                                          state.onTapContact();
-                                        },
-                                        icon: const Icon(Icons.account_circle),
-                                      ),
-                                  false: (c) => PasteTextIcon(
-                                        onPaste: state.onPaste,
-                                        isSensitive: false,
-                                      )
+                              APPStreamBuilder(
+                                value: state.newContact,
+                                builder: (context, value) {
+                                  return APPAnimatedSwitcher(
+                                    widgets: {
+                                      true: (c) => IconButton(
+                                            onPressed: () {
+                                              state.onTapContact();
+                                            },
+                                            icon: const Icon(
+                                                Icons.account_circle),
+                                          ),
+                                      false: (c) => PasteTextIcon(
+                                            onPaste: state.onPaste,
+                                            isSensitive: false,
+                                          )
+                                    },
+                                    enable: value != null,
+                                  );
                                 },
-                                enable: state.newContact != null,
                               ),
                               BarcodeScannerIconView(state.onPaste),
                             ],

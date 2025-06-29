@@ -164,7 +164,7 @@ class SuccessWithButtonView extends StatelessWidget {
           children: [
             buttonWidget ?? Text(text!, textAlign: TextAlign.center),
             WidgetConstant.height8,
-            TextButton(onPressed: onPressed, child: Text(buttonText))
+            FilledButton(onPressed: onPressed, child: Text(buttonText))
           ],
         ),
         icon: WidgetConstant.checkCircleLarge);

@@ -33,7 +33,7 @@ abstract class Web3TonImpl<RESPONSE, T extends Web3TonRequestParam<RESPONSE>>
     }
   }
 
-  late final LiveTransactionForm liveRequest =
+  late final LiveTransactionForm<TonWeb3Form> liveRequest =
       LiveTransactionForm(validator: _buildForm());
   TonWeb3Form get form => liveRequest.value;
 }

@@ -325,15 +325,19 @@ enum JSWorkerType {
 
 @JS()
 extension type JSWorkerEvent._(JSObject o) implements JSAny {
-  factory JSWorkerEvent({required JSWorkerType type, JSAny? data}) {
+  factory JSWorkerEvent(
+      {required JSWorkerType type, JSAny? data, String? clientId}) {
     return JSWorkerEvent._(JSObject())
       ..type = type.name
-      ..data = data;
+      ..data = data
+      ..clientId = clientId;
   }
   external String? get type;
+  external String? get clientId;
   external JSAny? get data;
   external set type(String? _);
   external set data(JSAny? _);
+  external set clientId(String? _);
   JSWorkerType get eventType => JSWorkerType.fronName(type);
 }
 @JS()

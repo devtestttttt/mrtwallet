@@ -22,7 +22,6 @@ class _CreateWalletSettingsViewState extends State<CreateWalletSettingsView>
   late String name = widget.wallet.name;
   late bool reqPassword = widget.wallet.requiredPassword;
   late bool protectWallet = widget.wallet.protectWallet;
-  late bool defaultWallet = true;
   late WalletLockTime locktime = widget.wallet.locktime;
   late List<String> walletIds;
   late SetupWalletController controller;
@@ -30,7 +29,6 @@ class _CreateWalletSettingsViewState extends State<CreateWalletSettingsView>
     name = walletInfos.name;
     locktime = walletInfos.lockTime;
     reqPassword = walletInfos.requirmentPassword;
-    defaultWallet = walletInfos.asDefaultWallet;
     protectWallet = walletInfos.protectWallet;
     await controller.setupHDWallet(walletInfos);
   }
@@ -62,7 +60,6 @@ class _CreateWalletSettingsViewState extends State<CreateWalletSettingsView>
           locktime: locktime,
           requrmentPassword: reqPassword,
           exitsIds: walletIds,
-          asDefaultWallet: defaultWallet,
           onUpdate: (update) => setup(update),
           protectWallet: protectWallet),
     );

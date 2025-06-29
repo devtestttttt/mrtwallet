@@ -107,7 +107,9 @@ class _UpdateChainPermissionWidgetState<
               menuItems: widget.menuItems,
               onChanged: widget.onChangeChain,
               value: widget.chain),
-          pinned: true,
+          pinned: false,
+          floating: true,
+          snap: true,
           bottom: TabBar(onTap: onChangeTab, tabs: [
             Tab(text: "accounts".tr),
             Tab(text: "history".tr),

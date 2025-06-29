@@ -62,7 +62,7 @@ class StellarWeb3JSStateAccount extends Web3JSStateAccount<
         e.id == authenticated.currentNetwork.id);
     return StellarWeb3JSStateAccount._(
         accounts: accounts.whereType<StellarWeb3JSStateAddress>().toList(),
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null

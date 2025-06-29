@@ -31,8 +31,8 @@ abstract class _WalletController with CryptoWokerImpl {
   WalletNetwork get network => _chain.network;
 
   /// update wallet storage.
-  Future<void> _updateWallet({bool? asDefaultWallet}) async {
-    await _core._updateWallet(_wallet, asDefaultWallet: asDefaultWallet);
+  Future<void> _updateWallet() async {
+    await _core._updateWallet(_wallet);
   }
 }
 
@@ -41,40 +41,18 @@ class WalletController extends _WalletController
   WalletController._(WalletCore super.core, super.chains);
 
   /// setup wallet.
-  /// retrive wallet storage and init wallet controller.
-  static Future<(ChainsHandler, List<String>)> _setupNetwork(
+  static Future<WalletController> _setup(
       WalletCore core, HDWallet wallet) async {
     final List<Chain> chains = [];
-    final keys = await core._readAccounts(wallet);
-    final keyBytes = keys.map((e) => e.$2).toList();
-    List<String> junkKeys = [];
-    for (final i in keyBytes) {
+    final values = await core._readAccounts(wallet);
+    for (final i in values) {
       try {
         final chain = Chain.deserialize(hex: i);
         chains.add(chain);
-      } catch (_) {
-        junkKeys.add(i);
-      }
+      } catch (_) {}
     }
-    final chain = ChainsHandler(chains: chains, wallet: wallet);
-
-    return (chain, junkKeys);
-  }
-
-  /// setup wallet.
-  static Future<WalletController> _setup(
-      WalletCore core, HDWallet wallet) async {
-    final handler = await _setupNetwork(core, wallet);
-    final storageVersion = await core._readStorageVersion();
-    if (storageVersion != core.storageVersion) {
-      await core._writeStorageVersion(core.storageVersion);
-      await core._deleteMultiple(keys: handler.$2);
-      final chains = handler.$1.chains();
-      for (final i in chains) {
-        await i.save();
-      }
-    }
-    final controller = WalletController._(core, handler.$1);
+    final handler = await ChainsHandler.setup(chains: chains, wallet: wallet);
+    final controller = WalletController._(core, handler);
     await controller._onInitController();
     return controller;
   }

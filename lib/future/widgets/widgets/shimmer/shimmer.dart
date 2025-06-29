@@ -142,4 +142,8 @@ class ShimmerAction<T> {
   void toggleAction() {
     _action = !action;
   }
+
+  void setAction(bool action) {
+    _action = action;
+  }
 }

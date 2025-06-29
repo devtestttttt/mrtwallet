@@ -30,7 +30,7 @@ class JSWebviewWallet extends Web3JSWalletHandler {
     final event = jsRequest.data as JSWorkerEvent;
     switch (event.eventType) {
       case JSWorkerType.wallet:
-        _onResponse((event.data as JSWalletEvent).toEvent());
+        _onWalletResponse((event.data as JSWalletEvent).toEvent());
         break;
       case JSWorkerType.client:
         handleClientMessage(event.data as PageMessage);
@@ -42,7 +42,7 @@ class JSWebviewWallet extends Web3JSWalletHandler {
 
   bool _onMainResponse(JSWalletEvent jsEvnt) {
     final event = jsEvnt.toEvent();
-    return _onResponse(event);
+    return _onWalletResponse(event);
   }
 
   @override
@@ -63,17 +63,19 @@ class JSWebviewWallet extends Web3JSWalletHandler {
   factory JSWebviewWallet.initialize(
       {required WalletEvent request,
       required String clientId,
+      required X25519Keypair keyPair,
       required JSWebviewTraget target,
       bool isWorker = true}) {
-    final chacha =
-        ChaCha20Poly1305(QuickCrypto.sha256Hash(StringUtils.encode(clientId)));
+    final peerKey = BytesUtils.fromHexString(request.additional!);
+    final sharedKey = X25519.scalarMult(keyPair.privateKey, peerKey);
+    final chacha = ChaCha20Poly1305(sharedKey);
     final data = List<int>.from(request.data);
     final encryptedMessage = Web3EncryptedMessage.deserialize(bytes: data);
     final decode =
         chacha.decrypt(encryptedMessage.nonce, encryptedMessage.message);
     final message = Web3ChainMessage.deserialize(bytes: decode);
     final handler = JSWebviewWallet._(
-        crypto: ChaCha20Poly1305(message.authenticated.token.symkey),
+        crypto: chacha,
         clientId: clientId,
         target: target,
         isWorker: isWorker,

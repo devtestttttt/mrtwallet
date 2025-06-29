@@ -88,7 +88,10 @@ class _WalletLoginPageViewState extends State<WalletLoginPageView>
                                 },
                                 icon: const Icon(Icons.add))
                           ])
-                  .then(wallet.wallet.switchWallet);
+                  .then((e) {
+                if (e == null) return;
+                wallet.wallet.switchWallet(e);
+              });
             },
             icon: const Icon(Icons.account_balance_wallet_rounded)),
       ),

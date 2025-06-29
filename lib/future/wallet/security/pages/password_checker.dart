@@ -85,7 +85,7 @@ class _PasswordCheckerViewState extends State<PasswordCheckerView>
                 },
                 child: Text("keep_unlock".tr))
           ],
-          content: StreamWidget(
+          content: APPStreamBuilder(
             value: lockTime,
             builder: (context, value) {
               return Text(
@@ -171,8 +171,8 @@ class _PasswordCheckerViewState extends State<PasswordCheckerView>
     updateState();
   }
 
-  void listener(WStatus status) {
-    if (status != WStatus.unlock) {
+  void listener(WalletActionEvent status) {
+    if (status.walletStatus != WStatus.unlock) {
       credentials = null;
       _entredPassword = "";
       _correctPassword = "";
@@ -195,14 +195,14 @@ class _PasswordCheckerViewState extends State<PasswordCheckerView>
     super.initState();
   }
 
-  StreamSubscription<WStatus>? _onWalletStatus;
+  StreamSubscription<WalletActionEvent>? _onWalletStatus;
 
   @override
   void onInitOnce() {
     super.onInitOnce();
     wallet = context.watch<WalletProvider>(StateConst.main);
     _onWalletStatus = wallet.wallet.status.stream.listen(listener);
-    listener(wallet.wallet.homePageStatus);
+    listener(wallet.wallet.status.value);
     MethodUtils.after(() => getKey(password: initialPassword));
     _walletStatus =
         Stream.periodic(const Duration(seconds: 1)).listen(onUpdateWalletTimer);

@@ -17,7 +17,7 @@ class SubstrateTransactionFeeView extends StatelessWidget {
         Text("transaction_fee".tr, style: context.textTheme.titleMedium),
         Text("cost_for_transaction".tr),
         WidgetConstant.height8,
-        StreamWidget(
+        APPStreamBuilder(
             value: controller.feeStatusStream,
             builder: (context, status) {
               return ContainerWithBorder(

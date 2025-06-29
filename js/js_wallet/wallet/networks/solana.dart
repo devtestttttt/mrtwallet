@@ -62,7 +62,7 @@ class SolanaWeb3JSStateAccount extends Web3JSStateAccount<
     return SolanaWeb3JSStateAccount._(
         accounts: accounts.whereType<SolanaWeb3JSStateAddress>().toList(),
         applicationId: applicationId,
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null

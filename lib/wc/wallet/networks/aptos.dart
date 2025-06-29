@@ -143,7 +143,7 @@ class AptosWeb3WalletConnectStateAccount extends Web3WalletConnectStateAccount<
     return AptosWeb3WalletConnectStateAccount._(
         accounts:
             accounts.whereType<AptosWeb3WalletConnectStateAddress>().toList(),
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null

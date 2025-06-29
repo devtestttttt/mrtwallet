@@ -30,6 +30,28 @@ mixin BitcoinWeb3StateHandler<
         REQUEST,
         EVENT> {
   @override
+  BitcoinBaseAddress toAddress(String v,
+      {Web3BitcoinChainIdnetifier? network, STATEACCOUNT? state}) {
+    try {
+      if (network != null) {
+        return BitcoinNetworkAddress.parse(address: v, network: network.network)
+            .baseAddress;
+      }
+
+      final networks = state?.chains.map((e) => e.network).toSet() ??
+          BasedUtxoNetwork.values;
+      for (final i in networks) {
+        try {
+          return BitcoinNetworkAddress.parse(address: v, network: i)
+              .baseAddress;
+        } catch (_) {}
+      }
+    } catch (_) {}
+    throw Web3RequestExceptionConst.invalidAddress(
+        key: v, network: networkType.name);
+  }
+
+  @override
   NetworkType get networkType => NetworkType.bitcoinAndForked;
 
   @override
@@ -49,21 +71,23 @@ mixin BitcoinWeb3StateHandler<
         if (accountsJson == null) return null;
         if (accountsJson is List) {
           final accounts = accountsJson
-              .map(DefaultStateAddress.parse)
-              .cast<DefaultStateAddress>();
+              .map((e) => tryParseStateAddress(
+                  addr: e, params: params, state: state, network: network))
+              .cast<
+                  ParsedNetworkStateAddress<BitcoinBaseAddress,
+                      Web3BitcoinChainIdnetifier>>();
           if (accounts.isEmpty) return null;
           return accounts
-              .map((e) => state.findAddressStrOrDefault(
-                  address: e.address, network: network, networkStr: e.chain))
+              .map((e) => state.findAddressOrDefault(
+                  address: e.address, network: network ?? e.chain))
               .toList();
         }
-        final account = DefaultStateAddress.parse(accountsJson);
+        final account = tryParseStateAddress(
+            addr: accountsJson, params: params, state: state, network: network);
         if (account == null) return null;
         return [
-          state.findAddressStrOrDefault(
-              address: account.address,
-              networkStr: account.chain,
-              network: network)
+          state.findAddressOrDefault(
+              address: account.address, network: network ?? account.chain)
         ];
       }, error: Web3BitcoinExceptionConstant.invalidPSBT);
 
@@ -93,7 +117,8 @@ mixin BitcoinWeb3StateHandler<
   }
 
   Web3BitcoinSendTransaction parseTransferObject(
-      {required Map<String, dynamic> param,
+      {required REQUEST params,
+      required Map<String, dynamic> param,
       required STATEACCOUNT state,
       required Web3BitcoinRequestMethods method,
       Web3BitcoinChainIdnetifier? network}) {
@@ -103,21 +128,23 @@ mixin BitcoinWeb3StateHandler<
         if (accountsJson == null) return null;
         if (accountsJson is List) {
           final accounts = accountsJson
-              .map(DefaultStateAddress.parse)
-              .cast<DefaultStateAddress>();
+              .map((e) => tryParseStateAddress(
+                  addr: e, params: params, state: state, network: network))
+              .cast<
+                  ParsedNetworkStateAddress<BitcoinBaseAddress,
+                      Web3BitcoinChainIdnetifier>>();
           if (accounts.isEmpty) return null;
           return accounts
-              .map((e) => state.findAddressStrOrDefault(
-                  address: e.address, network: network, networkStr: e.chain))
+              .map((e) => state.findAddressOrDefault(
+                  address: e.address, network: network ?? e.chain))
               .toList();
         }
-        final account = DefaultStateAddress.parse(accountsJson);
+        final account = tryParseStateAddress(
+            addr: accountsJson, params: params, state: state, network: network);
         if (account == null) return null;
         return [
-          state.findAddressStrOrDefault(
-              address: account.address,
-              networkStr: account.chain,
-              network: network)
+          state.findAddressOrDefault(
+              address: account.address, network: network ?? account.chain)
         ];
       }, error: Web3BitcoinExceptionConstant.invalidPSBT);
       final BitcoinNetworkAddress? recipientAddress =
@@ -176,26 +203,14 @@ mixin BitcoinWeb3StateHandler<
     final param = params.paramsAsMap(keys: keys, method: method);
     final account = Web3ValidatorUtils.parseParams2(() {
       final addr = param['account'] ?? param['address'];
-      final address = DefaultStateAddress.parse(addr);
+      final address = tryParseStateAddress(
+          addr: addr, params: params, state: state, network: network);
       if (address == null) return null;
-      return state.findAddressStrOrDefault(
-          address: address.address,
-          network: network,
-          networkStr: address.chain);
+      return state.findAddressOrDefault(
+          address: address.address, network: network ?? address.chain);
     },
         error: Web3RequestExceptionConst.invalidAddressArgrument(
             key: 'account', network: networkType.name));
-    // final account = Web3ValidatorUtils.parseAddress(
-    //     onParse: (e) => network == null
-    //         ? state.findAddressStrOrDefault(address: e)
-    //         : state.findAddressOrDefault(
-    //             address: BitcoinNetworkAddress.parse(
-    //                     address: e, network: network.network)
-    //                 .baseAddress),
-    //     key: "account",
-    //     method: method,
-    //     json: param,
-    //     network: network?.network.value ?? networkType.name);
     return createResponse([
       {
         "address": account.addressStr,
@@ -218,26 +233,14 @@ mixin BitcoinWeb3StateHandler<
       final param = params.paramsAsMap(keys: keys, method: method);
       final account = Web3ValidatorUtils.parseParams2(() {
         final addr = param['account'] ?? param['address'];
-        final address = DefaultStateAddress.parse(addr);
+        final address = tryParseStateAddress(
+            addr: addr, params: params, state: state, network: network);
         if (address == null) return null;
-        return state.findAddressStrOrDefault(
-            address: address.address,
-            network: network,
-            networkStr: address.chain);
+        return state.findAddressOrDefault(
+            address: address.address, network: network ?? address.chain);
       },
           error: Web3RequestExceptionConst.invalidAddressArgrument(
               key: 'account', network: networkType.name));
-      // final account = Web3ValidatorUtils.parseAddress(
-      //     onParse: (e) => network == null
-      //         ? state.findAddressStrOrDefault(address: e)
-      //         : state.findAddressOrDefault(
-      //             address: BitcoinNetworkAddress.parse(
-      //                     address: e, network: network.network)
-      //                 .baseAddress),
-      //     key: "account",
-      //     method: method,
-      //     json: param,
-      //     network: network?.network.value ?? networkType.name);
       if (account.keyIndex.isMultiSig ||
           account.type.isP2sh ||
           account.type == SegwitAddressType.p2wsh) {
@@ -272,7 +275,11 @@ mixin BitcoinWeb3StateHandler<
       for (int i = 0; i < data.length; i++) {
         final elem = params.elementAsMap(i, method: method, keys: keys);
         final message = parseTransferObject(
-            param: elem, state: state, network: network, method: method);
+            param: elem,
+            state: state,
+            network: network,
+            method: method,
+            params: params);
         messages.add(message);
       }
       return Web3BitcoinSendTransaction(

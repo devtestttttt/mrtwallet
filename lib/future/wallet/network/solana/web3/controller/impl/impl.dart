@@ -38,7 +38,7 @@ abstract class Web3SolanaImpl<RESPONSE,
     }
   }
 
-  late final LiveTransactionForm liveRequest =
+  late final LiveTransactionForm<SolanaWeb3Form> liveRequest =
       LiveTransactionForm(validator: _buildForm());
   SolanaWeb3Form get form => liveRequest.value;
 }

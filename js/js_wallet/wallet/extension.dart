@@ -14,34 +14,61 @@ class JSExtentionWallet extends Web3JSWalletHandler {
   final _portLock = SynchronizedLock();
   @override
   final String clientId;
+  final String tabId;
   RuntimePort? _port;
   Web3APPData? _initializeAuthenticated;
 
   bool onMessage(
       JSWalletEvent message, MessageSender sender, JSFunction sendResponse) {
-    _onResponse(message.toEvent());
-    return true;
+    final event = message.toEvent();
+    if (event == null) return false;
+    switch (event.type) {
+      case WalletEventTypes.tabId:
+        final response = WalletEvent(
+                target: WalletEventTarget.external,
+                type: WalletEventTypes.tabId,
+                clientId: clientId)
+            .toJsEvent();
+        sendResponse.callAsFunction(sendResponse, response);
+        return true;
+      default:
+        final update = _onWalletResponse(message.toEvent());
+        final response = WalletEvent(
+            target: WalletEventTarget.external,
+            type: WalletEventTypes.message,
+            clientId: clientId,
+            data: [update ? 1 : 0]).toJsEvent();
+        sendResponse.callAsFunction(sendResponse, response);
+        return true;
+    }
   }
 
   JSExtentionWallet._(
       {required ChaCha20Poly1305 crypto,
       required this.clientId,
+      required this.tabId,
       required Web3APPData authenticated})
       : _initializeAuthenticated = authenticated,
         super._(crypto);
 
-  static JSExtentionWallet initialize(WalletEvent activationEvent) {
-    final chacha = ChaCha20Poly1305(
-        QuickCrypto.sha256Hash(StringUtils.encode(activationEvent.clientId)));
+  static JSExtentionWallet initialize(
+      {required WalletEvent activationEvent, required X25519Keypair keypair}) {
+    final additional = activationEvent.additional!.split(":");
+    final peerKey = BytesUtils.fromHexString(additional[1]);
+    final sharedKey = JsCryptoUtils.generateShareKey(
+        privateKey: keypair.privateKey, peerKey: peerKey);
+    final chacha = ChaCha20Poly1305(sharedKey);
     final data = List<int>.from(activationEvent.data);
     final encryptedMessage = Web3EncryptedMessage.deserialize(bytes: data);
     final decode =
         chacha.decrypt(encryptedMessage.nonce, encryptedMessage.message);
     final message = Web3ChainMessage.deserialize(bytes: decode);
+
     final handler = JSExtentionWallet._(
-        crypto: ChaCha20Poly1305(message.authenticated.token.symkey),
+        crypto: chacha,
         clientId: activationEvent.clientId,
-        authenticated: message.authenticated);
+        authenticated: message.authenticated,
+        tabId: additional[0]);
     handler._listenOnClients();
     extension.runtime.onMessage.addListener(handler.onMessage.toJS);
     return handler;
@@ -183,7 +210,7 @@ class JSExtentionWallet extends Web3JSWalletHandler {
 
     void onMessage(JSWalletEvent event, RuntimePort port) {
       if (event.clientId != clientId || event.requestId != requestId) return;
-      _onResponse(event.toEvent());
+      _onWalletResponse(event.toEvent());
     }
 
     port.onDisconnect.addListener(onDisconnect.toJS);
@@ -204,7 +231,7 @@ class JSExtentionWallet extends Web3JSWalletHandler {
           type: WalletEventTypes.background,
           target: WalletEventTarget.external);
       final r = await sendBackgroudMessage(event);
-      _onResponse(r);
+      _onWalletResponse(r);
       return;
     }
     final encryptedMessage = _encryptMessage(message);
@@ -213,7 +240,8 @@ class JSExtentionWallet extends Web3JSWalletHandler {
         data: encryptedMessage.toCbor().encode(),
         requestId: requestId,
         type: WalletEventTypes.message,
-        target: WalletEventTarget.external);
+        target: WalletEventTarget.external,
+        additional: tabId);
     await _sendMessageToExtention(message: event, requestId: requestId);
   }
 

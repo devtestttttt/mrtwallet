@@ -40,23 +40,30 @@ class _APPPage extends StatelessWidget {
   const _APPPage(this.wallet);
   @override
   Widget build(BuildContext context) {
-    return StreamWidget(
-      value: wallet.wallet.status,
+    return APPStreamWidget<WalletActionEvent>(
+      stream: wallet.wallet.status,
+      allowNotify: (value) {
+        if (value.action.isLogin) {
+          return value.status.isSuccess;
+        }
+        return value.action.rebuild;
+      },
       builder: (context, value) {
         return APPAnimated(
             isActive: wallet.wallet.isOpen,
             onDeactive: (context) {
-              if (wallet.wallet.inProgress) {
+              if (value.inProgress) {
                 return ProgressWithAPPLogo();
               }
-              return switch (value) {
+              return switch (value.walletStatus) {
                 WStatus.init => ProgressWithAPPLogo(),
                 WStatus.setup => const WalletSetupPageWidget(),
                 WStatus.lock => const WalletLoginPageView(),
                 _ => WidgetConstant.sizedBox
               };
             },
-            onActive: (context) => _UnlockWalletView(wallet));
+            onActive: (context) =>
+                _UnlockWalletView(wallet: wallet, status: value));
       },
     );
   }
@@ -64,7 +71,8 @@ class _APPPage extends StatelessWidget {
 
 class _UnlockWalletView extends StatelessWidget {
   final WalletProvider wallet;
-  const _UnlockWalletView(this.wallet);
+  final WalletActionEvent status;
+  const _UnlockWalletView({required this.wallet, required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +88,7 @@ class _UnlockWalletView extends StatelessWidget {
               child: Shimmer(
                   onActive: (e, context) => NetworkAccountPageView(
                       wallet: wallet, account: wallet.wallet.currentChain),
-                  enable: !wallet.wallet.inProgress)),
+                  enable: !status.inProgress)),
         ],
       ),
     );

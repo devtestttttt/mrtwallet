@@ -66,7 +66,7 @@ class AptosWeb3JSStateAccount extends Web3JSStateAccount<
         e.id == authenticated.currentNetwork.id);
     return AptosWeb3JSStateAccount._(
         accounts: accounts.whereType<AptosWeb3JSStateAddress>().toList(),
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null

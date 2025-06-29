@@ -35,7 +35,8 @@ enum CryptoRequestMethod {
   jwt(CryptoKeyConst.jwt),
   // hexToBytes(CryptoKeyConst.hexToBytes),
   hashing(CryptoKeyConst.hashing),
-  symkey(CryptoKeyConst.generateSymKey);
+  symkey(CryptoKeyConst.generateSymKey),
+  x25519(CryptoKeyConst.x25519);
 
   final List<int> _tag;
   const CryptoRequestMethod(this._tag);
@@ -170,6 +171,9 @@ abstract class CryptoRequest<T, A extends CborMessageResponseArgs>
       case CryptoRequestMethod.symkey:
         args = CryptoRequestGenerateWalletConnectSymKeyInfo.deserialize(
             object: decode);
+        break;
+      case CryptoRequestMethod.x25519:
+        args = CryptoRequestGenerateX25519Key.deserialize(object: decode);
         break;
       case CryptoRequestMethod.jwt:
         args = CryptoRequestGenerateJwt.deserialize(object: decode);

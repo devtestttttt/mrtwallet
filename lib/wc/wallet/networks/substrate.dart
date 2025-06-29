@@ -108,7 +108,7 @@ class SubstrateWeb3WalletConnectStateAccount
         accounts: accounts
             .whereType<SubstrateWeb3WalletConnectStateAddress>()
             .toList(),
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null

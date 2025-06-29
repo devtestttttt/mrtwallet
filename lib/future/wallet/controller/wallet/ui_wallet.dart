@@ -6,7 +6,6 @@ import 'package:on_chain_wallet/crypto/keys/access/crypto_keys/crypto_keys.dart'
 import 'package:on_chain_wallet/future/router/page_router.dart';
 import 'package:on_chain_wallet/future/state_managment/state_managment.dart';
 import 'package:on_chain_wallet/future/wallet/global/pages/wallet_signing_password.dart';
-import 'package:on_chain_wallet/marketcap/prices/live_currency.dart';
 import 'package:on_chain_wallet/wallet/models/models.dart';
 import 'package:on_chain_wallet/wallet/provider/wallet_provider.dart';
 import 'package:on_chain_wallet/wallet/web3/core/request/web_request.dart';
@@ -19,21 +18,7 @@ abstract class UIWallet extends WalletCore {
   final int storageVersion;
   bool get isolate => true;
 
-  final LiveCurrencies currency = LiveCurrencies();
-  StreamSubscription<WStatus>? _onWalletStatus;
-  void _listener(WStatus status) {
-    switch (status) {
-      case WStatus.init:
-      case WStatus.setup:
-      case WStatus.lock:
-        navigatorKey.currentContext?.popToHome();
-        break;
-      case WStatus.readOnly:
-      case WStatus.unlock:
-        currency.streamPrices(coinIds());
-        break;
-    }
-  }
+  Future<void> onWalletEvent(WalletActionEvent status);
 
   Future<String> _getPassword(
       {required Set<AddressDerivationIndex> keys,
@@ -92,13 +77,9 @@ abstract class UIWallet extends WalletCore {
         false;
   }
 
-  void dispose() {
-    _onWalletStatus?.cancel();
-    _onWalletStatus = null;
-  }
+  void dispose() {}
 
   Future<void> init() async {
-    _onWalletStatus = status.stream.listen(_listener);
     await initWallet();
   }
 }

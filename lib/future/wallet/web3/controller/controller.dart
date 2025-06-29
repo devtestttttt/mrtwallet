@@ -76,7 +76,6 @@ mixin Web3GlobalRequestControllerState<WEB3REQUEST extends Web3GlobalRequest>
   }
 }
 
-// typedef WEB3NETWORKREQUESTCONTROLLERSTATE =
 abstract class Web3NetworkRequestControllerState<
     RESPONSE,
     NETWORK extends WalletNetwork,

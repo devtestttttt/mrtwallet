@@ -29,7 +29,7 @@ class Web3CosmosGlobalRequestController<RESPONSE,
     }
   }
 
-  LiveTransactionForm? _liveRequest;
+  LiveTransactionForm<CosmosWeb3Form>? _liveRequest;
   CosmosWeb3Form get form => _liveRequest!.value;
 
   Future<Web3CosmosSignMessageResponse> _signMessage() async {
@@ -127,6 +127,6 @@ class Web3CosmosGlobalRequestController<RESPONSE,
   void close() {
     super.close();
     _liveRequest?.removeListener(onChangeForm);
-    form.onCompleteForm = null;
+    _liveRequest?.value.onCompleteForm = null;
   }
 }

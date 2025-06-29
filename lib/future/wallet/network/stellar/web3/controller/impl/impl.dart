@@ -29,7 +29,7 @@ abstract class Web3StellarImpl<RESPONSE,
     }
   }
 
-  late final LiveTransactionForm liveRequest =
+  late final LiveTransactionForm<StellarWeb3Form> liveRequest =
       LiveTransactionForm(validator: _buildForm());
   StellarWeb3Form get form => liveRequest.value;
 }

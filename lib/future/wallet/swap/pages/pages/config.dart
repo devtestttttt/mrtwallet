@@ -15,7 +15,7 @@ class RouteConfigView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamWidget(
+    return APPStreamBuilder(
         value: routes.route,
         builder: (context, route) {
           return ContainerWithBorder(
@@ -75,7 +75,7 @@ class RouteConfigView extends StatelessWidget {
                               );
                             })),
                       ),
-                      StreamWidget(
+                      APPStreamBuilder(
                           value: controller.timeout,
                           builder: (context, timeout) {
                             return SizedBox(

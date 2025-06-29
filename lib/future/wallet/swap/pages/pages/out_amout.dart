@@ -78,7 +78,7 @@ class SwapAmountOutView extends StatelessWidget {
                                                       .onPrimaryContainer,
                                                   fontWeight: FontWeight.bold),
                                         ),
-                                        onActive: (context) => StreamWidget(
+                                        onActive: (context) => APPStreamBuilder(
                                             value: route!.route,
                                             builder: (context, currentRoute) {
                                               return CoinAndMarketPriceView(

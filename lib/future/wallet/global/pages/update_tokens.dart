@@ -148,7 +148,7 @@ class _UpdateTokenDetailsViewState extends State<UpdateTokenDetailsView>
       if (apiId != token.market?.apiId) {
         progressKey.progressText("retrieving_token_price".tr);
         final result = await MethodUtils.call(() async {
-          return await wallet.wallet.currency.getCoinPrice(apiId);
+          return await wallet.currency.getCoinPrice(apiId);
         });
         if (result.hasError || result.result == null) {
           progressKey.errorText(result.error?.tr ?? "invalid_api_id".tr,

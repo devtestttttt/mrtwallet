@@ -6,6 +6,7 @@ import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/web3/utils/web3_validator_utils.dart';
 import 'package:on_chain_wallet/wallet/web3/web3.dart';
+import '../../../js_crypto_utils.dart';
 import '../../../webview.dart';
 import '../../constant/constant.dart';
 import '../../models/models.dart';
@@ -80,12 +81,14 @@ abstract class Web3JSWalletHandler
   String get clientId;
   late final String _id = JsUtils.toWalletId(clientId);
   final ChaCha20Poly1305 _crypto;
+  Web3NetworkState _state = Web3NetworkState.ready;
   Web3JSWalletHandler._(this._crypto);
 
   void handleClientMessage(PageMessage request) {
     final client = request.clientType;
     switch (request.data.messageType) {
       case PageMessageType.event:
+        if (_state.isBlock) return;
         if (client == null) {
           _onGlobalEvent(request.data.asEvent());
         } else {
@@ -181,8 +184,9 @@ abstract class Web3JSWalletHandler
         } else {
           final handler = _networks[client];
           if (handler == null) {
-            throw WalletExceptionConst.invalidRequest;
+            throw WalletExceptionConst.networkDoesNotExist;
           }
+
           message ??= await handler.request(request);
         }
       }
@@ -218,6 +222,9 @@ abstract class Web3JSWalletHandler
     final handler = _networks[client];
     final clientRequest = Web3JsClientRequest(params.data.asRequest());
     try {
+      if (_state.isBlock) {
+        throw Web3RequestExceptionConst.bannedHost;
+      }
       final result = await _buildAndSendMessage(params: params, client: client);
       final Web3MessageCore response = result.$1;
       final Web3WalletRequestParams? request = result.$2;
@@ -251,6 +258,8 @@ abstract class Web3JSWalletHandler
   }
 
   Future<void> _updateAuthenticated(Web3APPData authenticated) async {
+    _state =
+        authenticated.active ? Web3NetworkState.ready : Web3NetworkState.block;
     for (final i in authenticated.networks) {
       final client = JSClientType.fromNetworkName(i.name);
       final event = await _networks[client]?.initChain(authenticated);
@@ -260,7 +269,7 @@ abstract class Web3JSWalletHandler
     _sendGlobalEvent();
   }
 
-  void _onWalletResponse(WalletEvent request) async {
+  void _onWalletResponseIternal(WalletEvent request) async {
     try {
       final data = List<int>.from(request.data);
       final encryptedMessage = Web3EncryptedMessage.deserialize(bytes: data);
@@ -307,7 +316,7 @@ abstract class Web3JSWalletHandler
     }
   }
 
-  bool _onResponse(WalletEvent? request) {
+  bool _onWalletResponse(WalletEvent? request) {
     assert(request?.clientId == clientId, 'invalid clinet id');
     if (request?.clientId != clientId) {
       return false;
@@ -318,7 +327,7 @@ abstract class Web3JSWalletHandler
         completer.complete(response: message, requestId: request.requestId);
         break;
       default:
-        _onWalletResponse(request);
+        _onWalletResponseIternal(request);
         break;
     }
     return true;

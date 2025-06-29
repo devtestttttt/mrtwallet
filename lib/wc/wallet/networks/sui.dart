@@ -78,7 +78,7 @@ class SuiWeb3WalletConnectStateAccount extends Web3WalletConnectStateAccount<
     return SuiWeb3WalletConnectStateAccount._(
         accounts:
             accounts.whereType<SuiWeb3WalletConnectStateAddress>().toList(),
-        state: Web3NetworkState.init,
+        state: Web3NetworkState.ready,
         chains: authenticated.networks,
         defaultChain: authenticated.currentNetwork,
         defaultAccount: defaultAddress == null

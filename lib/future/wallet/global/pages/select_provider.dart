@@ -28,7 +28,7 @@ class AccountManageProviderIcon extends StatelessWidget {
                   subtitle: Text("manage_network_service_providers".tr),
                   trailing: Icon(service?.tracker.icon ?? Icons.error),
                 ),
-            onActive: (context) => StreamWidget(
+            onActive: (context) => APPStreamBuilder(
                 value: service!.tracker.status,
                 builder: (context, value) => AppListTile(
                       title: Text("service_provider".tr),

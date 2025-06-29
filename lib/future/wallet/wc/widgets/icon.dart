@@ -11,7 +11,7 @@ class WalletConnectIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wallet = context.wallet;
-    return StreamWidget(
+    return APPStreamBuilder(
       value: wallet.wallet.walletConnect.connectionStatus,
       builder: (context, value) {
         return IconButton(
@@ -24,13 +24,7 @@ class WalletConnectIcon extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Opacity(
                     opacity: value.isDispose ? APPConst.disabledOpacity : 1,
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: context.colors.inverseSurface,
-                          shape: BoxShape.circle),
-                      child: Icon(CustomIcons.wc,
-                          color: context.colors.onInverseSurface),
-                    ),
+                    child: Icon(CustomIcons.wc2),
                   ),
                 ),
                 Align(

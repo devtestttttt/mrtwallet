@@ -1,29 +1,4 @@
 part of 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
-// import 'package:blockchain_utils/bip/bip/bip.dart';
-// import 'package:blockchain_utils/cbor/cbor.dart';
-// import 'package:blockchain_utils/crypto/crypto/hash/hash.dart';
-// import 'package:blockchain_utils/utils/binary/utils.dart';
-// import 'package:blockchain_utils/utils/string/string.dart';
-// import 'package:on_chain_wallet/app/core.dart';
-// import 'package:on_chain_wallet/crypto/keys/keys.dart';
-// import 'package:on_chain_wallet/wallet/constant/tags/constant.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/aptos.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/bch.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/bitcoin.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/cardano.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/cosmos.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/ethereum.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/monero.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/ripple.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/solana.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/stellar.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/substrate.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/sui.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/ton.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/address/creation_params/networks/tron.dart';
-// import 'package:on_chain_wallet/crypto/derivation/derivation.dart';
-// import 'package:on_chain_wallet/wallet/models/chain/chain/chain.dart';
-// import 'package:on_chain_wallet/wallet/models/network/network.dart';
 
 enum NewAccountParamsType {
   bitcoinCashNewAddressParams(CborTagsConst.bitcoinCashNewAddressParams),

@@ -1,6 +1,5 @@
 import 'package:blockchain_utils/cbor/cbor.dart';
 import 'package:blockchain_utils/helper/helper.dart';
-import 'package:blockchain_utils/utils/binary/utils.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/wallet/constant/tags/constant.dart';
 import 'package:on_chain_wallet/wallet/models/network/core/network/network.dart';
@@ -53,6 +52,7 @@ enum Web3APPProtocol {
   final int value;
   const Web3APPProtocol(this.value);
   bool get isWalletConnect => this == walletConnect;
+  bool get isInjected => this == injected;
   static Web3APPProtocol fromValue(int? tag) {
     return values.firstWhere((e) => e.value == tag,
         orElse: () => throw WalletExceptionConst.invalidData(
@@ -61,22 +61,15 @@ enum Web3APPProtocol {
 }
 
 class Web3APPAuthenticationKey with CborSerializable {
-  final List<int> topic;
   final List<int> publicKey;
-  final List<int> symkey;
+  final List<int> privateKey;
   factory Web3APPAuthenticationKey.fake() {
-    return Web3APPAuthenticationKey(topic: [], publicKey: [], symkey: []);
+    return Web3APPAuthenticationKey(publicKey: [], privateKey: []);
   }
   Web3APPAuthenticationKey(
-      {required List<int> topic,
-      required List<int> publicKey,
-      required List<int> symkey})
-      : topic = topic.asImmutableBytes,
-        publicKey = publicKey.asImmutableBytes,
-        symkey = symkey.asImmutableBytes;
-  late final String topicAsHex = BytesUtils.toHexString(topic);
-  late final String publicKeyAsHex = BytesUtils.toHexString(publicKey);
-  late final String symkeyAsHex = BytesUtils.toHexString(symkey);
+      {required List<int> publicKey, required List<int> privateKey})
+      : publicKey = publicKey.asImmutableBytes,
+        privateKey = privateKey.asImmutableBytes;
   factory Web3APPAuthenticationKey.deseralize(
       {List<int>? bytes, CborObject? object, String? hex}) {
     final CborListValue values = CborSerializable.cborTagValue(
@@ -85,9 +78,8 @@ class Web3APPAuthenticationKey with CborSerializable {
         object: object,
         tags: CborTagsConst.web3AppAuthKey);
     return Web3APPAuthenticationKey(
-      symkey: values.elementAs(0),
+      privateKey: values.elementAs(0),
       publicKey: values.elementAs(1),
-      topic: values.elementAs(2),
     );
   }
 
@@ -95,9 +87,8 @@ class Web3APPAuthenticationKey with CborSerializable {
   CborTagValue toCbor() {
     return CborTagValue(
         CborListValue.fixedLength([
-          CborBytesValue(symkey),
+          CborBytesValue(privateKey),
           CborBytesValue(publicKey),
-          CborBytesValue(topic),
         ]),
         CborTagsConst.web3AppAuthKey);
   }
@@ -447,7 +438,7 @@ class Web3APPAuthentication extends Web3RequestAuthentication
 class Web3APPData with CborSerializable {
   final bool active;
   final String applicationId;
-  final Web3APPAuthenticationKey token;
+  // final Web3APPAuthenticationKey token;
   final List<NetworkType> networks;
   List<Web3ChainAuthenticated> _chains;
   List<Web3ChainAuthenticated> get chains => _chains;
@@ -462,7 +453,7 @@ class Web3APPData with CborSerializable {
   }
 
   Web3APPData._({
-    required this.token,
+    // required this.token,
     required List<NetworkType> networks,
     required this.applicationId,
     this.active = true,
@@ -478,7 +469,7 @@ class Web3APPData with CborSerializable {
       bool active = true}) {
     return Web3APPData._(
         active: active,
-        token: token,
+        // token: token,
         chains: chains,
         networks: networks,
         applicationId: applicationId);
@@ -496,13 +487,13 @@ class Web3APPData with CborSerializable {
             .map((e) => Web3ChainAuthenticated.deserialize(object: e))
             .toList(),
         active: values.elementAt(1),
-        token:
-            Web3APPAuthenticationKey.deseralize(object: values.getCborTag(2)),
+        // token:
+        //     Web3APPAuthenticationKey.deseralize(object: values.getCborTag(2)),
         networks: values
-            .elementAsListOf<CborBytesValue>(3)
+            .elementAsListOf<CborBytesValue>(2)
             .map((e) => NetworkType.fromTag(e.value))
             .toList(),
-        applicationId: values.elementAs(4));
+        applicationId: values.elementAs(3));
   }
   @override
   CborTagValue toCbor() {
@@ -510,7 +501,7 @@ class Web3APPData with CborSerializable {
         CborListValue.fixedLength([
           CborListValue.fixedLength(_chains.map((e) => e.toCbor()).toList()),
           active,
-          token.toCbor(),
+          // token.toCbor(),
           CborListValue.fixedLength(
               networks.map((e) => CborBytesValue(e.tag)).toList()),
           applicationId

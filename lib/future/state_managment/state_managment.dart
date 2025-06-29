@@ -2,6 +2,8 @@ library;
 
 export 'typdef/typedef.dart';
 export 'extension/extension.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/future/future.dart';

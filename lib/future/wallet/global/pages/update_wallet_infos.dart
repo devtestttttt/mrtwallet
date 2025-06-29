@@ -13,13 +13,11 @@ class UpdateWalletInfosWidget extends StatefulWidget {
       this.setupButtonTitle,
       required this.exitsIds,
       required this.onUpdate,
-      required this.asDefaultWallet,
       required this.protectWallet,
       super.key});
   final String name;
   final WalletLockTime locktime;
   final bool requrmentPassword;
-  final bool asDefaultWallet;
   final bool protectWallet;
   final String? setupButtonTitle;
   final List<String> exitsIds;
@@ -37,7 +35,6 @@ class _UpdateWalletInfosWidgetState extends State<UpdateWalletInfosWidget>
   final GlobalKey<PageProgressState> progressKey = GlobalKey();
   late String name = widget.name;
   late bool reqPassword = widget.requrmentPassword;
-  late bool defaultWallet = widget.asDefaultWallet;
   late WalletLockTime locktime = widget.locktime;
   late bool protectWallet = widget.protectWallet;
 
@@ -51,11 +48,6 @@ class _UpdateWalletInfosWidgetState extends State<UpdateWalletInfosWidget>
 
   void onChangeReqPassword(bool? v) {
     reqPassword = v ?? reqPassword;
-    updateState();
-  }
-
-  void onChangeReqDefault(bool? v) {
-    defaultWallet = v ?? defaultWallet;
     updateState();
   }
 
@@ -80,7 +72,6 @@ class _UpdateWalletInfosWidgetState extends State<UpdateWalletInfosWidget>
         name: name,
         lockTime: locktime,
         requirmentPassword: reqPassword,
-        asDefaultWallet: defaultWallet,
         protectWallet: protectWallet));
   }
 
@@ -137,15 +128,6 @@ class _UpdateWalletInfosWidgetState extends State<UpdateWalletInfosWidget>
               title: Text("protect_wallet".tr,
                   style: context.textTheme.titleMedium),
               subtitle: Text("required_password_to_sign_transaction".tr),
-            ),
-            WidgetConstant.height20,
-            AppCheckListTile(
-              contentPadding: EdgeInsets.zero,
-              value: defaultWallet,
-              onChanged: onChangeReqDefault,
-              title: Text("default_wallet".tr,
-                  style: context.textTheme.titleMedium),
-              subtitle: Text("default_wallet_desc".tr),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
