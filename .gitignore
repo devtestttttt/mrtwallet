@@ -35,3 +35,5 @@ requirement/extensions/firefox_content.js
 debug.dart
 debug_builder.dart
 debug_builder.dart
+requirement/dmg_installer/onchain.dmg
+.DS_Store

@@ -36,8 +36,9 @@ void main(List<String> args) async {
           requestId: "0",
           data: pubKey,
           type: WalletEventTypes.tabId.name),
-      target: JSWebviewTraget.macos);
-
+      target: onChain.onChainInternalJsRequest_ == null
+          ? JSWebviewTraget.macos
+          : JSWebviewTraget.android);
   final workerCompleter = Completer<(JSWebviewWallet, JSWebviewTraget)>();
   bool onActivation(JSWalletEvent data) {
     try {

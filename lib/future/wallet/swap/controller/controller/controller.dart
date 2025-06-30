@@ -32,8 +32,12 @@ enum SwapPage {
 typedef ONUPDATEPROVIDERS = Future<APPSwapSettings?> Function(
     SwapStateController);
 
-class SwapStateController extends StreamStateController
-    with SwapSourceController, SwapDestinationController, BaseRepository {
+class SwapStateController
+    with
+        StreamStateController,
+        SwapSourceController,
+        SwapDestinationController,
+        BaseRepository {
   APPSwapSettings _settings = APPSwapSettings();
   APPSwapSettings get settings => _settings;
 

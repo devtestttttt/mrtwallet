@@ -1,6 +1,6 @@
 part of 'package:on_chain_wallet/wc/wc.dart';
 
-class WalletConnectStorage with NativeSecureStorageImpl {
+class WalletConnectStorage with NativeSecureStorageImpl, StreamStateController {
   static const String _sessionKey = "sessions_";
   static const String _messageKey = "msg_";
   @override
@@ -65,17 +65,20 @@ class WalletConnectStorage with NativeSecureStorageImpl {
     session = session.copyWith(latestAction: DateTime.now());
     await write(key: key, value: session.toCbor().toCborHex());
     _activeSessions[session.topic] = session;
+    notify();
   }
 
   Future<void> deleteSesshins() async {
     await deleteAll(identifier: _sessionKey);
     _activeSessions.clear();
+    notify();
   }
 
   Future<void> deleteSession(String topic) async {
     final String key = _getAppKey(topic);
     await delete(key);
     _activeSessions.remove(topic);
+    notify();
   }
 
   List<SessionData> getActiveSessions() {
@@ -110,6 +113,7 @@ class WalletConnectStorage with NativeSecureStorageImpl {
       if (_isReady) return;
       _activeSessions = await _initSessions();
       _pendingMessage = await _getPendingMessage();
+      notify();
       _isReady = true;
     });
   }
@@ -119,6 +123,7 @@ class WalletConnectStorage with NativeSecureStorageImpl {
       _activeSessions.clear();
       _pendingMessage.clear();
       _isReady = false;
+      dispose();
     });
   }
 }

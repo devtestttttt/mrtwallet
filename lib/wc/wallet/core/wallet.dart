@@ -33,6 +33,7 @@ class Web3WalletConnectHandler {
       : _storage = WalletConnectStorage(storageKey);
   StreamValue<WcRpcSocketStatus> get connectionStatus =>
       walletConnectCore.connectionStatus;
+  StreamValue<void> get onSessionUpdated => _storage.notifier;
   late final WalletConnect walletConnectCore = () {
     final walletConnect = WalletConnect(
         projectId: "392db477d2a3f837141f08aa2bd40583",

@@ -7,24 +7,33 @@ import 'package:on_chain_wallet/wallet/web3/core/core.dart';
 
 ///
 class Web3ApplicationView extends StatelessWidget {
-  const Web3ApplicationView({required this.permission, this.info, super.key});
+  const Web3ApplicationView(
+      {required this.permission, this.client, this.info, super.key});
   final Web3RequestAuthentication permission;
   final Web3RequestInformation? info;
+  final Web3ClientInfo? client;
 
   @override
   Widget build(BuildContext context) {
-    return _Web3ClientInfoView(
-        permission: permission,
-        info: info is Web3RequestApplicationInformation
-            ? info as Web3RequestApplicationInformation
-            : null);
+    final client = this.client ?? info?.client;
+    return ConditionalWidget(
+      enable: client != null,
+      onDeactive: (context) => _PermissionInfo(
+          logo: permission.icon,
+          name: permission.name,
+          url: permission.url ?? permission.applicationId),
+      onActive: (context) => _PermissionInfo(
+          logo: client!.image, name: client.name, url: client.url),
+    );
   }
 }
 
-class _Web3ClientInfoView extends StatelessWidget {
-  const _Web3ClientInfoView({required this.permission, this.info});
-  final Web3RequestAuthentication permission;
-  final Web3RequestApplicationInformation? info;
+class _PermissionInfo extends StatelessWidget {
+  final APPImage? logo;
+  final String name;
+  final String url;
+  const _PermissionInfo(
+      {required this.logo, required this.name, required this.url});
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +47,7 @@ class _Web3ClientInfoView extends StatelessWidget {
           child: Row(
             children: [
               CircleAPPImageView(
-                permission.icon,
+                logo,
                 radius: APPConst.circleRadius25,
                 onError: (c) =>
                     const Icon(Icons.broken_image, size: APPConst.double40),
@@ -48,9 +57,9 @@ class _Web3ClientInfoView extends StatelessWidget {
                   child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  OneLineTextWidget(permission.name,
+                  OneLineTextWidget(name,
                       style: context.onPrimaryTextTheme.labelLarge),
-                  Text(permission.url ?? permission.applicationId,
+                  OneLineTextWidget(url,
                       style: context.onPrimaryTextTheme.bodySmall),
                 ],
               )),
@@ -138,8 +147,9 @@ class Web3ClientInfoIconView extends StatelessWidget {
               },
               client: client.client?.client),
           onDeactive: (context) => switch (client.web3Status) {
-            WalletJSScriptStatus.progress =>
-              const APPCircularProgressIndicator(),
+            WalletJSScriptStatus.progress => Opacity(
+                opacity: APPConst.disabledOpacity,
+                child: Icon(CustomIcons.web3)),
             _ => Icon(Icons.error)
           },
         ),
@@ -155,13 +165,14 @@ class _Web3ClientInfoIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConditionalWidget(
-      enable: client?.image != null,
-      onActive: (context) => CircleAPPImageView(client?.image,
-          radius: APPConst.circleRadius12,
-          onError: (context) => icon,
-          onProgress: (context) => APPCircularProgressIndicator()),
-      onDeactive: (context) => icon,
+    return APPImageView(
+      client?.image,
+      radius: APPConst.circleRadius12,
+      onLoading: {
+        APPImageLoaderStatus.loading: (context) => icon,
+        APPImageLoaderStatus.failed: (context) => icon,
+        APPImageLoaderStatus.nullImage: (context) => icon
+      },
     );
   }
 }

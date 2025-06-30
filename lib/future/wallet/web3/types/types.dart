@@ -9,6 +9,7 @@ class Web3UpdatePermissionRequest {
   final List<Chain> lockedChains;
   final List<NetworkType> lockedNetworks;
   final Web3APPAuthentication authentication;
+  final Web3ClientInfo? client;
   late final Web3APPAuthentication cloneAutneticated = authentication.clone();
   bool haveRequiredPermissions() {
     final networks = requiredNetworkPermissions(authentication);
@@ -45,7 +46,8 @@ class Web3UpdatePermissionRequest {
   Web3UpdatePermissionRequest(
       {this.lockedChains = const [],
       this.lockedNetworks = const [],
-      required this.authentication});
+      required this.authentication,
+      this.client});
   bool get hasLockedNetwork => lockedNetworks.isNotEmpty;
   bool get hasLockedChain => lockedChains.isNotEmpty;
   bool networkDisabled(NetworkType network) {

@@ -1,4 +1,5 @@
 import 'package:blockchain_utils/blockchain_utils.dart';
+import 'package:on_chain_wallet/app/dev/logging.dart';
 import 'package:on_chain_wallet/app/euqatable/equatable.dart';
 import 'package:on_chain_wallet/app/synchronized/basic_lock.dart';
 import 'package:on_chain_wallet/app/utils/list/extension.dart';
@@ -462,14 +463,6 @@ abstract class Web3ClientRequest {
     }, error: Web3RequestExceptionConst.invalidMapParameters(keys: keys));
   }
 
-  List<Map<String, dynamic>> parametersAsListOfMap(
-      {Web3RequestMethods? method, Web3RequestException? error}) {
-    return Web3ValidatorUtils.parseParams2(() {
-      final param = tryObjectAsListOfMap(requestParams);
-      return param;
-    }, error: error ?? Web3RequestExceptionConst.invalidListOfObject());
-  }
-
   Map<String, dynamic> elementAsMap(int index,
       {Web3RequestException? error,
       Web3RequestMethods? method,
@@ -507,15 +500,6 @@ abstract class Web3ClientRequest {
     try {
       return objectAsMap(object: object, name: '', keys: keys);
     } catch (_) {
-      return null;
-    }
-  }
-
-  List<Map<String, dynamic>>? tryObjectAsListOfMap(Object? object,
-      {String? name, Web3RequestException? error}) {
-    try {
-      return objectAsListOfMap(object: object, name: '');
-    } catch (e) {
       return null;
     }
   }

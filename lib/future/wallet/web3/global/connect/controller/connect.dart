@@ -45,7 +45,8 @@ class Web3GlobalRequestConnectStateController
     _authenticated = Web3UpdatePermissionRequest(
         authentication: request.authenticated,
         lockedNetworks: lockedNetworks,
-        lockedChains: locakedChains);
+        lockedChains: locakedChains,
+        client: request.info.client);
     progressKey.idle();
   }
 }

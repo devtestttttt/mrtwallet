@@ -92,3 +92,19 @@ class StreamValue<T> extends StreamListenable<T> {
   StreamValue(super.val);
   StreamValue.immutable(super.val) : super(immutable: true);
 }
+
+mixin StreamStateController {
+  bool _closed = false;
+  final StreamValue<void> notifier = StreamValue(null);
+  Stream<void> get stream => notifier.stream;
+  void notify() {
+    if (_closed) return;
+    notifier.notify();
+  }
+
+  void dispose() {
+    if (_closed) return;
+    _closed = true;
+    notifier.dispose();
+  }
+}

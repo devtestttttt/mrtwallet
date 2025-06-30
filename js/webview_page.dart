@@ -74,7 +74,9 @@ void main(List<String> args) async {
                   requestId: "",
                   data: workerEvent.clientId!,
                   type: WalletEventTypes.tabId.name),
-              target: JSWebviewTraget.macos);
+              target: onChain.onChainInternalJsRequest_ == null
+                  ? JSWebviewTraget.macos
+                  : JSWebviewTraget.android);
           onChain.onWebViewMessage = (JSWalletEvent event) {
             if (walletEvent.type == WalletEventTypes.exception) {
               final error =

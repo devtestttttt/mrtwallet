@@ -42,7 +42,7 @@ class _WalletConnectViewState extends State<WalletConnectView>
   Future<void> connect(
       {required Uri pairUrl, required Cancelable cancelable}) async {
     await walletConnect.pair(pairUrl, cancelable: cancelable);
-    await loadSessions();
+    // await loadSessions();
     context.backToCurrent();
   }
 
@@ -73,24 +73,6 @@ class _WalletConnectViewState extends State<WalletConnectView>
     }
     context.showAlert("application_updated".tr);
   }
-
-  // Future<void> updateApplicationAuthenticated(
-  //     Web3ClientInfo client, ONUPDATEWEB3PERMISSION onUpdate) async {
-  //   final auth = await wallet.wallet.getWeb3Dapp(client);
-  //   final request = auth.hasError
-  //       ? null
-  //       : Web3UpdatePermissionRequest(
-  //           lockedChains: [], authentication: auth.result.authentication);
-  //   onUpdate(
-  //     request,
-  //     (networks) async {
-  //       final updateResult =
-  //           await wallet.wallet.updateWeb3Application(request!.authentication);
-  //       await walletConnect.updateAuthenticated(updateResult.result);
-  //       return false;
-  //     },
-  //   );
-  // }
 
   Future<void> updateApplicationAuthenticated(
       ShimmerAction<Web3ClientInfo> client) async {
@@ -125,12 +107,9 @@ class _WalletConnectViewState extends State<WalletConnectView>
 
   Future<void> newPair() async {
     if (!status.isConnect) return;
-    final result = await context.openDialogPage<bool>('',
+    await context.openDialogPage<bool>('',
         child: (context) => _ConnectPairingView(this),
         routeName: PageRouter.walletConnectPairing);
-    if (result != true) return;
-    await loadSessions();
-    updateState();
   }
 
   void toggleConnection() {
@@ -141,11 +120,17 @@ class _WalletConnectViewState extends State<WalletConnectView>
     }
   }
 
+  Future<void> _onSessionUpdated(var _) async {
+    await loadSessions();
+    updateState();
+  }
+
   @override
   void onInitOnce() {
     super.onInitOnce();
     wallet = context.wallet;
     walletConnect = wallet.wallet.walletConnect;
+    walletConnect.onSessionUpdated.stream.listen(_onSessionUpdated);
     loadSessions();
   }
 

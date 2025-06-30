@@ -1,6 +1,7 @@
 import 'package:blockchain_utils/utils/binary/utils.dart';
 import 'package:blockchain_utils/utils/string/string.dart';
 import 'package:cosmos_sdk/cosmos_sdk.dart';
+import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/app/utils/utils.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
@@ -110,59 +111,53 @@ mixin CosmosWeb3StateHandler<
           json: param,
           network: networkType.name);
       final currentChain = state.getAccountChain(account);
-      final tx = Web3CosmosSignTransaction.fromJson(
-          account: account,
-          json: param,
+
+      if (method == Web3CosmosRequestMethods.signTransactionAmino) {
+        final aminoJson = Web3ValidatorUtils.tryObjectAsMap(param["signDoc"]);
+        if (aminoJson == null) {
+          throw Web3CosmosExceptionConstant.invalidAminoSignDoc;
+        }
+        final AminoTx amino = AminoTx.fromJson(aminoJson);
+        if (currentChain.chainId != amino.chainId) {
+          throw Web3CosmosExceptionConstant.mismatchChainId;
+        }
+        return Web3CosmosSignTransaction(
+            account: account,
+            chainId: amino.chainId,
+            transaction: Web3CosmosSignTransactionAminoParams(amino));
+      }
+      final Map<String, dynamic> signDoc = Web3ValidatorUtils.parseMap(
+          key: "signDoc",
           method: method,
-          chainId: currentChain.chainId);
+          json: param,
+          requiredKeys: ["bodyBytes"]);
+      final List<int> bodyBytes = params.objectAsBytes(
+          object: signDoc["bodyBytes"],
+          name: "bodyBytes",
+          encoding: [StringEncoding.hex, StringEncoding.base64]);
+      final List<int>? authInfoBytes = Web3ValidatorUtils.parseParams2(() {
+        final authInfoBytes = signDoc["authInfoBytes"];
+        if (authInfoBytes == null) return null;
+        return params.objectAsBytes(
+            object: signDoc["authInfoBytes"],
+            name: "authInfoBytes",
+            encoding: [StringEncoding.hex, StringEncoding.base64]);
+      }, errorOnNull: false);
+      final BigInt? accountNumber = Web3ValidatorUtils.parseBigInt(
+          key: "accountNumber", method: method, json: signDoc);
+      final tx = Web3CosmosSignTransaction(
+          account: account,
+          chainId: currentChain.chainId,
+          transaction: Web3CosmosSignTransactionDirectParams(
+              bodyBytes: bodyBytes,
+              authInfos: authInfoBytes,
+              accountNumber: accountNumber));
       if (tx.chainId != currentChain.chainId) {
         throw Web3CosmosExceptionConstant.mismatchChainId;
       }
       return tx;
     }, error: Web3RequestExceptionConst.invalidTransaction);
   }
-
-  // Web3CosmosSignTransaction toSignTransactionRequest(
-  //     {required REQUEST params,
-  //     required STATEACCOUNT state,
-  //     required Web3CosmosRequestMethods method,
-  //     Web3CosmoshainIdnetifier? network}) {
-  //   return Web3ValidatorUtils.parseParams2(() {
-  //     const List<String> keys = ["address", "transaction"];
-  //     final param = params.parametersAsMap(keys: keys, method: method);
-  //     final account = Web3ValidatorUtils.parseAddress(
-  //         onParse: (e) => state.findAddressStrOrDefault(address: e),
-  //         key: "address",
-  //         method: method,
-  //         json: param,
-  //         network: networkType.name);
-  //     final chain = state.getAccountChain(account);
-  //     final toJson = Web3ValidatorUtils.tryObjectAsMap(param["transaction"]);
-  //     if (toJson != null) {
-  //       final aminoTx = AminoTx.fromJson(toJson);
-  //       if (aminoTx.chainId != chain.chainId) {
-  //         throw Web3RequestExceptionConst.mismatchAccountAndTransactionChainId;
-  //       }
-  //       return Web3CosmosSignTransaction(
-  //           account: account,
-  //           chainId: aminoTx.chainId,
-  //           transaction: Web3CosmosSignTransactionAminoParams(aminoTx));
-  //     }
-  //     final signDoc = SignDoc.deserialize(params.objectAsBytes(
-  //         param["transaction"], "transaction",
-  //         encoding: StringEncoding.base64));
-  //     if (signDoc.chainId != chain.chainId) {
-  //       throw Web3RequestExceptionConst.mismatchAccountAndTransactionChainId;
-  //     }
-  //     return Web3CosmosSignTransaction(
-  //         account: account,
-  //         chainId: signDoc.chainId,
-  //         transaction: Web3CosmosSignTransactionDirectParams(
-  //             accountNumber: signDoc.accountNumber,
-  //             bodyBytes: signDoc.bodyBytes,
-  //             authInfos: signDoc.authInfoBytes));
-  //   }, error: Web3CosmosExceptionConstant.invalidSignTransactionParams);
-  // }
 
   @override
   Future<Web3MessageCore> request(REQUEST message,

@@ -36,7 +36,8 @@ class Web3RequestCompleterEvent {
 }
 
 abstract class Web3RequestInformation with Equatable {
-  // String? get origin;
+  final Web3ClientInfo? client;
+  Web3RequestInformation({this.client});
   bool get isClosed => _controller.isClosed;
   Stream<Web3RequestCompleterEvent> get stream =>
       _controller.stream.asBroadcastStream();
@@ -44,7 +45,6 @@ abstract class Web3RequestInformation with Equatable {
   late final StreamController<Web3RequestCompleterEvent> _controller =
       StreamController<Web3RequestCompleterEvent>.broadcast(sync: true);
 
-  // final Completer<WalletEvent> _requestComoleter = Completer<WalletEvent>();
   final Completer<Object?> _completer = Completer();
   bool _responseHasListener = false;
 
@@ -126,7 +126,6 @@ class Web3RequestLocalInformation extends Web3RequestInformation {
 
 class Web3RequestApplicationInformation extends Web3RequestInformation {
   final Web3MessageCore message;
-  // final Web3ActiveClient client;
   @override
   final String requestId;
   final String applicationId;
@@ -134,13 +133,18 @@ class Web3RequestApplicationInformation extends Web3RequestInformation {
   Web3RequestApplicationInformation._(
       {required this.requestId,
       required this.message,
-      required this.applicationId});
+      required this.applicationId,
+      super.client});
   factory Web3RequestApplicationInformation(
       {required Web3MessageCore message,
       required String requestId,
-      required String applicationId}) {
+      required String applicationId,
+      required Web3ClientInfo client}) {
     return Web3RequestApplicationInformation._(
-        message: message, requestId: requestId, applicationId: applicationId);
+        message: message,
+        requestId: requestId,
+        applicationId: applicationId,
+        client: client);
   }
 
   @override

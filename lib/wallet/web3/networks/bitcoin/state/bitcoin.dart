@@ -146,7 +146,7 @@ mixin BitcoinWeb3StateHandler<
           state.findAddressOrDefault(
               address: account.address, network: network ?? account.chain)
         ];
-      }, error: Web3BitcoinExceptionConstant.invalidPSBT);
+      }, error: Web3BitcoinExceptionConstant.invalidTransferParams);
       final BitcoinNetworkAddress? recipientAddress =
           Web3ValidatorUtils.parseAddress(
               onParse: (e) {

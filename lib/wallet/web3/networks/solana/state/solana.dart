@@ -3,6 +3,7 @@ import 'package:blockchain_utils/utils/string/string.dart';
 import 'package:on_chain/ethereum/src/eip_4361/exception/exception.dart';
 import 'package:on_chain/solana/src/address/sol_address.dart';
 import 'package:on_chain/solana/src/transaction/transaction.dart';
+import 'package:on_chain_wallet/app/core.dart';
 import 'package:on_chain_wallet/crypto/models/networks.dart';
 import 'package:on_chain_wallet/wallet/web3/constant/constant/exception.dart';
 import 'package:on_chain_wallet/wallet/web3/core/messages/types/message.dart';
@@ -54,6 +55,7 @@ mixin SolanaWeb3StateHandler<
       }, error: Web3RequestExceptionConst.invalidTransaction);
       Web3SolanaChainAccount? account;
       final hasAccount = data["account"] ?? data["address"];
+
       if (hasAccount != null) {
         account = Web3ValidatorUtils.parseParams2(() {
           final account = tryParseStateAddress(

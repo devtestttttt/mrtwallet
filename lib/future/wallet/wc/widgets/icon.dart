@@ -18,42 +18,33 @@ class WalletConnectIcon extends StatelessWidget {
             onPressed: () {
               context.to(PageRouter.walletConnect);
             },
-            icon: Stack(
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: Opacity(
-                    opacity: value.isDispose ? APPConst.disabledOpacity : 1,
-                    child: Icon(CustomIcons.wc2),
+            icon: SizedBox.fromSize(
+              size: WidgetConstant.circularProgressIndicatorSize,
+              child: Stack(
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: Opacity(
+                        opacity: value.isDispose ? APPConst.disabledOpacity : 1,
+                        child: Icon(CustomIcons.wc2)),
                   ),
-                ),
-                Align(
-                    alignment: Alignment.bottomCenter,
-                    child: APPAnimatedSwitcher<WcRpcSocketStatus>(
-                        enable: value,
-                        widgets: {
-                          WcRpcSocketStatus.connect: (context) => Icon(
-                                Icons.link,
-                                size: APPConst.circleRadius12,
-                              ),
-                          WcRpcSocketStatus.disconnect: (context) => Icon(
-                                Icons.link_off,
-                                size: APPConst.circleRadius12,
-                              ),
-                          WcRpcSocketStatus.pending: (context) => Icon(
-                                Icons.sync,
-                                size: APPConst.circleRadius12,
-                              ),
-                          WcRpcSocketStatus.dispose: (context) => Icon(
-                                Icons.block,
-                                size: APPConst.circleRadius12,
-                              ),
-                          WcRpcSocketStatus.noNetwork: (context) => Icon(
-                                Icons.block,
-                                size: APPConst.circleRadius12,
-                              ),
-                        }))
-              ],
+                  Align(
+                      alignment: Alignment.bottomCenter,
+                      child: APPAnimatedSwitcher<
+                          WcRpcSocketStatus>(enable: value, widgets: {
+                        WcRpcSocketStatus.connect: (context) =>
+                            Icon(Icons.link, size: APPConst.circleRadius12),
+                        WcRpcSocketStatus.disconnect: (context) =>
+                            Icon(Icons.link_off, size: APPConst.circleRadius12),
+                        WcRpcSocketStatus.pending: (context) =>
+                            Icon(Icons.sync, size: APPConst.circleRadius12),
+                        WcRpcSocketStatus.dispose: (context) =>
+                            Icon(Icons.block, size: APPConst.circleRadius12),
+                        WcRpcSocketStatus.noNetwork: (context) =>
+                            Icon(Icons.block, size: APPConst.circleRadius12),
+                      }))
+                ],
+              ),
             ));
       },
     );

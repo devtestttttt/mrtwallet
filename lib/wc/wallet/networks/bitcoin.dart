@@ -125,6 +125,20 @@ class BitcoinWeb3WalletConnectStateHandler
             WalletConnectNetworkRequest,
             WalletConnectClientEvent> {
   BitcoinWeb3WalletConnectStateHandler({required super.sendInternalMessage});
+  @override
+  BitcoinBaseAddress toAddress(String v,
+      {Web3BitcoinChainIdnetifier? network,
+      BitcoinWeb3WalletConnectStateAccount? state}) {
+    if (network == null || !network.isBch) {
+      return super.toAddress(v, network: network, state: state);
+    }
+    final hasCaip = v.indexOf(":") > 0;
+    if (hasCaip) {
+      return super.toAddress(v, network: network, state: state);
+    }
+    final correctAddress = "${network.caipChainId}:$v";
+    return super.toAddress(correctAddress, network: network, state: state);
+  }
 
   @override
   Future<List<WCChainNamespace>> generateNamespace() async {

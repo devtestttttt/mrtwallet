@@ -29,6 +29,7 @@ class WebViewController
   WebViewController({required this.walletCore, required this.observer});
   String? _pageScript;
   String? _webviewWalletScript;
+  String? _tronScript;
 
   final bool enableBackForwardKey = PlatformInterface.isMacos;
 
@@ -45,6 +46,11 @@ class WebViewController
     _pageScript ??=
         await PlatformUtils.loadAssetText(APPConst.assetWebviewPageScript);
     return _pageScript!;
+  }
+
+  Future<String> _loadTronWebScript() async {
+    _tronScript ??= await PlatformUtils.loadAssetText(APPConst.assetsTronWeb);
+    return _tronScript!;
   }
 
   Future<String> _loadWebViewScript() async {
@@ -69,7 +75,7 @@ class WebViewController
   }
 
   Future<void> _runPageScripts(String viewId) async {
-    final tronWeb = await PlatformUtils.loadAssetText(APPConst.assetsTronWeb);
+    final tronWeb = await _loadTronWebScript();
     await _loadScript(viewType: viewId, script: tronWeb);
     final script = await _loadWebViewPageScript();
     await _loadScript(viewType: viewId, script: script);
@@ -132,7 +138,7 @@ class WebViewController
     }
   }
 
-  static const bool isWorker = true;
+  final bool isWorker = true;
 
   Future<void> _activeScript(WebViewEvent event) async {
     final auth = tabsAuthenticated[event.viewId];
@@ -140,6 +146,7 @@ class WebViewController
     await _runPageScripts(event.viewId);
     if (isWorker) {
       final script = await _loadWebViewScript();
+
       final responseEvent = toResponseEvent(
           id: auth.viewId,
           type: WalletEventTypes.activation,
@@ -187,8 +194,13 @@ class WebViewController
     await _lock.synchronized(() async {
       onWeb3ClinetDisconnected(latestClient.value.client);
       super.onPageStart(event);
-      await MethodUtils.call(() async => await _activeScript(event),
+      final execute = await MethodUtils.call(
+          () async => await _activeScript(event),
           cancelable: _cancelable);
+      if (execute.hasError) {
+        updatePageScriptStatus(
+            status: WalletJSScriptStatus.failed, identifier: event.viewId);
+      }
     });
   }
 

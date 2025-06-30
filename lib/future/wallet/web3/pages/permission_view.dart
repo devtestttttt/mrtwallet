@@ -104,6 +104,7 @@ class __Web3APPPermissionViewState extends State<_Web3ApplicationPermissionView>
   final GlobalKey<FormState> formKey = GlobalKey();
   Web3APPAuthentication get currentApplication => authenticated.authentication;
   Web3UpdatePermissionRequest get authenticated => widget.authenticated;
+  Web3ClientInfo? get client => authenticated.client;
   late Web3APPAuthentication application;
   List<Web3AccountAcitvity> activities = [];
   String applicationName = "";
@@ -366,7 +367,7 @@ class __Web3APPPermissionViewState extends State<_Web3ApplicationPermissionView>
                                   borderRadius: WidgetConstant.border8),
                               padding: WidgetConstant.padding10,
                               child: Web3ApplicationView(
-                                  permission: application))),
+                                  permission: application, client: client))),
                       child: Padding(
                           padding: WidgetConstant.padding10,
                           child: CircleAPPImageView(application.icon,
@@ -442,7 +443,8 @@ class _APPSettingView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Web3ApplicationView(permission: state.application),
+            Web3ApplicationView(
+                permission: state.application, client: state.client),
             WidgetConstant.height20,
             Text("application_name".tr, style: context.textTheme.titleMedium),
             Text("edit_application_name_desc".tr),

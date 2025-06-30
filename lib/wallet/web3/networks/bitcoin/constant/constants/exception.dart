@@ -11,6 +11,10 @@ class Web3BitcoinExceptionConstant {
   static Web3RequestException txInputNotFound(String txId, int index) =>
       Web3RequestExceptionConst.invalidParameters(
           "Transaction input with TXID $txId and index $index not found in the list of unspent inputs.");
+  static Web3RequestException get invalidTransferParams =>
+      Web3RequestExceptionConst.invalidParameters(
+          "Required: 'account' or 'accounts' (for multi-address transfers), 'recipientAddress' or 'script' (a valid Bitcoin scriptPubKey as hex) , and 'amount'.");
+
   static Web3RequestException get invalidPSBT =>
       Web3RequestExceptionConst.invalidParameters(
           "The PSBT request must include either an 'account' for single-address spending or 'accounts' for multiple-address spending, along with a valid base64-encoded PSBT string containing valid inputs and outputs.");

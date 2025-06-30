@@ -64,18 +64,3 @@ abstract class Disposable extends BaseController with ListenableX {
 }
 
 abstract class StateController extends Disposable {}
-
-abstract class StreamStateController {
-  bool _closed = false;
-  final StreamValue<void> notifier = StreamValue(null);
-  void notify() {
-    if (_closed) return;
-    notifier.notify();
-  }
-
-  void dispose() {
-    if (_closed) return;
-    _closed = true;
-    notifier.dispose();
-  }
-}

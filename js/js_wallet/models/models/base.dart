@@ -82,6 +82,8 @@ extension type OnChainWallet(JSObject _) implements JSOBJ {
   @JS("onChainInternalJsRequest")
   external void onChainInternalJsRequest(
       String id, String data, String requestId, String type);
+  @JS("onChainInternalJsRequest")
+  external JSFunction? get onChainInternalJsRequest_;
 
   String get clientId {
     if (_scriptId.isA<JSFunction>()) {
