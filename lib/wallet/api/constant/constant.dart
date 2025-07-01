@@ -218,27 +218,39 @@ class ProvidersConst {
     12: <APIProvider>[
       ElectrumAPIProvider(
           identifier: "${defaultidentifierName}22",
-          url: "mainnet.pepeblocks.com:50002",
+          url: "electrum.pepeblocks.com:50002",
           protocol: ServiceProtocol.ssl),
       ElectrumAPIProvider(
           identifier: "${defaultidentifierName}24",
-          url: "mainnet.pepeblocks.com:50001",
+          url: "electrum.pepeblocks.com:50001",
           protocol: ServiceProtocol.tcp),
       ElectrumAPIProvider(
           identifier: "${defaultidentifierName}24",
-          url: "wss://mainnet.pepeblocks.com:50004",
+          url: "wss://electrum.pepeblocks.com:50004",
           protocol: ServiceProtocol.websocket),
       ElectrumAPIProvider(
           identifier: "${defaultidentifierName}25",
-          url: "mainnet.pepelum.site:50002",
+          url: "electrum.pepelum.site:50002",
           protocol: ServiceProtocol.ssl),
       ElectrumAPIProvider(
           identifier: "${defaultidentifierName}26",
-          url: "mainnet.pepelum.site:50001",
+          url: "electrum.pepelum.site:50001",
           protocol: ServiceProtocol.tcp),
       ElectrumAPIProvider(
           identifier: "${defaultidentifierName}27",
-          url: "wss://mainnet.pepelum.site:50004",
+          url: "wss://electrum.pepelum.site:50004",
+          protocol: ServiceProtocol.websocket),
+      ElectrumAPIProvider(
+          identifier: "${defaultidentifierName}25",
+          url: "electrum.pepe.tips:50002",
+          protocol: ServiceProtocol.ssl),
+      ElectrumAPIProvider(
+          identifier: "${defaultidentifierName}26",
+          url: "electrum.pepe.tips:50001",
+          protocol: ServiceProtocol.tcp),
+      ElectrumAPIProvider(
+          identifier: "${defaultidentifierName}27",
+          url: "wss://electrum.pepe.tips:50004",
           protocol: ServiceProtocol.websocket)
     ],
     30: <APIProvider>[
